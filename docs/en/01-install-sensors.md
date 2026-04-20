@@ -49,47 +49,78 @@ sensors
 
 ## 🚀 Step 5: Installing the Sensor Server (API Bridge)
 
-The official Proxmox API does not expose all hardware sensors.
-Therefore, this integration uses a small service that acts as a bridge.
+The official Proxmox API does not expose all hardware sensors. Therefore, this integration uses a small service that acts as a bridge.
 
-5.1. **Download and install the script**
-Run these commands on your Proxmox server terminal:
+To avoid running scripts as root, we will create a dedicated `homeassistant` user and run the API as a user-level service.
+
+### 5.1. Create User and Enable Persistence
+Run these commands as **root** to create the user and ensure their services start at boot:
 
 ```bash
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
-chmod +x /usr/local/bin/pve-sensors-api.py
+# Create the user
+adduser --system --group --shell /bin/bash homeassistant
+
+# Allow the user to read disk SMART data (optional, but recommended for Proxmox)
+usermod -aG disk homeassistant
+
+# Ensure the service starts at boot and stays running after logout
+loginctl enable-linger homeassistant
 ```
 
-5.2. **Configure as a system service**
-
-Create the service file:
+### 5.2. Download and Setup (as homeassistant user)
+Switch to the new user and set up the script:
 
 ```bash
-cat <<EOF > /etc/systemd/system/pve-sensors.service
+# Switch to the user session
+su - homeassistant
+
+# Create necessary folders
+mkdir -p ~/.local/bin
+mkdir -p ~/.config/systemd/user/
+
+# Download the script
+wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O ~/.local/bin/pve-sensors-api.py
+chmod +x ~/.local/bin/pve-sensors-api.py
+```
+
+### 5.3. Create the User Service
+While still logged in as the **homeassistant** user, create the service file:
+
+```bash
+cat <<EOF > ~/.config/systemd/user/pve-sensors.service
 [Unit]
-Description=PVE Sensors API
+Description=PVE Sensors API (User Mode)
 After=network.target
-StartLimitIntervalSec=60
-StartLimitBurst=5
 
 [Service]
-ExecStart=/usr/bin/python3 /usr/local/bin/pve-sensors-api.py
+ExecStart=/usr/bin/python3 %h/.local/bin/pve-sensors-api.py
 Restart=always
 RestartSec=10s
-User=root
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOF
-
 ```
 
-5.3. **Activation**
+### 5.4. Activation
+Since you are logged in via `su`, you must export the runtime path to avoid "Operation not permitted" errors, then enable the service:
 
-systemctl daemon-reload
-systemctl enable --now pve-sensors.service
+```bash
+# Fix the D-Bus connection for this session
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
 
-5.4. **Final verification**
+# Load, Enable, and Start
+systemctl --user daemon-reload
+systemctl --user enable pve-sensors.service
+systemctl --user start pve-sensors.service
+```
+
+### 5.5. Final verification
+Check the status of the service:
+```bash
+systemctl --user status pve-sensors.service
+```
+
 Open in your browser:
 
 ```
