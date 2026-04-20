@@ -58,10 +58,7 @@ Run these commands as **root** to create the user and ensure their services star
 
 ```bash
 # Create the user
-adduser --system --group --shell /bin/bash homeassistant
-
-# Allow the user to read disk SMART data (optional, but recommended for Proxmox)
-usermod -aG disk homeassistant
+adduser homeassistant
 
 # Ensure the service starts at boot and stays running after logout
 loginctl enable-linger homeassistant
