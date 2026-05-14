@@ -1,4 +1,4 @@
-"""Sensor platform for Proxmox Sensors Extended."""
+"""Sensor platform for Proxmox Extended Sensors."""
 
 from __future__ import annotations
 import logging
@@ -33,9 +33,20 @@ from .node import (
     ProxmoxNodeIOWaitSensor,
     ProxmoxNodeLoadAverageSensor,
     ProxmoxNodeScoreSensor,
+    ProxmoxNodeMountedDisksSensor,
     ProxmoxStoragesSensor,
-    ProxmoxClusterNotificationsSensor,
-    ProxmoxPackageUpdatesModeSensor,
+)
+
+from .cluster import (
+    ProxmoxBackupJobsSensor,
+    ProxmoxClusterStatusSensor,
+    ProxmoxClusterNodesSensor,
+    ProxmoxClusterCPUSensor,
+    ProxmoxClusterRAMSensor,
+    ProxmoxClusterVMsSensor,
+    ProxmoxClusterCTsSensor,
+    ProxmoxClusterStorageSensor,
+    ProxmoxClusterHASensor,
 )
 
 # Hardware Sensors (lm-sensors)
@@ -64,7 +75,6 @@ from .pbs import (
     ProxmoxPBSRamTotalSensor,
     ProxmoxPBSRamUsedSensor,
     ProxmoxPBSRamFreeSensor,
-    ProxmoxPBSBackupCountSensor,
     ProxmoxPBSLastBackupTimeSensor,
     ProxmoxPBSLastBackupSizeSensor,
     ProxmoxPBSLastBackupStatusSensor,
@@ -127,10 +137,14 @@ async def async_setup_entry(
         "enable_nodes_list", entry.data.get("enable_nodes_list", True)
     )
 
+    enable_cluster = entry.options.get(
+        "enable_cluster", entry.data.get("enable_cluster", True)
+    )
+
     hass.data[DOMAIN][entry.entry_id]["enable_node_controls"] = enable_node_controls
 
     node = entry.data.get(CONF_NODE, "Proxmox")
-    server_type = entry.data.get(CONF_PLATFORM_TYPE, "PVE")
+    server_type = hass.data[DOMAIN][entry.entry_id].get("server_type", "PVE")
 
     entities = []
     c_data = coordinator.data
@@ -167,7 +181,15 @@ async def async_setup_entry(
             name=f"Node: {node}",
         )
 
-        # ========NODES LIST SENSOR (ONLY FOR PVE)========
+        device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, f"mounted_disks_{node}")},
+            manufacturer="Proxmox",
+            model="Mounted Disks",
+            name=f"6. Mounted Disks: {node}",
+        )
+
+        # ========NODES LIST SENSOR========
         if server_type == "PVE" and enable_nodes_list:
             try:
                 nodes_sensor = ProxmoxNodesSensor(coordinator, entry.entry_id, node)
@@ -205,6 +227,7 @@ async def async_setup_entry(
                     x in sid
                     for x in [
                         "coretemp",
+                        "core",
                         "package",
                         "cpu",
                         "k10temp",
@@ -221,7 +244,7 @@ async def async_setup_entry(
                     pch_sensors.append(key)
 
                 # NVMe
-                elif any(x in sid for x in ["nvme", "composite"]):
+                elif "nvme" in sid:
                     nvme_sensors.append(key)
 
                 # SATA
@@ -232,14 +255,23 @@ async def async_setup_entry(
                     other_sensors.append(key)
 
             # Second: Group NVMe by device
-            nvme_devices = {}
-            for key in nvme_sensors:
-                if key.startswith("nvme-pci-"):
-                    parts = key.split("_")
-                    device_prefix = parts[0]
-                    nvme_devices[device_prefix] = True
+            import re
 
-            for device_prefix in nvme_devices.keys():
+            nvme_devices = set()
+
+            for key in nvme_sensors:
+                match = re.search(r"(nvme[-_]pci[-_][^_\s]+|nvme\d+)", key.lower())
+                if match:
+                    nvme_devices.add(match.group(1).replace("_", "-"))
+
+            if not nvme_devices:
+                smart_data = c_data.get("smart", {}).get(node, {})
+                for disk_id, disk in smart_data.items():
+                    if disk.get("device_type") == "nvme":
+                        nvme_devices.add(str(disk_id).lower())
+
+            # Create sensors
+            for device_prefix in nvme_devices:
                 sensor = ProxmoxHardwareNVMeSensor(coordinator, device_prefix, node)
                 if sensor.is_valid():
                     entities.append(sensor)
@@ -250,14 +282,28 @@ async def async_setup_entry(
             for key in ordered:
                 sid = key.lower()
 
+                if "nvme" in sid:
+                    continue
+
                 # Skip adapters/pwm
                 if any(x in sid for x in ["adapter", "pwm"]):
                     continue
 
                 # ---------------- CPU (only one) ----------------
-                if any(x in sid for x in ["coretemp", "k10temp", "tctl", "tdie"]):
-                    if "package" not in sid and "tctl" not in sid and "tdie" not in sid:
-                        continue
+                if any(
+                    x in sid
+                    for x in [
+                        "coretemp",
+                        "core",
+                        "package",
+                        "cpu",
+                        "k10temp",
+                        "zenpower",
+                        "tctl",
+                        "tdie",
+                        "tccd",
+                    ]
+                ):
                     if cpu_created:
                         continue
                     cpu_created = True
@@ -271,14 +317,14 @@ async def async_setup_entry(
 
                     # Mark as primary
                     sensor._attr_translation_key = "chipset_temp"
-                    sensor._attr_name = f"Chipset Temp ({node})"
+                    sensor._attr_name = "Chipset Temp"
 
                     if sensor.is_valid():
                         entities.append(sensor)
                         chipset_created = True
                     continue
 
-                # Do not create sensor for acpitz (will be an attribute)
+                # Do not create sensor for acpitz
                 if "acpitz" in sid:
                     continue
 
@@ -302,8 +348,7 @@ async def async_setup_entry(
             entities.append(ProxmoxNodeIOWaitSensor(coordinator, node))
             entities.append(ProxmoxNodeLoadAverageSensor(coordinator, node))
             entities.append(ProxmoxNodeScoreSensor(coordinator, node))
-            entities.append(ProxmoxClusterNotificationsSensor(coordinator, node))
-            entities.append(ProxmoxPackageUpdatesModeSensor(coordinator, node))
+            entities.append(ProxmoxNodeMountedDisksSensor(coordinator, node))
 
             mapping = {
                 "cpuinfo": ProxmoxCPUInfoSensor,
@@ -322,6 +367,7 @@ async def async_setup_entry(
                     "kversion",
                     "boot-info",
                     "last_task",
+                    "wait",
                 ):
                     entities.append(ProxmoxNodeSensor(coordinator, key, node))
 
@@ -335,7 +381,6 @@ async def async_setup_entry(
                             coordinator, d_id, node, d_info.get("model") or d_id
                         )
                     )
-                    # NOTE: SMART data is already included as attributes in ProxmoxDiskSensor
 
         # Storage pools
         storage_map = c_data.get("storage", {})
@@ -394,7 +439,6 @@ async def async_setup_entry(
                 ("Free Space", "avail"),
                 ("Total Capacity", "total"),
                 ("Type", "type"),
-                ("Path", "path"),
             ]:
                 entities.append(
                     ProxmoxStorageAttributeSensor(
@@ -430,8 +474,8 @@ async def async_setup_entry(
                     ("memory_total", "GB", "mdi:memory"),
                     ("disk_total", "GB", "mdi:harddisk-plus"),
                     ("uptime", "h", "mdi:timer-sand"),
-                    ("network_rx", "MB", "mdi:download-network"),
-                    ("network_tx", "MB", "mdi:upload-network"),
+                    ("network_rx", "GB", "mdi:download-network"),
+                    ("network_tx", "GB", "mdi:upload-network"),
                 ]:
                     entities.append(
                         ProxmoxVMAttributeSensor(
@@ -469,8 +513,8 @@ async def async_setup_entry(
                     ("disk_total", "GB", "mdi:harddisk-plus"),
                     ("disk_used", "GB", "mdi:harddisk"),
                     ("uptime", "h", "mdi:timer-outline"),
-                    ("network_rx", "MB", "mdi:download-network"),
-                    ("network_tx", "MB", "mdi:upload-network"),
+                    ("network_rx", "GB", "mdi:download-network"),
+                    ("network_tx", "GB", "mdi:upload-network"),
                 ]:
                     entities.append(
                         ProxmoxContainerAttributeSensor(
@@ -485,17 +529,62 @@ async def async_setup_entry(
                         )
                     )
 
+    # ==============CLUSTER SECTION====================
+    elif server_type == "CLUSTER":
+        from .cluster import (
+            ProxmoxClusterStatusSensor,
+            ProxmoxClusterNodesSensor,
+            ProxmoxClusterCPUSensor,
+            ProxmoxClusterRAMSensor,
+            ProxmoxClusterVMsSensor,
+            ProxmoxClusterCTsSensor,
+            ProxmoxClusterStorageSensor,
+            ProxmoxClusterHASensor,
+            ProxmoxClusterFirewallSensor,
+            ProxmoxBackupAgeSensor,
+            ProxmoxBackupHealthSensor,
+            ProxmoxFailedTasksSensor,
+        )
+
+        cluster_status = c_data.get("cluster_status", {})
+        cluster_name = cluster_status.get("name", "Proxmox Cluster")
+
+        device_registry = dr.async_get(hass)
+        device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, f"proxmox_cluster_{entry.entry_id}")},
+            manufacturer="Proxmox",
+            model="Proxmox VE Cluster",
+            name=f"Cluster: {cluster_name}",
+        )
+
+        entities.append(ProxmoxClusterStatusSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxClusterNodesSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxClusterCPUSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxClusterRAMSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxClusterVMsSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxClusterCTsSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxClusterStorageSensor(coordinator, entry.entry_id, node))
+        entities.append(
+            ProxmoxClusterFirewallSensor(coordinator, cluster_name, entry.entry_id)
+        )
+        entities.append(ProxmoxBackupJobsSensor(coordinator, entry.entry_id, node))
+        if c_data.get("cluster_ha"):
+            entities.append(ProxmoxClusterHASensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxBackupAgeSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxBackupHealthSensor(coordinator, entry.entry_id, node))
+        entities.append(ProxmoxFailedTasksSensor(coordinator, entry.entry_id, node))
+
     # ==============PBS SECTION====================
     elif server_type == "PBS":
         server_id = entry.data["server_id"]
 
         # Node Hardware Status
-        if c_data.get("pbs_node_status"):
-            entities.append(ProxmoxPBSCpuSensor(coordinator, server_id))
-            entities.append(ProxmoxPBSRamSensor(coordinator, server_id))
-            entities.append(ProxmoxPBSRamTotalSensor(coordinator, server_id))
-            entities.append(ProxmoxPBSRamUsedSensor(coordinator, server_id))
-            entities.append(ProxmoxPBSRamFreeSensor(coordinator, server_id))
+        entities.append(ProxmoxPBSCpuSensor(coordinator, server_id))
+        entities.append(ProxmoxPBSRamSensor(coordinator, server_id))
+        entities.append(ProxmoxPBSRamTotalSensor(coordinator, server_id))
+        entities.append(ProxmoxPBSRamUsedSensor(coordinator, server_id))
+        entities.append(ProxmoxPBSRamFreeSensor(coordinator, server_id))
 
         # Datastores
         for store_id in c_data.get("pbs_datastores", {}):
@@ -524,9 +613,6 @@ async def async_setup_entry(
             )
             entities.append(ProxmoxPBSVerifySensor(coordinator, server_id, store_id))
             entities.append(ProxmoxPBSPruneSensor(coordinator, server_id, store_id))
-            entities.append(
-                ProxmoxPBSBackupCountSensor(coordinator, server_id, store_id)
-            )
             entities.append(
                 ProxmoxPBSLastBackupTimeSensor(coordinator, server_id, store_id)
             )

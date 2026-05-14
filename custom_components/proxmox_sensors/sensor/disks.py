@@ -1,4 +1,4 @@
-"""Physical disk sensors for Proxmox."""
+"""Physical disk sensors for Proxmox Extended Sensors."""
 
 from .base import ProxmoxBaseSensor
 from ..const import DOMAIN

@@ -4,6 +4,7 @@ import subprocess
 import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/sensors":
@@ -16,6 +17,8 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_memory()
         elif self.path == "/health":
             self._handle_health()
+        elif self.path == "/mounts":
+            self._handle_mounts()
         else:
             self.send_response(404)
             self.end_headers()
@@ -47,51 +50,53 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_memory(self):
         """Handle memory information from dmidecode."""
         try:
-            # Ejecutar dmidecode y filtrar por memoria
             cmd = ["dmidecode", "-t", "memory"]
             result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False
+                cmd, capture_output=True, text=True, timeout=10, check=False
             )
-            
+
             if result.returncode != 0:
                 self._send_error_response(f"dmidecode failed: {result.stderr}")
                 return
-            
-            # Filtrar las líneas relevantes
+
             memory_data = []
             current_module = {}
-            
-            for line in result.stdout.split('\n'):
+
+            for line in result.stdout.split("\n"):
                 if "Memory Device" in line and "Array" not in line:
                     if current_module:
                         memory_data.append(current_module)
                     current_module = {}
-                
+
                 if "Locator:" in line and "Bank" not in line:
                     current_module["locator"] = line.split(":", 1)[1].strip()
-                elif "Size:" in line and "No Module Installed" not in line:
+                elif (
+                    line.strip().startswith("Size:")
+                    and "No Module Installed" not in line
+                ):
                     current_module["size"] = line.split(":", 1)[1].strip()
                 elif "Type:" in line and "Unknown" not in line:
                     current_module["type"] = line.split(":", 1)[1].strip()
-                elif "Speed:" in line and "Configured" not in line and "Unknown" not in line:
+                elif (
+                    "Speed:" in line
+                    and "Configured" not in line
+                    and "Unknown" not in line
+                ):
                     current_module["speed"] = line.split(":", 1)[1].strip()
                 elif "Configured Memory Speed:" in line:
                     current_module["configured_speed"] = line.split(":", 1)[1].strip()
                 elif "Manufacturer:" in line and "NO DIMM" not in line:
                     current_module["manufacturer"] = line.split(":", 1)[1].strip()
-            
-            # Añadir el último módulo
+
             if current_module:
                 memory_data.append(current_module)
-            
-            # Filtrar módulos vacíos o sin tamaño
-            memory_data = [m for m in memory_data if m.get("size") and "No Module Installed" not in m.get("size", "")]
-            
-            # Calcular total
+
+            memory_data = [
+                m
+                for m in memory_data
+                if m.get("size") and "No Module Installed" not in m.get("size", "")
+            ]
+
             total_gb = 0
             for module in memory_data:
                 size_str = module.get("size", "0")
@@ -99,16 +104,16 @@ class Handler(BaseHTTPRequestHandler):
                     total_gb += int(size_str.replace("GB", "").strip())
                 elif "MB" in size_str:
                     total_gb += int(size_str.replace("MB", "").strip()) / 1024
-            
+
             result_data = {
                 "modules": memory_data,
                 "total_modules": len(memory_data),
                 "total_gb": round(total_gb, 1),
-                "timestamp": subprocess.check_output(["date", "+%s"]).decode().strip()
+                "timestamp": subprocess.check_output(["date", "+%s"]).decode().strip(),
             }
-            
+
             self._send_json_response(json.dumps(result_data, indent=2))
-            
+
         except subprocess.TimeoutExpired:
             self._send_error_response("dmidecode timeout (10s)")
         except Exception as e:
@@ -117,11 +122,10 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_health(self):
         """Return health status."""
         try:
-            # Obtain basic data
             sensors_ok = self._check_sensors()
             smart_ok = self._check_smartctl()
             disks = self._get_disk_health_summary()
-            
+
             health_data = {
                 "status": "healthy" if sensors_ok and smart_ok else "degraded",
                 "sensors": sensors_ok,
@@ -129,137 +133,212 @@ class Handler(BaseHTTPRequestHandler):
                 "disks_working": disks["working"],
                 "disks_failed": disks["failed"],
                 "disks_total": disks["total"],
-                "timestamp": subprocess.check_output(["date", "+%s"]).decode().strip()
+                "timestamp": subprocess.check_output(["date", "+%s"]).decode().strip(),
             }
             self._send_json_response(json.dumps(health_data))
         except Exception as e:
             self._send_error_response(f"Error: {e}")
 
+    def _handle_mounts(self):
+        """Handle disk mount status via lsblk."""
+        try:
+            result = subprocess.run(
+                ["lsblk", "-J", "-o", "NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL,UUID"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+            if result.returncode != 0:
+                self._send_error_response(f"lsblk failed: {result.stderr}")
+                return
+
+            raw = json.loads(result.stdout)
+            mounted = []
+            unmounted = []
+
+            def _walk(devices, parent=None):
+                for dev in devices or []:
+                    name = dev.get("name", "")
+                    dtype = dev.get("type", "")
+                    fstype = dev.get("fstype")
+                    mountpoint = dev.get("mountpoint")
+
+                    # Solo particiones y discos con filesystem
+                    if dtype in ("part", "disk") and fstype:
+                        entry = {
+                            "name": name,
+                            "size": dev.get("size"),
+                            "fstype": fstype,
+                            "mountpoint": mountpoint,
+                            "label": dev.get("label"),
+                            "parent": parent,
+                        }
+                        if mountpoint:
+                            mounted.append(entry)
+                        else:
+                            unmounted.append(entry)
+
+                    # Recursivo para children
+                    _walk(dev.get("children", []), parent=name)
+
+            _walk(raw.get("blockdevices", []))
+
+            df_mounts = []
+
+            try:
+                df = subprocess.run(
+                    ["df", "-h", "--output=source,target"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+
+                if df.returncode == 0:
+                    lines = df.stdout.strip().split("\n")[1:]  # skip header
+
+                    for line in lines:
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            source = parts[0]
+                            target = parts[1]
+
+                            if source.startswith(
+                                ("tmpfs", "udev", "overlay", "efivarfs")
+                            ):
+                                continue
+
+                            if target.startswith(("/run", "/sys", "/proc", "/dev")):
+                                continue
+
+                            if target in ("/", "/boot/efi", "/etc/pve"):
+                                continue
+
+                            df_mounts.append({"source": source, "target": target})
+
+            except Exception:
+                pass
+
+            response = {
+                "mounted": mounted,
+                "unmounted": unmounted,
+                "mounted_count": len(mounted),
+                "unmounted_count": len(unmounted),
+                "mount_points": df_mounts,
+            }
+
+            self._send_json_response(json.dumps(response))
+
+        except Exception as e:
+            self._send_error_response(f"Error getting mount info: {e}")
+
     def _get_smart_data_fast(self):
         """Universal SMART data collection for all disks."""
         smart_data = {}
-        
+
         try:
-            # 1. Use smartctl --scan-open for available disks
             scan_cmd = ["smartctl", "--scan-open"]
             result = subprocess.run(
-                scan_cmd,
-                capture_output=True,
-                text=True,
-                timeout=20
+                scan_cmd, capture_output=True, text=True, timeout=20
             )
-            
+
             if result.returncode == 0 and result.stdout.strip():
-                lines = result.stdout.strip().split('\n')
-                
+                lines = result.stdout.strip().split("\n")
+
                 for line in lines:
                     if line and not line.startswith("#"):
-                        # Format: /dev/sda -d sat # /dev/sda, ATA device
                         parts = line.split()
                         if len(parts) >= 3:
                             device = parts[0]
-                            device_type = parts[2]  # -d parameter value
+                            device_type = parts[2]
                             device_key = device.replace("/dev/", "")
-                            
-                            # Get disc info
+
                             disk_info = self._get_disk_info_safe(
                                 device, device_type, timeout=10
                             )
-                            
+
                             if disk_info:
                                 smart_data[device_key] = disk_info
                             else:
-                                # Disk accessible without SMART
                                 smart_data[device_key] = {
                                     "model": "Device (no SMART)",
                                     "smart_available": False,
                                     "device_type": device_type,
-                                    "path": device
+                                    "path": device,
                                 }
-            
-            # 2. If there are no disks, check basics.
+
             if not smart_data:
-                # Test only basic system disks
                 basic_checks = [
                     ("/dev/sda", "sat"),
                     ("/dev/nvme0", "nvme"),
                 ]
-                
+
                 for device, dev_type in basic_checks:
                     device_key = device.replace("/dev/", "")
                     info = self._get_disk_info_safe(device, dev_type, timeout=5)
                     if info:
                         smart_data[device_key] = info
-            
+
             return smart_data
-            
+
         except Exception as e:
             return {"error": f"Scan failed: {str(e)}"}
 
     def _get_smart_data_extended(self):
         """Get extended SMART data with retry logic."""
         smart_data = self._get_smart_data_fast()
-        
-        # For working discs, get more details.
+
         for disk_key in list(smart_data.keys()):
             if smart_data[disk_key].get("smart_available"):
-                # Obtain detailed SMART attributes
                 detailed = self._get_detailed_smart_attributes(f"/dev/{disk_key}")
                 if detailed:
                     smart_data[disk_key].update(detailed)
-        
+
         return smart_data
 
     def _get_disk_info_safe(self, device, device_type, timeout=10):
-        """Safely get disk info with timeout."""
         device_key = device.replace("/dev/", "")
-        
+
         try:
-            # Build command according to type
             if device_type == "scsi":
                 base_cmd = ["smartctl", "-a", "-d", "scsi"]
             elif device_type == "nvme":
                 base_cmd = ["smartctl", "-a", "-d", "nvme"]
             else:
                 base_cmd = ["smartctl", "-a", "-d", "sat"]
-            
-            # Try JSON first
+
             cmd_json = base_cmd + ["-j", device]
             result = subprocess.run(
-                cmd_json,
-                capture_output=True,
-                text=True,
-                timeout=timeout
+                cmd_json, capture_output=True, text=True, timeout=timeout
             )
-            
+
             if result.returncode == 0:
                 disk_info = json.loads(result.stdout)
                 return self._parse_smart_info(disk_info, result.returncode)
             else:
-                # Fallback to basic information without JSON
                 cmd_info = ["smartctl", "-i", device]
                 result_info = subprocess.run(
-                    cmd_info,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout
+                    cmd_info, capture_output=True, text=True, timeout=timeout
                 )
-                
+
                 if result_info.returncode == 0:
-                    return self._parse_basic_info_text(result_info.stdout, result.returncode)
-        
+                    return self._parse_basic_info_text(
+                        result_info.stdout, result.returncode
+                    )
+
         except (subprocess.TimeoutExpired, json.JSONDecodeError, Exception):
             pass
-        
+
         return None
 
     def _parse_smart_info(self, disk_info, returncode):
-        """Parse JSON SMART data with all critical attributes."""
         parsed = {
             "model": disk_info.get("model_name", "Unknown"),
             "serial": disk_info.get("serial_number", "Unknown"),
             "firmware": disk_info.get("firmware_version", "Unknown"),
-            "capacity_gb": round(disk_info.get("user_capacity", {}).get("bytes", 0) / (1024**3), 1),
+            "capacity_gb": round(
+                disk_info.get("user_capacity", {}).get("bytes", 0) / (1024**3), 1
+            ),
             "smart_passed": disk_info.get("smart_status", {}).get("passed", False),
             "smart_available": bool(
                 disk_info.get("smart_status")
@@ -270,14 +349,12 @@ class Handler(BaseHTTPRequestHandler):
             "power_on_hours": None,
             "device_type": disk_info.get("device", {}).get("type", ""),
             "returncode": returncode,
-            # CRITICAL ATTRIBUTES
             "reallocated_sectors": None,
             "pending_sectors": None,
             "uncorrectable_errors": None,
             "media_errors": None,
             "spin_retry_count": None,
             "seek_error_rate": None,
-            # NVMe-SPECIFIC ATTRIBUTES
             "available_spare": None,
             "available_spare_threshold": None,
             "percentage_used": None,
@@ -295,323 +372,289 @@ class Handler(BaseHTTPRequestHandler):
             "critical_temp_time": None,
             "critical_warning": None,
         }
-        
+
         device_type = disk_info.get("device", {}).get("type", "").lower()
-        
-        # ========== NVMe ==========
+
         if "nvme" in device_type:
             nvme_smart = disk_info.get("nvme_smart_health_information_log", {})
             if nvme_smart:
-                # Temperatura (principal)
                 parsed["temperature_c"] = nvme_smart.get("temperature")
-                
-                # Available Spare (0-100%)
                 parsed["available_spare"] = nvme_smart.get("available_spare")
-                
-                # Available Spare Threshold
-                parsed["available_spare_threshold"] = nvme_smart.get("available_spare_threshold")
-                
-                # Percentage Used (desgaste)
+                parsed["available_spare_threshold"] = nvme_smart.get(
+                    "available_spare_threshold"
+                )
                 parsed["percentage_used"] = nvme_smart.get("percentage_used")
-                
-                # Data R/W
+
                 data_units_read = nvme_smart.get("data_units_read")
                 if data_units_read:
                     parsed["data_units_read"] = data_units_read
-                    # Convert to TB
-                    parsed["data_units_read_tb"] = round(data_units_read * 512 / (1000**4), 1)
-                
+                    parsed["data_units_read_tb"] = round(
+                        data_units_read * 512 / (1000**4), 1
+                    )
+
                 data_units_written = nvme_smart.get("data_units_written")
                 if data_units_written:
                     parsed["data_units_written"] = data_units_written
-                    parsed["data_units_written_tb"] = round(data_units_written * 512 / (1000**4), 1)
-                
-                # Commands
+                    parsed["data_units_written_tb"] = round(
+                        data_units_written * 512 / (1000**4), 1
+                    )
+
                 parsed["host_read_commands"] = nvme_smart.get("host_read_commands")
                 parsed["host_write_commands"] = nvme_smart.get("host_write_commands")
-                
-                # Controller time
                 parsed["controller_busy_time"] = nvme_smart.get("controller_busy_time")
-                
-                # Cycles and shutdowns
                 parsed["power_cycles"] = nvme_smart.get("power_cycles")
                 parsed["unsafe_shutdowns"] = nvme_smart.get("unsafe_shutdowns")
-                
-                # Errors
-                parsed["media_errors"] = nvme_smart.get("media_and_data_integrity_errors")
-                parsed["error_info_log_entries"] = nvme_smart.get("error_information_log_entries")
-                
-                # Temperature times
-                parsed["warning_temp_time"] = nvme_smart.get("warning_composite_temperature_time")
-                parsed["critical_temp_time"] = nvme_smart.get("critical_composite_temperature_time")
-                
-                # Critical Warning
+                parsed["media_errors"] = nvme_smart.get(
+                    "media_and_data_integrity_errors"
+                )
+                parsed["error_info_log_entries"] = nvme_smart.get(
+                    "error_information_log_entries"
+                )
+                parsed["warning_temp_time"] = nvme_smart.get(
+                    "warning_composite_temperature_time"
+                )
+                parsed["critical_temp_time"] = nvme_smart.get(
+                    "critical_composite_temperature_time"
+                )
                 parsed["critical_warning"] = nvme_smart.get("critical_warning")
-                
-                # Power on hours
                 parsed["power_on_hours"] = nvme_smart.get("power_on_hours")
-            
-            # For NVMe, DO NOT use pending_sectors as available_spare
+
             if "pending_sectors" in parsed:
                 parsed["pending_sectors"] = None
-        
+
         else:
-            # ========== PARA HDD/SSD SATA ==========
-            # Temperature
             temp = disk_info.get("temperature", {})
             if temp:
                 parsed["temperature_c"] = temp.get("current", temp.get("value"))
-            
-            # Power on hours
+
             power_time = disk_info.get("power_on_time", {})
             if power_time:
                 parsed["power_on_hours"] = power_time.get("hours")
-            
-            # Parse specific SMART attributes - FIND THE CRITICAL ONES
+
             attributes = disk_info.get("ata_smart_attributes", {}).get("table", [])
             for attr in attributes:
                 name = attr.get("name", "")
                 raw_value = attr.get("raw", {}).get("value", 0)
                 normalized_name = name.lower().replace("_", "").replace("-", "")
-                
-                # Temperature
+
                 if "temperature" in normalized_name:
-                    parsed["temperature_c"] = raw_value if not parsed["temperature_c"] else parsed["temperature_c"]
-                
-                # Power on hours
+                    parsed["temperature_c"] = (
+                        raw_value
+                        if not parsed["temperature_c"]
+                        else parsed["temperature_c"]
+                    )
                 elif "poweronhours" in normalized_name:
-                    parsed["power_on_hours"] = raw_value if not parsed["power_on_hours"] else parsed["power_on_hours"]
-                
-                # === CRITICAL ATTRIBUTES ===
-                
-                # Current_Pending_Sector
-                elif any(x in normalized_name for x in ["currentpendingsector", "pending"]):
+                    parsed["power_on_hours"] = (
+                        raw_value
+                        if not parsed["power_on_hours"]
+                        else parsed["power_on_hours"]
+                    )
+                elif any(
+                    x in normalized_name for x in ["currentpendingsector", "pending"]
+                ):
                     parsed["pending_sectors"] = raw_value
-                
-                # Reallocated_Sector_Ct
-                elif any(x in normalized_name for x in ["reallocatedsectorct", "reallocated"]):
+                elif any(
+                    x in normalized_name for x in ["reallocatedsectorct", "reallocated"]
+                ):
                     parsed["reallocated_sectors"] = raw_value
-                
-                # Uncorrectable_Error_Cnt
-                elif any(x in normalized_name for x in ["uncorrectableerrorcnt", "offlineuncorrectable"]):
+                elif any(
+                    x in normalized_name
+                    for x in ["uncorrectableerrorcnt", "offlineuncorrectable"]
+                ):
                     parsed["uncorrectable_errors"] = raw_value
-                
-                # Spin_Retry_Count
                 elif "spinretrycount" in normalized_name:
                     parsed["spin_retry_count"] = raw_value
-                
-                # Seek_Error_Rate
                 elif "seekerrorrate" in normalized_name:
                     parsed["seek_error_rate"] = raw_value
-                
-                # Search by attribute ID
+
                 attr_id = attr.get("id")
                 if attr_id:
-                    # Common SMART attribute IDs
-                    if attr_id == 5:  # Reallocated_Sector_Ct
+                    if attr_id == 5:
                         parsed["reallocated_sectors"] = raw_value
-                    elif attr_id == 197:  # Current_Pending_Sector
+                    elif attr_id == 197:
                         parsed["pending_sectors"] = raw_value
-                    elif attr_id == 198:  # Offline_Uncorrectable o Uncorrectable_Error_Cnt
+                    elif attr_id == 198:
                         parsed["uncorrectable_errors"] = raw_value
-                    elif attr_id == 10:  # Spin_Retry_Count
+                    elif attr_id == 10:
                         parsed["spin_retry_count"] = raw_value
-                    elif attr_id == 7:  # Seek_Error_Rate
+                    elif attr_id == 7:
                         parsed["seek_error_rate"] = raw_value
-        
+
         return parsed
 
     def _parse_basic_info_text(self, text_output, returncode):
-        """Parse basic disk info from text output."""
         parsed = {
             "model": "Unknown",
             "smart_available": False,
             "returncode": returncode,
-            # Inicializar atributos críticos
             "reallocated_sectors": None,
             "pending_sectors": None,
             "uncorrectable_errors": None,
         }
-        
-        lines = text_output.split('\n')
+
+        lines = text_output.split("\n")
         for line in lines:
             line_lower = line.lower()
-            
+
             if "model:" in line_lower and "unknown" not in line_lower:
                 parsed["model"] = line.split(":", 1)[1].strip()
             elif "serial number:" in line_lower:
                 parsed["serial"] = line.split(":", 1)[1].strip()
             elif "user capacity:" in line_lower:
-                import re
-                match = re.search(r'(\d+[,\.]?\d*)\s*bytes', line, re.IGNORECASE)
+                match = re.search(r"(\d+[,\.]?\d*)\s*bytes", line, re.IGNORECASE)
                 if match:
                     try:
-                        bytes_str = match.group(1).replace(',', '').replace('.', '')
+                        bytes_str = match.group(1).replace(",", "").replace(".", "")
                         bytes_val = int(bytes_str)
                         parsed["capacity_gb"] = round(bytes_val / (1024**3), 1)
                     except:
                         pass
-        
+
         return parsed
 
     def _get_detailed_smart_attributes(self, device):
-        """Get detailed SMART attributes for working disks."""
         detailed = {}
 
         try:
-            # Determine device type
             cmd_check = ["smartctl", "-i", device]
             result_check = subprocess.run(
-                cmd_check,
-                capture_output=True,
-                text=True,
-                timeout=5
+                cmd_check, capture_output=True, text=True, timeout=5
             )
 
             device_type = "unknown"
             if "nvme" in result_check.stdout.lower():
                 device_type = "nvme"
-            elif "ata" in result_check.stdout.lower() or "sata" in result_check.stdout.lower():
+            elif (
+                "ata" in result_check.stdout.lower()
+                or "sata" in result_check.stdout.lower()
+            ):
                 device_type = "ata"
 
-            # ============================
-            # NVMe EXTENDED PARSING
-            # ============================
             if device_type == "nvme":
                 cmd = ["smartctl", "-x", device]
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
                 if result.returncode == 0:
-                    lines = result.stdout.split('\n')
+                    lines = result.stdout.split("\n")
                     for line in lines:
 
-                        # Available Spare
                         if "Available Spare:" in line:
-                            match = re.search(r'Available Spare:\s+(\d+)%', line)
+                            match = re.search(r"Available Spare:\s+(\d+)%", line)
                             if match:
                                 detailed["available_spare"] = int(match.group(1))
 
-                        # Available Spare Threshold
                         elif "Available Spare Threshold:" in line:
-                            match = re.search(r'Available Spare Threshold:\s+(\d+)%', line)
+                            match = re.search(
+                                r"Available Spare Threshold:\s+(\d+)%", line
+                            )
                             if match:
-                                detailed["available_spare_threshold"] = int(match.group(1))
+                                detailed["available_spare_threshold"] = int(
+                                    match.group(1)
+                                )
 
-                        # Percentage Used
                         elif "Percentage Used:" in line:
-                            match = re.search(r'Percentage Used:\s+(\d+)%', line)
+                            match = re.search(r"Percentage Used:\s+(\d+)%", line)
                             if match:
                                 detailed["percentage_used"] = int(match.group(1))
 
-                        # Data Units Read
                         elif "Data Units Read:" in line:
-                            match = re.search(r'Data Units Read:\s+([\d,]+)', line)
+                            match = re.search(r"Data Units Read:\s+([\d,]+)", line)
                             if match:
                                 val = int(match.group(1).replace(",", ""))
                                 detailed["data_units_read"] = val
-                                detailed["data_units_read_tb"] = round(val * 512 / (1000**4), 1)
+                                detailed["data_units_read_tb"] = round(
+                                    val * 512 / (1000**4), 1
+                                )
 
-                        # Data Units Written
                         elif "Data Units Written:" in line:
-                            match = re.search(r'Data Units Written:\s+([\d,]+)', line)
+                            match = re.search(r"Data Units Written:\s+([\d,]+)", line)
                             if match:
                                 val = int(match.group(1).replace(",", ""))
                                 detailed["data_units_written"] = val
-                                detailed["data_units_written_tb"] = round(val * 512 / (1000**4), 1)
+                                detailed["data_units_written_tb"] = round(
+                                    val * 512 / (1000**4), 1
+                                )
 
-                        # Host Read Commands
                         elif "Host Read Commands" in line:
-                            match = re.search(r'Host\s+Read\s+Commands:\s+([\d,]+)', line)
+                            match = re.search(
+                                r"Host\s+Read\s+Commands:\s+([\d,]+)", line
+                            )
                             if match:
-                                detailed["host_read_commands"] = int(match.group(1).replace(",", ""))
+                                detailed["host_read_commands"] = int(
+                                    match.group(1).replace(",", "")
+                                )
 
-                        # Host Write Commands
                         elif "Host Write Commands" in line:
-                            match = re.search(r'Host\s+Write\s+Commands:\s+([\d,]+)', line)
+                            match = re.search(
+                                r"Host\s+Write\s+Commands:\s+([\d,]+)", line
+                            )
                             if match:
-                                detailed["host_write_commands"] = int(match.group(1).replace(",", ""))
+                                detailed["host_write_commands"] = int(
+                                    match.group(1).replace(",", "")
+                                )
 
-                        # Controller Busy Time
                         elif "Controller Busy Time:" in line:
-                            match = re.search(r'Controller Busy Time:\s+(\d+)', line)
+                            match = re.search(r"Controller Busy Time:\s+(\d+)", line)
                             if match:
                                 detailed["controller_busy_time"] = int(match.group(1))
 
-                        # Power Cycles
                         elif "Power Cycles:" in line:
-                            match = re.search(r'Power Cycles:\s+(\d+)', line)
+                            match = re.search(r"Power Cycles:\s+(\d+)", line)
                             if match:
                                 detailed["power_cycles"] = int(match.group(1))
 
-                        # Power On Hours
                         elif "Power On Hours:" in line:
-                            match = re.search(r'Power On Hours:\s+(\d+)', line)
+                            match = re.search(r"Power On Hours:\s+(\d+)", line)
                             if match:
                                 detailed["power_on_hours"] = int(match.group(1))
 
-                        # Unsafe Shutdowns
                         elif "Unsafe Shutdowns:" in line:
-                            match = re.search(r'Unsafe Shutdowns:\s+(\d+)', line)
+                            match = re.search(r"Unsafe Shutdowns:\s+(\d+)", line)
                             if match:
                                 detailed["unsafe_shutdowns"] = int(match.group(1))
 
-                        # Media Errors
                         elif "Media and Data Integrity Errors:" in line:
-                            match = re.search(r'Media and Data Integrity Errors:\s+(\d+)', line)
+                            match = re.search(
+                                r"Media and Data Integrity Errors:\s+(\d+)", line
+                            )
                             if match:
                                 detailed["media_errors"] = int(match.group(1))
 
-                        # Error Log Entries
                         elif "Error Information Log Entries" in line:
-                            match = re.search(r'Entries:\s+(\d+)', line)
+                            match = re.search(r"Entries:\s+(\d+)", line)
                             if match:
                                 detailed["error_info_log_entries"] = int(match.group(1))
 
-                        # Warning Temp Time
                         elif "Warning  Comp. Temperature Time" in line:
-                            match = re.search(r'Time:\s+(\d+)', line)
+                            match = re.search(r"Time:\s+(\d+)", line)
                             if match:
                                 detailed["warning_temp_time"] = int(match.group(1))
 
-                        # Critical Temp Time
                         elif "Critical Comp. Temperature Time" in line:
-                            match = re.search(r'Time:\s+(\d+)', line)
+                            match = re.search(r"Time:\s+(\d+)", line)
                             if match:
                                 detailed["critical_temp_time"] = int(match.group(1))
 
-            # ============================
-            # SATA / SAS PARSING
-            # ============================
             else:
                 cmd = ["smartctl", "-A", device]
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
                 if result.returncode == 0:
-                    lines = result.stdout.split('\n')
+                    lines = result.stdout.split("\n")
                     for line in lines:
 
                         if "Reallocated_Sector_Ct" in line:
-                            match = re.search(r'(\d+)\s+(\d+)\s+(\d+)\s+(\d+)', line)
+                            match = re.search(r"(\d+)\s+(\d+)\s+(\d+)\s+(\d+)", line)
                             if match:
                                 detailed["reallocated_sectors"] = int(match.group(4))
 
                         elif "Current_Pending_Sector" in line:
-                            match = re.search(r'(\d+)\s+(\d+)\s+(\d+)\s+(\d+)', line)
+                            match = re.search(r"(\d+)\s+(\d+)\s+(\d+)\s+(\d+)", line)
                             if match:
                                 detailed["pending_sectors"] = int(match.group(4))
 
                         elif "Uncorrectable_Error_Cnt" in line:
-                            match = re.search(r'(\d+)\s+(\d+)\s+(\d+)\s+(\d+)', line)
+                            match = re.search(r"(\d+)\s+(\d+)\s+(\d+)\s+(\d+)", line)
                             if match:
                                 detailed["uncorrectable_errors"] = int(match.group(4))
 
@@ -621,55 +664,40 @@ class Handler(BaseHTTPRequestHandler):
         return detailed
 
     def _check_sensors(self):
-        """Check if lm-sensors is working."""
         try:
-            result = subprocess.run(
-                ["sensors", "-v"],
-                capture_output=True,
-                timeout=3
-            )
+            result = subprocess.run(["sensors", "-v"], capture_output=True, timeout=3)
             return result.returncode == 0
         except Exception:
             return False
 
     def _check_smartctl(self):
-        """Check if smartctl is working."""
         try:
             result = subprocess.run(
-                ["smartctl", "--version"],
-                capture_output=True,
-                timeout=3
+                ["smartctl", "--version"], capture_output=True, timeout=3
             )
             return result.returncode == 0
         except Exception:
             return False
 
     def _get_disk_health_summary(self):
-        """Get disk health summary."""
         try:
             smart_data = self._get_smart_data_fast()
             working = 0
             failed = 0
-            
+
             for disk, info in smart_data.items():
                 if info.get("smart_available") and info.get("smart_passed"):
                     working += 1
                 else:
                     failed += 1
-            
-            return {
-                "working": working,
-                "failed": failed,
-                "total": working + failed
-            }
+
+            return {"working": working, "failed": failed, "total": working + failed}
         except Exception:
             return {"working": 0, "failed": 0, "total": 0}
 
     def _send_json_response(self, data):
-        """Send JSON response."""
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         if isinstance(data, bytes):
             self.wfile.write(data)
@@ -677,7 +705,6 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(data.encode())
 
     def _send_error_response(self, message):
-        """Send error response."""
         error_data = json.dumps({"error": message})
         self.send_response(500)
         self.send_header("Content-Type", "application/json")
@@ -685,8 +712,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(error_data.encode())
 
     def log_message(self, format, *args):
-        """Reduce log noise."""
         pass
+
 
 def main():
     port = 9000
@@ -698,7 +725,9 @@ def main():
     print(f"  GET /smart-extended  - Extended SMART data")
     print(f"  GET /memory          - Memory module information")
     print(f"  GET /health          - System health status")
+    print(f"  GET /mounts          - Disk mount status")
     server.serve_forever()
+
 
 if __name__ == "__main__":
     main()

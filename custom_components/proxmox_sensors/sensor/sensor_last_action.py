@@ -1,3 +1,5 @@
+"""LAST ACTION for Proxmox Extended Sensors."""
+
 import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import STATE_UNKNOWN

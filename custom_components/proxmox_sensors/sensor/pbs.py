@@ -1,4 +1,4 @@
-"""Sensors for Proxmox PBS."""
+"""Sensors PBS for Proxmox Extended Sensors."""
 
 from datetime import datetime
 
@@ -78,6 +78,24 @@ class ProxmoxPBSCpuSensor(ProxmoxPbsBaseSensor):
         status = self.coordinator.data.get("pbs_node_status", {})
         cpu = status.get("cpu")
         return round(cpu * 100, 2) if cpu is not None else 0
+
+    @property
+    def extra_state_attributes(self):
+        status = self.coordinator.data.get("pbs_node_status", {})
+        cpuinfo = status.get("cpuinfo") or {}
+
+        # Fallback for containers
+        cores = cpuinfo.get("cores") or status.get("cpu_cores") or status.get("cpus")
+
+        loadavg = status.get("loadavg") or []
+
+        return {
+            "cores": cores,
+            "model": cpuinfo.get("model"),
+            "load_1m": loadavg[0] if len(loadavg) > 0 else None,
+            "load_5m": loadavg[1] if len(loadavg) > 1 else None,
+            "load_15m": loadavg[2] if len(loadavg) > 2 else None,
+        }
 
 
 class ProxmoxPBSRamSensor(ProxmoxPbsBaseSensor):
@@ -462,33 +480,6 @@ class ProxmoxPBSDedupSensor(ProxmoxPbsBaseSensor):
         }
 
 
-class ProxmoxPBSBackupCountSensor(ProxmoxPbsBaseSensor):
-    """Sensor for total backup count."""
-
-    def __init__(self, coordinator, server_id, store):
-        super().__init__(
-            coordinator=coordinator,
-            server_id=server_id,
-            sensor_id=f"{store}_backup_count",
-            name="Backup Count",
-        )
-        self._store = store
-        self._attr_icon = "mdi:counter"
-
-    def _get_value(self):
-        data = self.coordinator.data.get("pbs_datastores", {}).get(self._store, {})
-        return data.get("backup_count", 0)
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, f"datastore_{self._store}")},
-            "name": f"Datastore: {self._store}",
-            "manufacturer": "Proxmox",
-            "model": "Backup Server Datastore",
-        }
-
-
 class ProxmoxPBSLastBackupTimeSensor(ProxmoxPbsBaseSensor):
     """Sensor for last backup timestamp."""
 
@@ -646,7 +637,7 @@ class ProxmoxPBSBackupsListSensor(ProxmoxPbsBaseSensor):
 
     def _get_value(self):
         data = self.coordinator.data.get("pbs_datastores", {}).get(self._store, {})
-        return len(data.get("backups", []))
+        return int(len(data.get("backups", [])))
 
     @property
     def extra_state_attributes(self):
@@ -790,18 +781,24 @@ class ProxmoxPBSVerifySensor(ProxmoxPbsBaseSensor):
     def _get_value(self):
         task = self._get_task()
 
-        if not task:
-            return "Idle"
-
-        if task.get("status") == "running" or not task.get("endtime"):
+        # detect running
+        if task and (task.get("status") == "running" or not task.get("endtime")):
             return "Running"
 
-        status = task.get("status", "").upper()
+        data = self.coordinator.data.get("pbs_datastores", {}).get(self._store, {})
+        last_backup = data.get("last_backup_time")
 
-        if status == "OK":
-            return "OK"
+        last_verify = None
+        if task:
+            last_verify = task.get("endtime")
 
-        return "Error"
+        if not last_verify:
+            return "Pending"
+
+        if last_backup and last_verify < last_backup:
+            return "Pending"
+
+        return "OK"
 
     @property
     def extra_state_attributes(self):

@@ -1,3 +1,5 @@
+"""memory sensors for Proxmox Extended Sensors."""
+
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity

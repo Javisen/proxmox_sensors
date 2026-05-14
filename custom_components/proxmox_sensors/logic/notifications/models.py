@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any, Optional, Literal
 from dataclasses import dataclass, field
-from typing import Any
+from datetime import datetime
 
 
 @dataclass(slots=True)
@@ -14,3 +15,19 @@ class NotificationEndpoint:
     type: str
     details: dict[str, Any] = field(default_factory=dict)
     enabled: bool = True
+
+
+@dataclass(slots=True)
+class NotificationEvent:
+    """Portable notification event payload."""
+
+    title: str
+    message: str
+
+    severity: Literal["info", "warning", "error"] = "info"
+    source: str = "proxmox"
+
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    id: Optional[str] = None
+    timestamp: Optional[datetime] = None

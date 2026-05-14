@@ -1,9 +1,4 @@
-"""Helpers for computing Proxmox node sensor values and attributes.
-
-This module centralizes the pure calculation logic used by node-related
-Home Assistant entities. Functions here are intentionally framework-agnostic
-so entity classes can stay focused on Home Assistant metadata and wiring.
-"""
+"""Helpers for computing Proxmox node sensor values and attributes"""
 
 from __future__ import annotations
 
@@ -310,7 +305,9 @@ def build_storage_summary_attributes(storage_data, node_name, last_update):
         if avail_bytes == 0 and total_bytes > 0:
             avail_bytes = max(total_bytes - used_bytes, 0)
 
-        percentage = round((used_bytes / total_bytes * 100), 1) if total_bytes > 0 else 0
+        percentage = (
+            round((used_bytes / total_bytes * 100), 1) if total_bytes > 0 else 0
+        )
         storage_type = storage_info.get("type", "unknown")
 
         if storage_type not in type_accumulators:

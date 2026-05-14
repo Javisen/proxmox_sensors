@@ -118,9 +118,6 @@ class ProxmoxStorageAttributeSensor(ProxmoxBaseSensor):
             self._storage_name, {}
         )
 
-        if self._key == "path":
-            return storage_data.get("path") or "N/A"
-
         value = storage_data.get(self._key)
 
         if value is None or value == "":

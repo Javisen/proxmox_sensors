@@ -81,19 +81,20 @@ Crea el archivo de servicio:
 
 cat <<EOF > /etc/systemd/system/pve-sensors.service
 [Unit]
-Description=PVE Sensors API
+Description=PVE Sensors API (User Mode)
 After=network.target
-StartLimitIntervalSec=60
-StartLimitBurst=5
 
 [Service]
 ExecStart=/usr/bin/python3 /usr/local/bin/pve-sensors-api.py
 Restart=always
 RestartSec=10s
-User=root
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOF
 
 ```

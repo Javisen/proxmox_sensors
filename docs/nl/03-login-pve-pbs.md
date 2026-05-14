@@ -1,148 +1,156 @@
 # 🔌 Stap 3: Installatie van de Integratie in Home Assistant
 
-Om de gegevens te bekijken (inclusief temperaturen, hardware-sensoren, schijven, PBS, VM's en CT's), gebruiken we de integratie **Proxmox Extended Sensors**.
-
-[Visuele Installatiegids](#-Visuele-Installatiegids)
+Om alle gegevens te visualiseren (temperaturen, hardwaresensoren, schijven, PBS, VM's en CT's), gebruiken we de integratie **Proxmox Extended Sensors**.
 
 ---
 
 ## 1. Installatie via HACS
 
-Omdat het een aangepaste integratie is, moeten we deze eerst toevoegen aan HACS:
+Omdat het een aangepaste integratie betreft, moet je deze eerst toevoegen aan HACS:
 
-1. Ga naar **HACS → Integraties**  
-2. Klik op de **drie puntjes** (rechtsboven)  
-3. Selecteer **Aangepaste repositories**  
-4. Voeg deze repository toe: `https://github.com/Javisen/proxmox_sensors/`
-5. Bij **Categorie**, selecteer `Integratie`  
-6. Installeer het en **herstart Home Assistant**
+1. Ga naar **HACS → Integraties**
+2. Klik op de **drie puntjes** (rechtsboven)
+3. Selecteer **Aangepaste repositories**
+4. Voeg deze repository toe:
+   `https://github.com/Javisen/proxmox_sensors/`
+5. Selecteer bij **Categorie** de optie `Integratie`
+6. Installeer de integratie en **herstart Home Assistant**
 
 ---
 
-## 2. Configuratie van de Integratie
+## 2. Integratie toevoegen
 
-Na het herstarten:
+Na de herstart:
 
-1. Ga naar **Instellingen → Apparaten & Diensten**  
-2. Klik op **Integratie toevoegen**  
+1. Ga naar **Instellingen → Apparaten en Services**
+2. Klik op **Integratie toevoegen**
 3. Zoek naar **Proxmox Extended Sensors**
 
 ---
 
-## 3. Verbindingsgegevens
-
-Het formulier is eenvoudig, maar er zijn belangrijke details:
+## 3. Verbindingsconfiguratie
 
 ### 🔹 Host
-- **Op lokaal netwerk:** alleen het IP-adres → `192.168.1.50`  
-*(Voeg geen poort of http/https toe)*  
-- **Van buitenaf:** je domein → `proxmox.mijndomein.com`  
-*(De integratie detecteert automatisch http/https)*
+- **Lokaal netwerk:** `192.168.1.50`
+- **Externe toegang:** `proxmox.mijndomein.com`
+
+> Het is niet nodig om `http://` of `https://` toe te voegen. Dit wordt automatisch gedetecteerd.
+
+---
 
 ### 🔹 Servertype
-- **PVE** → Proxmox Virtual Environment  
-- **PBS** → Proxmox Backup Server  
+- **CLUSTER** → Proxmox Cluster
+- **PVE** → Proxmox Virtual Environment
+- **PBS** → Proxmox Backup Server
+
+---
 
 ### 🔹 Authenticatiemethode
-- **Traditionele login** (alleen PVE)  
-- **API Token** (verplicht voor PBS)
+
+- **Gebruiker + wachtwoord** → alleen op PVE en Cluster
+- **API-token** → Verplicht op PBS
 
 ---
 
-## 🔐 Optie A: Inloggen met Gebruiker (zonder Token)
-
-Alleen geldig voor **PVE**.
+## 🔐 Optie A: Gebruiker en wachtwoord (alleen PVE)
 
 Velden:
 
-- **Gebruiker:** `gebruiker@realm`  
-Voorbeelden:  
-- `homeassistant@pve`  
-- `root@pam`  
-- **Wachtwoord:** het wachtwoord van de gebruiker  
-- **Node Name:** naam van de node (zoals deze in Proxmox verschijnt)
+- **Gebruiker:** `gebruiker@realm`
+  - Voorbeeld: `homeassistant@pve`
+- **Wachtwoord:** wachtwoord van de gebruiker
+
+> 💡 Vanaf V3 wordt het knooppunt automatisch gedetecteerd. Je hoeft het niet handmatig in te voeren.
 
 ---
 
-## 🔐 Optie B: Inloggen met Token (aanbevolen en verplicht voor PBS)
+## 🔐 Optie B: API-token (aanbevolen)
 
 Velden:
 
-- **Gebruiker:** `gebruiker@realm`  
-- **token_id:** alleen de token-naam → `ha-token`  
-*(Voeg niet `gebruiker@pve!token` in)*  
-- **Token_secret:** het door Proxmox gegenereerde Secret  
+- **Gebruiker:** `gebruiker@realm`
+- **Token-ID:** alleen de naam → `ha-token`
+- **Token Secret:** het geheim gegenereerd in Proxmox
+
+> ⚠️ Gebruik niet het formaat `gebruiker@pve!token`
 
 ---
 
-## ✅ Selectie van Entiteiten (alleen in PVE)
+## 🧠 Selectie van bronnen (PVE)
 
-Na het verbinden scant de integratie je server en kun je kiezen wat je wilt monitoren:
+Na de verbinding zal de integratie automatisch de beschikbare bronnen detecteren.
 
-- **VM's**  
-- **CT's**  
-- **Fysieke schijven**  
-- **Storage**
+Je kunt selecteren:
 
-> [!TIP]  
-> Selecteer alleen wat je nodig hebt om Home Assistant schoon en snel te houden.
+- Virtuele machines (VM's)
+- Containers (CT's)
+- Fysieke schijven
+- Opslag (Storage)
+
+> 💡 Selecteer alleen wat nodig is om Home Assistant schoon en efficiënt te houden.
 
 ---
 
 ## 🧭 Visuele Installatiegids
 
-**Hieronder vind je een complete visuele rondleiding door het configuratieproces, inclusief inlogmethoden, resource-selectie en configuratiestappen.**
+Hieronder wordt het volledige proces getoond met schermafbeeldingen:
 
 <details>
-  <summary>🪪 Schermafbeelding: Serververbinding</summary>
+  <summary>🪪 Verbinding met de server</summary>
   <p align="center">
-    <img src="../../img/install/setup_pve_1.png" alt="Login Proxmox" width="600">
+    <img src="../../img/install/setup_pve_1.png" alt="Proxmox Verbinding" width="600">
   </p>
-  > Gebruik geen "http://" of "https://". We regelen dat al voor je.
+  <p align="center"><i>Het is niet nodig om http/https toe te voegen.</i></p>
 </details>
 
 <details>
-  <summary>🪪 Schermafbeelding: Inloggen via Gebruiker en Wachtwoord (alleen PVE)</summary>
+  <summary>🪪 Aanmelden met gebruiker en wachtwoord (PVE)</summary>
   <p align="center">
-    <img src="../../img/install/access_passw.png" alt="Login Proxmox" width="600">
+    <img src="../../img/install/access_passw.png" alt="Aanmelden gebruiker" width="600">
   </p>
-  > Zorg ervoor dat je het realm `pam` of `pve` gebruikt volgens je gebruikersconfiguratie.
-</details>
-
-<details> 
-  <summary>🪪 Schermafbeelding: Inloggen via Gebruiker en Token (PVE en PBS)</summary>
-  <p align="center">
-    <img src="../../img/install/access_token.png" alt="Login Proxmox" width="600">
-  </p>
-  **In het veld Token_id alleen de token-naam invoeren**
+  <p align="center"><i>Gebruik het juiste realm (pam of pve).</i></p>
 </details>
 
 <details>
-  <summary>⚙️ Schermafbeelding: Resource-selectie</summary>
+  <summary>🪪 Aanmelden met token (PVE en PBS)</summary>
   <p align="center">
-    <img src="../../img/install/resources_select.png" alt="Login Proxmox" width="600">
+    <img src="../../img/install/access_token.png" alt="Aanmelden met token" width="600">
   </p>
-  *Opmerking: Selecteer de CT's, VM's en Storage die je wilt toevoegen, evenals de opties*
+  <p align="center"><i>Voer alleen de naam van het token in bij Token-ID.</i></p>
+</details>
+
+<details>
+  <summary>🧠 Selectie van knooppunten (V3)</summary>
+  <p align="center">
+    <img src="../../img/install/node_select.png" alt="Knooppuntselectie" width="600">
+  </p>
+  <p align="center"><i>Knooppunten worden automatisch gedetecteerd en kunnen handmatig worden geselecteerd.</i></p>
+</details>
+
+<details>
+  <summary>⚙️ Selectie van bronnen</summary>
+  <p align="center">
+    <img src="../../img/install/resources_select.png" alt="Bronselectie" width="600">
+  </p>
 </details>
 
 ---
 
-## ⚠️ Belangrijke opmerking voor PBS in gedeelde omgevingen (Tuxis, Hetzner, etc.)
+## ⚠️ Opmerking over PBS in beheerde omgevingen
 
-Als je een **beheerde** of **multi‑tenant** PBS gebruikt, zoals Tuxis Free PBS:
+Als je een **beheerde of multi-tenant** PBS gebruikt (Tuxis, Hetzner, enz.):
 
-- Je zult geen hardware-sensoren zien  
-- Je zult geen temperaturen zien  
-- Je zult geen fysieke schijven zien  
-- Je zult geen node-metrics zien  
+- Je hebt geen toegang tot hardwaresensoren
+- Je ziet geen temperaturen of fysieke schijven
+- Er zullen geen knooppuntmetrieken zijn
 
 Dit is normaal omdat:
 
-- Je geen toegang hebt tot de werkelijke hardware  
-- De provider de infrastructuur verbergt  
-- Je geen root-rechten hebt  
-- Je geen toegang hebt tot het echte bestandssysteem  
+- Je geen toegang hebt tot de echte hardware
+- De provider het systeem beperkt
+- Er geen laag-niveau rechten bestaan
 
-**Resultaat:**  
-De integratie toont alleen lege sensoren of geen gegevens.  
-In toekomstige versies zullen we proberen aangepaste datastore-metrics te tonen.
+**Resultaat:**
+Er worden alleen beperkte datastore-gegevens weergegeven.
+
+---

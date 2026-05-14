@@ -59,7 +59,7 @@ Felder:
   - Beispiel: `homeassistant@pve`  
 - **Password:** Passwort des Benutzers  
 
-> 💡 In V3 wird der Knoten automatisch erkannt. Eine manuelle Eingabe ist nicht erforderlich.
+> 💡 Ab V3 wird der Knoten automatisch erkannt. Eine manuelle Eingabe ist nicht erforderlich.
 
 ---
 

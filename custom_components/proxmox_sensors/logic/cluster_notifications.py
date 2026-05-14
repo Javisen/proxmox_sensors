@@ -1,8 +1,8 @@
 """Helpers for parsing and resolving Proxmox cluster notification settings.
 
 This module keeps notification parsing logic independent from Home Assistant
-entity classes so sensors and binary sensors can expose normalized values
-without duplicating string handling.
+entity classes so sensors and binary sensors can expose normalized values and
+notification event payloads without duplicating string handling.
 """
 
 from __future__ import annotations
@@ -53,56 +53,6 @@ def parse_notify_string(notify_value):
     return parsed
 
 
-def build_cluster_notifications_data(cluster_options, gotify_endpoints):
-    """Build normalized cluster notification data from API responses."""
-
-    notify_value = (
-        cluster_options.get("notify") if isinstance(cluster_options, dict) else None
-    )
-
-    # 🔥 CASO: no hay configuración de notificaciones
-    if not notify_value:
-        return {
-            "notify_raw": None,
-            "notify": {},
-            "gotify_endpoints": (
-                gotify_endpoints if isinstance(gotify_endpoints, list) else []
-            ),
-            "package_updates": "not_configured",
-            "replication": "not_configured",
-            "fencing": "not_configured",
-            "target_package_updates": None,
-            "target_package_updates_type": None,
-            "target_package_updates_server": None,
-            "target_package_updates_origin": None,
-            "notifications_configured": False,
-        }
-
-    # 🔁 Parsing normal
-    notify_raw = parse_notify_string(notify_value)
-
-    target_package_updates = notify_raw.get("target_package_updates")
-    target_resolution = resolve_notification_target(
-        target_package_updates, gotify_endpoints
-    )
-
-    return {
-        "notify_raw": notify_value,
-        "notify": notify_raw,
-        "gotify_endpoints": (
-            gotify_endpoints if isinstance(gotify_endpoints, list) else []
-        ),
-        "package_updates": notify_raw.get("package_updates"),
-        "replication": notify_raw.get("replication"),
-        "fencing": notify_raw.get("fencing"),
-        "target_package_updates": target_resolution["target"],
-        "target_package_updates_type": target_resolution["type"],
-        "target_package_updates_server": target_resolution["server"],
-        "target_package_updates_origin": target_resolution["origin"],
-        "notifications_configured": True,
-    }
-
-
 def build_gotify_endpoint_map(endpoints):
     """Build a lookup table for Gotify endpoints by configured name."""
     endpoint_map = {}
@@ -146,32 +96,60 @@ def resolve_notification_target(target_name, gotify_endpoints):
     return resolved
 
 
+def build_cluster_notification_events(notify_raw, target_resolution):
+    """Build structured notification events from parsed cluster data."""
+    events = []
+
+    target_name = target_resolution.get("target")
+    if (
+        notify_raw.get("package_updates")
+        and target_name
+        and not target_resolution.get("server")
+    ):
+        events.append(
+            {
+                "title": "Cluster notification target unresolved",
+                "message": (
+                    "Package update notifications reference target "
+                    f"'{target_name}', but no matching Gotify endpoint was resolved."
+                ),
+                "severity": "warning",
+                "source": "cluster",
+            }
+        )
+
+    return events
+
+
 def build_cluster_notifications_data(cluster_options, gotify_endpoints):
     """Build normalized cluster notification data from API responses."""
-    notify_raw = {}
-    if isinstance(cluster_options, dict):
-        notify_raw = parse_notify_string(cluster_options.get("notify"))
+    notify_value = (
+        cluster_options.get("notify") if isinstance(cluster_options, dict) else None
+    )
+    notify_raw = parse_notify_string(notify_value)
 
     target_package_updates = notify_raw.get("target_package_updates")
     target_resolution = resolve_notification_target(
         target_package_updates, gotify_endpoints
     )
+    notifications_configured = bool(notify_value)
+    events = build_cluster_notification_events(notify_raw, target_resolution)
 
     return {
-        "notify_raw": (
-            cluster_options.get("notify") if isinstance(cluster_options, dict) else None
-        ),
+        "notify_raw": notify_value,
         "notify": notify_raw,
         "gotify_endpoints": (
             gotify_endpoints if isinstance(gotify_endpoints, list) else []
         ),
-        "package_updates": notify_raw.get("package_updates"),
-        "replication": notify_raw.get("replication"),
-        "fencing": notify_raw.get("fencing"),
+        "package_updates": notify_raw.get("package_updates", "not_configured"),
+        "replication": notify_raw.get("replication", "not_configured"),
+        "fencing": notify_raw.get("fencing", "not_configured"),
         "target_package_updates": target_resolution["target"],
         "target_package_updates_type": target_resolution["type"],
         "target_package_updates_server": target_resolution["server"],
         "target_package_updates_origin": target_resolution["origin"],
+        "notifications_configured": notifications_configured,
+        "events": events,
     }
 
 

@@ -16,22 +16,50 @@
           "use_token": "Использовать API-токен (рекомендуется)"
         }
       },
-      "credentials": {
-        "title": "3. Учетные данные",
-        "description": "Введите данные для подключения к серверу.",
+      "credentials_pve": {
+        "title": "3. Учетные данные доступа — Proxmox VE",
+        "description": "Введите параметры подключения PVE.",
         "data": {
-          "user": "Имя пользователя (например: root@pam или admin@pve)",
+          "user": "Пользователь (например, root@pam)",
           "password": "Пароль",
           "token_id": "ID токена (без user@pve!)",
           "token_secret": "Секрет токена",
-          "node": "Имя узла Proxmox (только PVE)",
-          "enable_lm_sensors": "Мониторинг температуры (lm-sensors)",
+          "auto_detect_node": "Автоматически определить узел по IP хоста",
+          "enable_lm_sensors": "Отслеживать температуры (lm-sensors)",
           "verify_ssl": "Проверять SSL-сертификат"
         }
       },
+      "credentials_pbs": {
+        "title": "3. Учетные данные доступа — Proxmox Backup Server",
+        "description": "Введите параметры подключения PBS.",
+        "data": {
+          "user": "Пользователь (например, admin@pbs)",
+          "token_id": "ID токена (без user@pve!)",
+          "token_secret": "Секрет токена",
+          "verify_ssl": "Проверять SSL-сертификат"
+        }
+      },
+      "credentials_cluster": {
+        "title": "3. Учетные данные доступа — кластер Proxmox",
+        "description": "Введите учетные данные для подключения к кластеру. Используется тот же API, что и у PVE (порт 8006).",
+        "data": {
+          "user": "Пользователь (например, root@pam)",
+          "password": "Пароль",
+          "token_id": "ID токена (без user@pve!)",
+          "token_secret": "Секрет токена",
+          "verify_ssl": "Проверять SSL-сертификат"
+        }
+      },
+      "select_node": {
+        "title": "4. Выбор узла",
+        "description": "Выберите узел Proxmox для мониторинга.",
+        "data": {
+          "node": "Узел"
+        }
+      },
       "select_resources": {
-        "title": "4. Выбор ресурсов",
-        "description": "Выберите, что вы хотите отслеживать. Только выбранные элементы создадут сущности в Home Assistant.",
+        "title": "5. Выбор ресурсов",
+        "description": "Выберите ресурсы, которые нужно отслеживать и отображать как сущности в Home Assistant.",
         "data": {
           "vms": "Виртуальные машины (VM)",
           "cts": "Контейнеры (LXC)",
@@ -44,124 +72,258 @@
     "error": {
       "cannot_connect": "Не удалось подключиться к серверу. Проверьте адрес.",
       "invalid_auth": "Ошибка аутентификации. Проверьте учетные данные или права токена.",
+      "insufficient_permissions": "Подключение с этими учетными данными выполнено успешно, но прав недостаточно для требуемых endpoints API Proxmox.",
       "unknown": "Неизвестная ошибка. Проверьте журналы Home Assistant."
     },
     "abort": {
-      "already_configured": "Этот узел уже настроен."
+      "already_configured": "Этот узел уже настроен.",
+      "no_data": "Данные кластера не получены. Проверьте конфигурацию.",
+      "cluster_no_options": "Настройки кластера управляются из конфигурации узла PVE."
     }
   },
-
   "options": {
     "abort": {
-      "pbs_no_options": "Этот сервер PBS не имеет настраиваемых параметров."
+      "pbs_no_options": "Этот сервер PBS не имеет настраиваемых параметров.",
+      "cluster_no_options": "Настройки кластера управляются из конфигурации узла PVE.",
+      "entry_not_loaded": "Интеграция еще не загружена, повторите попытку."
     },
     "step": {
       "init": {
-        "title": "Параметры Proxmox Sensors",
-        "description": "Выберите ресурсы, которые хотите продолжить отслеживать на этом узле.",
+        "title": "Параметры Proxmox Extended Sensors",
+        "description": "Настройте параметры мониторинга и управления для этой интеграции.",
         "data": {
           "vms": "Выбрать виртуальные машины (VM)",
           "cts": "Выбрать контейнеры (LXC)",
           "storage": "Выбрать хранилище",
           "enable_lm_sensors": "Включить аппаратные датчики (lm-sensors)",
           "enable_physical_disks": "Включить датчики физических дисков",
-          "enable_smart_monitoring": "Включить SMART-мониторинг",
+          "enable_smart_monitoring": "Включить мониторинг состояния SMART и NVMe",
           "enable_node_controls": "Включить управление узлом",
-          "enable_backup_progress": "Включить датчик прогресса резервного копирования",
-          "enable_storage_list": "Включить список хранилищ",
-          "enable_nodes_list": "Включить список узлов",
+          "enable_pbs_node_controls": "Включить управление питанием узла PBS",
+          "wol_mac": "MAC-адрес Wake-on-LAN",
           "verify_ssl": "Проверять SSL-сертификат"
         }
       }
     }
   },
-
   "entity": {
     "sensor": {
-      "cpu_usage": { "name": "Загрузка CPU" },
-      "cpu_wait": { "name": "Ожидание I/O CPU" },
-      "uptime": { "name": "Время работы" },
-      "kernel_version": { "name": "Версия ядра" },
-      "pve_version": { "name": "Версия PVE" },
-      "load_average": { "name": "Средняя нагрузка" },
-      "network_rx": { "name": "Сеть RX" },
-      "network_tx": { "name": "Сеть TX" },
-
-      "last_task": { "name": "Последняя задача" },
-      "no_tasks": { "name": "Нет задач" },
-
-      "cpu_info": { "name": "Информация о CPU" },
-      "ksm_shared": { "name": "Общая память KSM" },
-      "memory_usage": { "name": "Использование памяти" },
-      "swap_usage": { "name": "Использование swap" },
-      "rootfs_usage": { "name": "Использование корневой файловой системы" },
-
-      "node_info": { "name": "Узел Proxmox" },
-      "storages": { "name": "Хранилище Proxmox" },
-      "backup_progress": { "name": "Прогресс резервного копирования" },
-
-      "vm_status": { "name": "Статус" },
-      "vm_cpu_usage": { "name": "Загрузка CPU" },
-      "vm_network_rx": { "name": "Сеть RX" },
-      "vm_network_tx": { "name": "Сеть TX" },
-      "vm_memory_used": { "name": "Используемая память" },
-      "vm_memory_total": { "name": "Общая память" },
-      "vm_disk_used": { "name": "Используемый диск" },
-      "vm_disk_total": { "name": "Общий диск" },
-      "vm_uptime": { "name": "Время работы" },
-
-      "ct_status": { "name": "Статус" },
-      "ct_cpu_usage": { "name": "Загрузка CPU" },
-      "ct_memory_used": { "name": "Используемая память" },
-      "ct_memory_total": { "name": "Общая память" },
-      "ct_disk_used": { "name": "Используемый диск" },
-      "ct_disk_total": { "name": "Общий диск" },
-      "ct_network_rx": { "name": "Сеть RX" },
-      "ct_network_tx": { "name": "Сеть TX" },
-      "ct_uptime": { "name": "Время работы" },
-
-      "storage_usage": { "name": "Использование (%)" },
-      "storage_used": { "name": "Использовано" },
-      "storage_available": { "name": "Доступно" },
-      "storage_total": { "name": "Всего" },
-      "storage_type": { "name": "Тип" },
-      "storage_path": { "name": "Путь" },
-
-      "version": { "name": "Версия" },
-      "release": { "name": "Release" },
-      "auth_status": { "name": "Статус аутентификации" },
-      "node_cpu": { "name": "Загрузка CPU" },
-      "node_ram": { "name": "Использование RAM" },
-      "ram_total": { "name": "Общий RAM" },
-      "ram_used": { "name": "Используемый RAM" },
-      "ram_free": { "name": "Свободный RAM" },
-
-      "last_task_type": { "name": "Тип последней задачи" },
-      "last_task_status": { "name": "Статус последней задачи" },
-      "last_task_message": { "name": "Сообщение последней задачи" },
-      "last_task_duration": { "name": "Длительность последней задачи" },
-      "last_action": { "name": "Последнее действие" },
-
-      "datastore_usage": { "name": "Использование (%)" },
-      "datastore_total": { "name": "Общий размер" },
-      "datastore_used": { "name": "Используемый размер" },
-      "datastore_free": { "name": "Свободный размер" },
-      "datastore_dedup": { "name": "Дедупликация" },
-      "datastore_backup_count": { "name": "Количество резервных копий" },
-      "datastore_last_backup_time": { "name": "Последний бэкап" },
-      "datastore_last_backup_size": { "name": "Размер последнего бэкапа" },
-      "datastore_last_backup_status": { "name": "Статус последнего бэкапа" },
-      "datastore_backup_errors": { "name": "Ошибки резервного копирования" },
-      "datastore_backups_summary": { "name": "Сводка резервных копий" },
-      "datastore_gc_status": { "name": "Статус GC" },
+      "cpu_usage": {
+        "name": "Загрузка CPU"
+      },
+      "uptime": {
+        "name": "Время работы"
+      },
+      "kernel_version": {
+        "name": "Версия ядра"
+      },
+      "pve_version": {
+        "name": "Версия PVE"
+      },
+      "load_average": {
+        "name": "Средняя нагрузка"
+      },
+      "network_rx": {
+        "name": "Сеть RX"
+      },
+      "network_tx": {
+        "name": "Сеть TX"
+      },
+      "last_task": {
+        "name": "Последняя задача"
+      },
+      "no_tasks": {
+        "name": "Нет задач"
+      },
+      "cpu_info": {
+        "name": "Информация о CPU"
+      },
+      "ksm_shared": {
+        "name": "Общая память KSM"
+      },
+      "memory_usage": {
+        "name": "Использование памяти"
+      },
+      "swap_usage": {
+        "name": "Использование swap"
+      },
+      "rootfs_usage": {
+        "name": "Использование корневой файловой системы"
+      },
+      "node_info": {
+        "name": "Узел Proxmox"
+      },
+      "storages": {
+        "name": "Хранилище Proxmox"
+      },
+      "backup_progress": {
+        "name": "Прогресс резервного копирования"
+      },
+      "vm_status": {
+        "name": "Статус"
+      },
+      "vm_cpu_usage": {
+        "name": "Загрузка CPU"
+      },
+      "vm_network_rx": {
+        "name": "Сеть RX"
+      },
+      "vm_network_tx": {
+        "name": "Сеть TX"
+      },
+      "vm_memory_used": {
+        "name": "Используемая память"
+      },
+      "vm_memory_total": {
+        "name": "Общая память"
+      },
+      "vm_disk_used": {
+        "name": "Используемый диск"
+      },
+      "vm_disk_total": {
+        "name": "Общий диск"
+      },
+      "vm_uptime": {
+        "name": "Время работы"
+      },
+      "ct_status": {
+        "name": "Статус"
+      },
+      "ct_cpu_usage": {
+        "name": "Загрузка CPU"
+      },
+      "ct_memory_used": {
+        "name": "Используемая память"
+      },
+      "ct_memory_total": {
+        "name": "Общая память"
+      },
+      "ct_disk_used": {
+        "name": "Используемый диск"
+      },
+      "ct_disk_total": {
+        "name": "Общий диск"
+      },
+      "ct_network_rx": {
+        "name": "Сеть RX"
+      },
+      "ct_network_tx": {
+        "name": "Сеть TX"
+      },
+      "ct_uptime": {
+        "name": "Время работы"
+      },
+      "storage_usage": {
+        "name": "Использование (%)"
+      },
+      "storage_used": {
+        "name": "Использовано"
+      },
+      "storage_available": {
+        "name": "Доступно"
+      },
+      "storage_total": {
+        "name": "Всего"
+      },
+      "storage_type": {
+        "name": "Тип"
+      },
+      "storage_path": {
+        "name": "Путь"
+      },
+      "version": {
+        "name": "Версия"
+      },
+      "release": {
+        "name": "Release"
+      },
+      "auth_status": {
+        "name": "Статус аутентификации"
+      },
+      "node_cpu": {
+        "name": "Загрузка CPU"
+      },
+      "node_ram": {
+        "name": "Использование RAM"
+      },
+      "ram_total": {
+        "name": "Общий RAM"
+      },
+      "ram_used": {
+        "name": "Используемый RAM"
+      },
+      "ram_free": {
+        "name": "Свободный RAM"
+      },
+      "last_task_type": {
+        "name": "Тип последней задачи"
+      },
+      "last_task_status": {
+        "name": "Статус последней задачи"
+      },
+      "last_task_message": {
+        "name": "Сообщение последней задачи"
+      },
+      "last_task_duration": {
+        "name": "Длительность последней задачи"
+      },
+      "last_action": {
+        "name": "Последнее действие"
+      },
+      "datastore_usage": {
+        "name": "Использование (%)"
+      },
+      "datastore_total": {
+        "name": "Общий размер"
+      },
+      "datastore_used": {
+        "name": "Используемый размер"
+      },
+      "datastore_free": {
+        "name": "Свободный размер"
+      },
+      "datastore_dedup": {
+        "name": "Дедупликация"
+      },
+      "datastore_backup_count": {
+        "name": "Количество резервных копий"
+      },
+      "datastore_last_backup_time": {
+        "name": "Последний бэкап"
+      },
+      "datastore_last_backup_size": {
+        "name": "Размер последнего бэкапа"
+      },
+      "datastore_last_backup_status": {
+        "name": "Статус последнего бэкапа"
+      },
+      "datastore_backup_errors": {
+        "name": "Ошибки резервного копирования"
+      },
+      "datastore_backups_summary": {
+        "name": "Сводка резервных копий"
+      },
+      "datastore_gc_status": {
+        "name": "Статус GC"
+      },
       "proxmox_dimm": {
         "name": "Модуль RAM (DIMM)",
         "state_attributes": {
-          "speed": { "name": "Скорость" },
-          "configured_speed": { "name": "Настроенная скорость" },
-          "type": { "name": "Тип памяти" },
-          "manufacturer": { "name": "Производитель" },
-          "locator": { "name": "Слот" }
+          "speed": {
+            "name": "Скорость"
+          },
+          "configured_speed": {
+            "name": "Настроенная скорость"
+          },
+          "type": {
+            "name": "Тип памяти"
+          },
+          "manufacturer": {
+            "name": "Производитель"
+          },
+          "locator": {
+            "name": "Слот"
+          }
         }
       }
     }

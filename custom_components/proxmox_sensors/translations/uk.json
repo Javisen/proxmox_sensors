@@ -16,22 +16,50 @@
           "use_token": "Використовувати API-токен (рекомендовано)"
         }
       },
-      "credentials": {
-        "title": "3. Облікові дані",
-        "description": "Введіть дані для підключення до сервера.",
+      "credentials_pve": {
+        "title": "3. Облікові дані доступу — Proxmox VE",
+        "description": "Введіть параметри підключення PVE.",
         "data": {
-          "user": "Користувач (наприклад: root@pam або admin@pve)",
+          "user": "Користувач (наприклад, root@pam)",
           "password": "Пароль",
           "token_id": "ID токена (без user@pve!)",
           "token_secret": "Секрет токена",
-          "node": "Назва вузла Proxmox (тільки PVE)",
-          "enable_lm_sensors": "Моніторинг температур (lm-sensors)",
+          "auto_detect_node": "Автоматично визначати вузол за IP хоста",
+          "enable_lm_sensors": "Відстежувати температури (lm-sensors)",
           "verify_ssl": "Перевіряти SSL-сертифікат"
         }
       },
+      "credentials_pbs": {
+        "title": "3. Облікові дані доступу — Proxmox Backup Server",
+        "description": "Введіть параметри підключення PBS.",
+        "data": {
+          "user": "Користувач (наприклад, admin@pbs)",
+          "token_id": "ID токена (без user@pve!)",
+          "token_secret": "Секрет токена",
+          "verify_ssl": "Перевіряти SSL-сертифікат"
+        }
+      },
+      "credentials_cluster": {
+        "title": "3. Облікові дані доступу — кластер Proxmox",
+        "description": "Введіть облікові дані для підключення до кластера. Використовується той самий API, що й у PVE (порт 8006).",
+        "data": {
+          "user": "Користувач (наприклад, root@pam)",
+          "password": "Пароль",
+          "token_id": "ID токена (без user@pve!)",
+          "token_secret": "Секрет токена",
+          "verify_ssl": "Перевіряти SSL-сертифікат"
+        }
+      },
+      "select_node": {
+        "title": "4. Вибір вузла",
+        "description": "Виберіть вузол Proxmox для моніторингу.",
+        "data": {
+          "node": "Вузол"
+        }
+      },
       "select_resources": {
-        "title": "4. Вибір ресурсів",
-        "description": "Оберіть, що потрібно відстежувати. Лише вибрані елементи створять сутності в Home Assistant.",
+        "title": "5. Вибір ресурсів",
+        "description": "Виберіть ресурси, які потрібно моніторити й показувати як сутності в Home Assistant.",
         "data": {
           "vms": "Віртуальні машини (VM)",
           "cts": "Контейнери (LXC)",
@@ -44,124 +72,258 @@
     "error": {
       "cannot_connect": "Не вдалося підключитися до сервера. Перевірте адресу.",
       "invalid_auth": "Помилка автентифікації. Перевірте облікові дані або права токена.",
+      "insufficient_permissions": "Підключення з цими обліковими даними успішне, але прав недостатньо для потрібних endpoints API Proxmox.",
       "unknown": "Невідома помилка. Перевірте журнали Home Assistant."
     },
     "abort": {
-      "already_configured": "Цей вузол уже налаштований."
+      "already_configured": "Цей вузол уже налаштований.",
+      "no_data": "Дані кластера не отримано. Перевірте конфігурацію.",
+      "cluster_no_options": "Налаштування кластера керуються з конфігурації вузла PVE."
     }
   },
-
   "options": {
     "abort": {
-      "pbs_no_options": "Цей сервер PBS не має налаштовуваних параметрів."
+      "pbs_no_options": "Цей сервер PBS не має налаштовуваних параметрів.",
+      "cluster_no_options": "Налаштування кластера керуються з конфігурації вузла PVE.",
+      "entry_not_loaded": "Інтеграцію ще не завантажено, спробуйте ще раз."
     },
     "step": {
       "init": {
-        "title": "Налаштування Proxmox Sensors",
-        "description": "Оберіть ресурси, які потрібно продовжити відстежувати на цьому вузлі.",
+        "title": "Параметри Proxmox Extended Sensors",
+        "description": "Налаштуйте параметри моніторингу й керування для цієї інтеграції.",
         "data": {
           "vms": "Обрати віртуальні машини (VM)",
           "cts": "Обрати контейнери (LXC)",
           "storage": "Обрати сховище",
           "enable_lm_sensors": "Увімкнути апаратні сенсори (lm-sensors)",
           "enable_physical_disks": "Увімкнути сенсори фізичних дисків",
-          "enable_smart_monitoring": "Увімкнути SMART-моніторинг",
+          "enable_smart_monitoring": "Увімкнути моніторинг стану SMART і NVMe",
           "enable_node_controls": "Увімкнути керування вузлом",
-          "enable_backup_progress": "Увімкнути сенсор прогресу резервного копіювання",
-          "enable_storage_list": "Увімкнути список сховищ",
-          "enable_nodes_list": "Увімкнути список вузлів",
+          "enable_pbs_node_controls": "Увімкнути керування живленням вузла PBS",
+          "wol_mac": "MAC-адреса Wake-on-LAN",
           "verify_ssl": "Перевіряти SSL-сертифікат"
         }
       }
     }
   },
-
   "entity": {
     "sensor": {
-      "cpu_usage": { "name": "Завантаження CPU" },
-      "cpu_wait": { "name": "Очікування I/O CPU" },
-      "uptime": { "name": "Час роботи" },
-      "kernel_version": { "name": "Версія ядра" },
-      "pve_version": { "name": "Версія PVE" },
-      "load_average": { "name": "Середнє навантаження" },
-      "network_rx": { "name": "Мережа RX" },
-      "network_tx": { "name": "Мережа TX" },
-
-      "last_task": { "name": "Останнє завдання" },
-      "no_tasks": { "name": "Немає завдань" },
-
-      "cpu_info": { "name": "Інформація про CPU" },
-      "ksm_shared": { "name": "Спільна пам’ять KSM" },
-      "memory_usage": { "name": "Використання пам’яті" },
-      "swap_usage": { "name": "Використання swap" },
-      "rootfs_usage": { "name": "Використання кореневої файлової системи" },
-
-      "node_info": { "name": "Вузол Proxmox" },
-      "storages": { "name": "Сховище Proxmox" },
-      "backup_progress": { "name": "Прогрес резервного копіювання" },
-
-      "vm_status": { "name": "Статус" },
-      "vm_cpu_usage": { "name": "Завантаження CPU" },
-      "vm_network_rx": { "name": "Мережа RX" },
-      "vm_network_tx": { "name": "Мережа TX" },
-      "vm_memory_used": { "name": "Використана пам’ять" },
-      "vm_memory_total": { "name": "Загальна пам’ять" },
-      "vm_disk_used": { "name": "Використаний диск" },
-      "vm_disk_total": { "name": "Загальний диск" },
-      "vm_uptime": { "name": "Час роботи" },
-
-      "ct_status": { "name": "Статус" },
-      "ct_cpu_usage": { "name": "Завантаження CPU" },
-      "ct_memory_used": { "name": "Використана пам’ять" },
-      "ct_memory_total": { "name": "Загальна пам’ять" },
-      "ct_disk_used": { "name": "Використаний диск" },
-      "ct_disk_total": { "name": "Загальний диск" },
-      "ct_network_rx": { "name": "Мережа RX" },
-      "ct_network_tx": { "name": "Мережа TX" },
-      "ct_uptime": { "name": "Час роботи" },
-
-      "storage_usage": { "name": "Використання (%)" },
-      "storage_used": { "name": "Використано" },
-      "storage_available": { "name": "Доступно" },
-      "storage_total": { "name": "Всього" },
-      "storage_type": { "name": "Тип" },
-      "storage_path": { "name": "Шлях" },
-
-      "version": { "name": "Версія" },
-      "release": { "name": "Release" },
-      "auth_status": { "name": "Статус автентифікації" },
-      "node_cpu": { "name": "Завантаження CPU" },
-      "node_ram": { "name": "Використання RAM" },
-      "ram_total": { "name": "Загальна RAM" },
-      "ram_used": { "name": "Використана RAM" },
-      "ram_free": { "name": "Вільна RAM" },
-
-      "last_task_type": { "name": "Тип останнього завдання" },
-      "last_task_status": { "name": "Статус останнього завдання" },
-      "last_task_message": { "name": "Повідомлення останнього завдання" },
-      "last_task_duration": { "name": "Тривалість останнього завдання" },
-      "last_action": { "name": "Остання дія" },
-
-      "datastore_usage": { "name": "Використання (%)" },
-      "datastore_total": { "name": "Загальний розмір" },
-      "datastore_used": { "name": "Використаний розмір" },
-      "datastore_free": { "name": "Вільний розмір" },
-      "datastore_dedup": { "name": "Дедуплікація" },
-      "datastore_backup_count": { "name": "Кількість резервних копій" },
-      "datastore_last_backup_time": { "name": "Останній бекап" },
-      "datastore_last_backup_size": { "name": "Розмір останнього бекапу" },
-      "datastore_last_backup_status": { "name": "Статус останнього бекапу" },
-      "datastore_backup_errors": { "name": "Помилки резервного копіювання" },
-      "datastore_backups_summary": { "name": "Зведення резервних копій" },
-      "datastore_gc_status": { "name": "Статус GC" },
+      "cpu_usage": {
+        "name": "Завантаження CPU"
+      },
+      "uptime": {
+        "name": "Час роботи"
+      },
+      "kernel_version": {
+        "name": "Версія ядра"
+      },
+      "pve_version": {
+        "name": "Версія PVE"
+      },
+      "load_average": {
+        "name": "Середнє навантаження"
+      },
+      "network_rx": {
+        "name": "Мережа RX"
+      },
+      "network_tx": {
+        "name": "Мережа TX"
+      },
+      "last_task": {
+        "name": "Останнє завдання"
+      },
+      "no_tasks": {
+        "name": "Немає завдань"
+      },
+      "cpu_info": {
+        "name": "Інформація про CPU"
+      },
+      "ksm_shared": {
+        "name": "Спільна пам’ять KSM"
+      },
+      "memory_usage": {
+        "name": "Використання пам’яті"
+      },
+      "swap_usage": {
+        "name": "Використання swap"
+      },
+      "rootfs_usage": {
+        "name": "Використання кореневої файлової системи"
+      },
+      "node_info": {
+        "name": "Вузол Proxmox"
+      },
+      "storages": {
+        "name": "Сховище Proxmox"
+      },
+      "backup_progress": {
+        "name": "Прогрес резервного копіювання"
+      },
+      "vm_status": {
+        "name": "Статус"
+      },
+      "vm_cpu_usage": {
+        "name": "Завантаження CPU"
+      },
+      "vm_network_rx": {
+        "name": "Мережа RX"
+      },
+      "vm_network_tx": {
+        "name": "Мережа TX"
+      },
+      "vm_memory_used": {
+        "name": "Використана пам’ять"
+      },
+      "vm_memory_total": {
+        "name": "Загальна пам’ять"
+      },
+      "vm_disk_used": {
+        "name": "Використаний диск"
+      },
+      "vm_disk_total": {
+        "name": "Загальний диск"
+      },
+      "vm_uptime": {
+        "name": "Час роботи"
+      },
+      "ct_status": {
+        "name": "Статус"
+      },
+      "ct_cpu_usage": {
+        "name": "Завантаження CPU"
+      },
+      "ct_memory_used": {
+        "name": "Використана пам’ять"
+      },
+      "ct_memory_total": {
+        "name": "Загальна пам’ять"
+      },
+      "ct_disk_used": {
+        "name": "Використаний диск"
+      },
+      "ct_disk_total": {
+        "name": "Загальний диск"
+      },
+      "ct_network_rx": {
+        "name": "Мережа RX"
+      },
+      "ct_network_tx": {
+        "name": "Мережа TX"
+      },
+      "ct_uptime": {
+        "name": "Час роботи"
+      },
+      "storage_usage": {
+        "name": "Використання (%)"
+      },
+      "storage_used": {
+        "name": "Використано"
+      },
+      "storage_available": {
+        "name": "Доступно"
+      },
+      "storage_total": {
+        "name": "Всього"
+      },
+      "storage_type": {
+        "name": "Тип"
+      },
+      "storage_path": {
+        "name": "Шлях"
+      },
+      "version": {
+        "name": "Версія"
+      },
+      "release": {
+        "name": "Release"
+      },
+      "auth_status": {
+        "name": "Статус автентифікації"
+      },
+      "node_cpu": {
+        "name": "Завантаження CPU"
+      },
+      "node_ram": {
+        "name": "Використання RAM"
+      },
+      "ram_total": {
+        "name": "Загальна RAM"
+      },
+      "ram_used": {
+        "name": "Використана RAM"
+      },
+      "ram_free": {
+        "name": "Вільна RAM"
+      },
+      "last_task_type": {
+        "name": "Тип останнього завдання"
+      },
+      "last_task_status": {
+        "name": "Статус останнього завдання"
+      },
+      "last_task_message": {
+        "name": "Повідомлення останнього завдання"
+      },
+      "last_task_duration": {
+        "name": "Тривалість останнього завдання"
+      },
+      "last_action": {
+        "name": "Остання дія"
+      },
+      "datastore_usage": {
+        "name": "Використання (%)"
+      },
+      "datastore_total": {
+        "name": "Загальний розмір"
+      },
+      "datastore_used": {
+        "name": "Використаний розмір"
+      },
+      "datastore_free": {
+        "name": "Вільний розмір"
+      },
+      "datastore_dedup": {
+        "name": "Дедуплікація"
+      },
+      "datastore_backup_count": {
+        "name": "Кількість резервних копій"
+      },
+      "datastore_last_backup_time": {
+        "name": "Останній бекап"
+      },
+      "datastore_last_backup_size": {
+        "name": "Розмір останнього бекапу"
+      },
+      "datastore_last_backup_status": {
+        "name": "Статус останнього бекапу"
+      },
+      "datastore_backup_errors": {
+        "name": "Помилки резервного копіювання"
+      },
+      "datastore_backups_summary": {
+        "name": "Зведення резервних копій"
+      },
+      "datastore_gc_status": {
+        "name": "Статус GC"
+      },
       "proxmox_dimm": {
         "name": "Модуль RAM (DIMM)",
         "state_attributes": {
-          "speed": { "name": "Швидкість" },
-          "configured_speed": { "name": "Налаштована швидкість" },
-          "type": { "name": "Тип пам’яті" },
-          "manufacturer": { "name": "Виробник" },
-          "locator": { "name": "Слот" }
+          "speed": {
+            "name": "Швидкість"
+          },
+          "configured_speed": {
+            "name": "Налаштована швидкість"
+          },
+          "type": {
+            "name": "Тип пам’яті"
+          },
+          "manufacturer": {
+            "name": "Виробник"
+          },
+          "locator": {
+            "name": "Слот"
+          }
         }
       }
     }

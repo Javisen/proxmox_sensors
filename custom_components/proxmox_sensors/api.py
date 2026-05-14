@@ -1,3 +1,5 @@
+"""API for Proxmox Extended Sensors."""
+
 from typing import Any, Optional
 import logging
 import requests
@@ -7,6 +9,43 @@ from proxmoxer import ProxmoxAPI
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 LOGGER = logging.getLogger(__name__)
+
+
+class AuthenticationError(Exception):
+    """Raised when the API rejects the supplied credentials."""
+
+
+class CannotConnect(Exception):
+    """Raised when the API cannot be reached."""
+
+
+class PermissionError(Exception):
+    """Raised when credentials are valid but permissions are insufficient."""
+
+
+def _raise_for_auth_or_permission(status_code: int | None, path: str) -> None:
+    """Map only auth/permission statuses; other HTTP errors are not network errors."""
+    if status_code == 401:
+        raise AuthenticationError(f"Authentication failed for {path}")
+    if status_code == 403:
+        raise PermissionError(f"Permission denied for {path}")
+
+
+def _extract_status_code(err: Exception) -> int | None:
+    response = getattr(err, "response", None)
+    if response is not None and getattr(response, "status_code", None):
+        return response.status_code
+
+    status_code = getattr(err, "status_code", None) or getattr(err, "status", None)
+    if status_code:
+        return int(status_code)
+
+    message = str(err)
+    for code in (401, 403):
+        if str(code) in message:
+            return code
+
+    return None
 
 
 class ProxmoxClient:
@@ -73,19 +112,32 @@ class ProxmoxClient:
 
         return self._proxmox
 
-    async def get(self, hass, path: str) -> Any:
+    async def get(self, hass, path: str, raise_errors: bool = False) -> Any:
         if self._server_type == "PBS":
             return await hass.async_add_executor_job(
-                self._pbs_request, "GET", path, None
+                self._pbs_request, "GET", path, None, raise_errors
             )
 
         proxmox = await self.get_api_client(hass)
         if proxmox is None:
+            if raise_errors:
+                raise CannotConnect(f"Unable to initialize client for {path}")
             return None
 
         try:
             return await hass.async_add_executor_job(proxmox.get, path)
         except Exception as err:
+            if raise_errors:
+                status_code = _extract_status_code(err)
+                if status_code is not None:
+                    _raise_for_auth_or_permission(status_code, path)
+                    LOGGER.debug(
+                        "PVE HTTP %s on validation endpoint %s", status_code, path
+                    )
+                    return None
+                if isinstance(err, requests.exceptions.RequestException):
+                    raise CannotConnect(f"PVE request failed for {path}") from err
+                raise
             LOGGER.error("PVE GET error on %s: %s", path, err)
             return None
 
@@ -109,11 +161,8 @@ class ProxmoxClient:
     async def get_cluster_tasks(self, hass):
         return await self.get(hass, "cluster/tasks") or []
 
-    async def get_cluster_notification_gotify_endpoints(self, hass):
-        """Return configured Gotify notification endpoints for the cluster."""
-        return (
-            await self.get(hass, "cluster/notifications/endpoints/gotify") or []
-        )
+    async def get_backup_jobs(self, hass):
+        return await self.get(hass, "cluster/backup") or []
 
     async def get_nodes(self, hass):
         """Return nodes in cluster."""
@@ -296,6 +345,19 @@ class ProxmoxClient:
 
         return await hass.async_add_executor_job(_fetch)
 
+    async def get_mounts(self, hass, node):
+        return await hass.async_add_executor_job(self._get_mounts_sync)
+
+    def _get_mounts_sync(self):
+        url = f"http://{self._host}:9000/mounts"
+
+        try:
+            r = requests.get(url, timeout=15)
+            r.raise_for_status()
+            return r.json()
+        except Exception:
+            return {}
+
     async def get_zfs_pools(self, hass, node):
         return await self.get(hass, f"nodes/{node}/disks/zfs") or []
 
@@ -342,7 +404,26 @@ class ProxmoxClient:
 
         return result
 
-    def _pbs_request(self, method: str, path: str, data=None):
+    async def get_cluster_status(self, hass):
+        """Return cluster status (name, quorum, version)."""
+        data = await self.get(hass, "cluster/status") or []
+        # The API returns a list; extract the item with type=="cluster"
+        for item in data:
+            if isinstance(item, dict) and item.get("type") == "cluster":
+                return item
+        return {}
+
+    async def get_cluster_ha_status(self, hass):
+        """Return current HA manager status."""
+        return await self.get(hass, "cluster/ha/status/current") or {}
+
+    async def get_cluster_firewall_options(self, hass):
+        """Return cluster firewall options."""
+        return await self.get(hass, "cluster/firewall/options") or {}
+
+    def _pbs_request(
+        self, method: str, path: str, data=None, raise_errors: bool = False
+    ):
         port = self._port or 8007
 
         clean_host = (
@@ -355,6 +436,8 @@ class ProxmoxClient:
 
         if not self._user or not self._token_secret:
             LOGGER.error("PBS token authentication requires user and token_secret")
+            if raise_errors:
+                raise AuthenticationError("PBS token authentication is incomplete")
             return None
 
         if self._token_id:
@@ -364,6 +447,8 @@ class ProxmoxClient:
                 token_full = f"{self._user}!{self._token_id}"
         else:
             LOGGER.error("PBS token_id is missing")
+            if raise_errors:
+                raise AuthenticationError("PBS token_id is missing")
             return None
 
         auth_header = f"PBSAPIToken {token_full}:{self._token_secret}"
@@ -383,6 +468,16 @@ class ProxmoxClient:
                     timeout=15,
                 )
 
+            if raise_errors and r.status_code >= 400:
+                _raise_for_auth_or_permission(r.status_code, path)
+                LOGGER.debug(
+                    "PBS HTTP %s on validation endpoint %s: %s",
+                    r.status_code,
+                    path,
+                    r.text,
+                )
+                return None
+
             if r.status_code == 403:
                 return None
 
@@ -392,7 +487,21 @@ class ProxmoxClient:
 
             return r.json().get("data")
 
+        except (AuthenticationError, PermissionError, CannotConnect):
+            raise
+        except requests.exceptions.RequestException as err:
+            if raise_errors:
+                raise CannotConnect(f"PBS request failed for {path}") from err
+            return None
         except Exception as err:
+            if raise_errors:
+                LOGGER.debug(
+                    "PBS validation endpoint %s failed with %s: %s",
+                    path,
+                    type(err).__name__,
+                    err,
+                )
+                raise
             return None
 
     async def pbs_get(self, hass, path: str) -> Any:
@@ -410,6 +519,15 @@ class ProxmoxClient:
             if data
             else []
         )
+
+    async def get_pbs_hostname(self, hass):
+        """Get PBS hostname from status endpoint."""
+        data = await self.pbs_get(hass, "status")
+
+        if isinstance(data, dict):
+            return data.get("hostname")
+
+        return None
 
     async def get_pbs_datastore_status(self, hass, store: str):
         return await self.pbs_get(hass, f"admin/datastore/{store}/status") or {}

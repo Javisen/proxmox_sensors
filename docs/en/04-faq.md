@@ -97,7 +97,7 @@ You will not have access to:
 
 ---
 
-## 🧠 System Insight (V3)
+## 🧠 System Insight (V3/V4)
 
 ### ❓ What is Node Score?
 

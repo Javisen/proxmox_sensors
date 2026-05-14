@@ -59,7 +59,7 @@ Fields:
   - Example: `homeassistant@pve`  
 - **Password:** user password  
 
-> 💡 In V3, the node is detected automatically. Manual entry is not required.
+> 💡 Since V3, the node is detected automatically. Manual entry is not required.
 
 ---
 

@@ -25,7 +25,7 @@ Problemas comunes, dudas frecuentes y cómo resolverlos.
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int_v3.png" alt="Proxmox Extended Sensors Logo" width="600"/>
+  <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int_v4.png" alt="Proxmox Extended Sensors Logo" width="600"/>
 </p>
 
 ---
@@ -42,31 +42,41 @@ Proporciona visibilidad completa de la infraestructura y añade capacidades de c
 
 ---
 
-## 🧠 System Insight (Nuevo en V3)
+## 🧠 System Insight (V3/V4)
 
-La versión 3 introduce sensores que transforman métricas técnicas en información interpretable:
+A partir de la versión 3, la integración evolucionó desde una colección de métricas técnicas hacia un sistema de observabilidad orientado a infraestructura.
 
-- **Node Score** → evaluación global del estado del nodo  
-- **Load Average (1m / 5m / 15m)** → carga real del sistema  
-- **IO Wait** → detección de presión de disco  
-- **Node Stress** → identificación de situaciones de estrés  
-- **Disk Overload** → detección de saturación de almacenamiento  
-- **Uso de CPU por núcleo** (nodo, VM y contenedor)
+V4 introduce sensores capaces de interpretar el estado global del nodo y transformar métricas complejas en información útil y accionable:
 
-Estos sensores permiten detectar cuellos de botella, anticipar problemas y construir automatizaciones más inteligentes.
+- **Proxmox Node** → estado global del nodo (`Excellent`, `Warning`, `Critical`, etc.) con atributos enriquecidos de infraestructura  
+- **Node Score** → evaluación numérica del rendimiento y salud general del sistema  
+- **Load Average (1m / 5m / 15m)** → carga real del host  
+- **IO Wait** → detección de presión y saturación de disco  
+- **Uso de CPU por núcleo** → disponible para nodos, VMs y contenedores  
+- **Telemetría de red del nodo** → cálculo inteligente de tráfico RX/TX agregado desde VMs y CTs  
+- **Información avanzada de almacenamiento** → estado, capacidad y métricas detalladas de discos físicos y storages  
+
+Estos sensores permiten detectar cuellos de botella, identificar degradación del sistema y construir automatizaciones mucho más inteligentes sin necesidad de herramientas externas adicionales.
 
 ---
 
-## 🔍 Características principales
+## 🔍 Capacidades principales de V4
 
-- Monitorización completa de:
-  - Nodos
-  - Máquinas virtuales (QEMU)
-  - Contenedores (LXC)
-  - Discos y almacenamiento
-  - Proxmox Backup Server (PBS)
+- Monitorización global de clúster Proxmox  
+- Detección avanzada de discos montados (CIFS/NFS/local)  
+- Telemetría inteligente de red y almacenamiento  
+- Sensores agregados de salud e infraestructura  
 
-- Sensores avanzados de sistema e infraestructura  
+### Monitorización completa de:
+
+- Nodos  
+- Máquinas virtuales (QEMU)  
+- Contenedores (LXC)  
+- Discos y almacenamiento  
+- Proxmox Backup Server (PBS)  
+
+### Funcionalidades avanzadas
+
 - Acciones de control desde Home Assistant  
 - Servicios de backup integrados  
 - Compatibilidad total con PBS (incluyendo deduplicación)  
@@ -78,15 +88,16 @@ Estos sensores permiten detectar cuellos de botella, anticipar problemas y const
 
 ## 🧩 Versiones Soportadas
 
-- Proxmox VE 7.x / 8.x / 9.x  
-- Proxmox Backup Server 3.x / 4.x  
-- Home Assistant 2024.x o posterior  
+- Proxmox VE 7.x / 8.x / 9.x
+- Compatible con Linux Kernel 6.x / 7.x
+- Proxmox Backup Server 3.x / 4.x
+- Home Assistant 2024.x o posterior
 
 ---
 
 ## 📑 Tabla de Contenidos
 
-- [Características Clave](#-características-clave-v200)
+- [Características Clave](#-características-clave-v400)
 - [Estado y Rendimiento del Nodo](#-estado-y-rendimiento-del-nodo)
 - [Discos y SMART](#-discos-y-smart)
 - [Máquinas Virtuales (QEMU)](#-máquinas-virtuales-qemu)
@@ -100,22 +111,45 @@ Estos sensores permiten detectar cuellos de botella, anticipar problemas y const
 
 ---
 
-## 🔥 Características Clave (v3.0.0)
+## 🔥 Características Clave de V4
 
-### ⚙️ Configuración mejorada
+### ⚙️ Configuración Mejorada
 
 - Descubrimiento automático de nodos  
 - Selección manual opcional  
 - Configuración más simple y guiada  
+- Compatibilidad con API Tokens (PVE/PBS)  
+- Detección inteligente de permisos limitados  
 
 ---
 
-### 🌡️ Monitoreo Avanzado de Hardware
+### 🌐 Monitorización de Clúster (NUEVO)
+
+- Sensores globales del clúster Proxmox  
+- Estado de backups y tareas fallidas  
+- Nodos online/offline  
+- Uso agregado de CPU y RAM  
+- Conteo global de VMs y CTs  
+
+---
+
+### 💽 Discos Montados y Almacenamiento (NUEVO)
+
+- Detección automática de discos montados  
+- Compatibilidad con CIFS / SMB y NFS  
+- Sensores de integridad y mounts faltantes  
+- Exclusión inteligente de tmpfs y pseudo-mounts  
+- Métricas detalladas de uso y capacidad  
+
+---
+
+### 🌡️ Monitorización Avanzada de Hardware
 
 - Temperaturas en tiempo real (CPU, VRM, chipset, discos)  
 - Sensores de ventiladores y voltajes  
 - Filtrado inteligente de sensores válidos  
 - Sensores unificados de temperatura (CPU + NVMe)  
+- Compatibilidad avanzada Intel / AMD / ACPI / NVMe 
 
 > Requiere `lm-sensors` en el host Proxmox
 
@@ -127,6 +161,7 @@ Estos sensores permiten detectar cuellos de botella, anticipar problemas y const
 - Monitorización de red (RX/TX)  
 - Tareas y estado del sistema  
 - Métricas avanzadas de carga y rendimiento  
+- Node Score y estado global de infraestructura  
 
 ---
 
@@ -136,6 +171,7 @@ Estos sensores permiten detectar cuellos de botella, anticipar problemas y const
 - Espacio total/usado y métricas avanzadas  
 - Atributos SMART (HDD, SSD, NVMe)  
 - Temperaturas por tipo de disco  
+- Métricas NVMe avanzadas y estado de salud  
 
 ---
 
@@ -145,6 +181,7 @@ Estos sensores permiten detectar cuellos de botella, anticipar problemas y const
 - Red RX/TX  
 - Información básica y uptime  
 - Uso de CPU por núcleo  
+- Acciones de control desde Home Assistant  
 
 ---
 
@@ -154,6 +191,7 @@ Estos sensores permiten detectar cuellos de botella, anticipar problemas y const
 - Red RX/TX  
 - Información básica y uptime  
 - Uso de CPU por núcleo  
+- Acciones de control desde Home Assistant  
 
 ---
 
@@ -161,20 +199,25 @@ Estos sensores permiten detectar cuellos de botella, anticipar problemas y const
 
 La integración permite crear backups directamente desde Home Assistant, totalmente compatibles con Proxmox VE y PBS.
 
-### 🟦 Backup individual
+### 🟦 Backup Individual
 
 - Soporta múltiples IDs (coma separada)  
 - Modos: snapshot / suspend / stop  
 - Compresión: zstd / gzip / lzo / none  
+- Compatible con PBS y deduplicación  
 
-### 🟩 Backup masivo
+### 🟩 Backup Masivo
 
 - Backup de todos los recursos de un nodo  
 - Control de concurrencia y tiempos  
 - Ideal para automatización  
+- Compatible con grandes infraestructuras  
 
-Los backups se nombran automáticamente como: ```HA-{{vmid}}-{{guestname}}```
+Los backups se nombran automáticamente como:
 
+```text
+HA-{{vmid}}-{{guestname}}
+```
 
 Totalmente compatibles con PBS, incluyendo deduplicación y cadenas existentes.
 
@@ -216,12 +259,13 @@ Monitorización avanzada de datastore y tareas:
 ## 🎨 Organización y estructura
 
 - Sensores agrupados automáticamente en:
-  1. Nodo  
-  2. Discos físicos  
-  3. Máquinas virtuales  
-  4. Contenedores  
-  5. Storages / Datastores  
-  6. PBS y tareas  
+  1. Cluster
+  2. Nodo
+  3. Discos físicos
+  4. Máquinas virtuales
+  5. Contenedores
+  6. Almacenamiento / Datastores
+  7. PBS y tareas
 
 - Nombres consistentes y claros para facilitar dashboards y automatizaciones  
 
@@ -274,7 +318,7 @@ A continuación encontrarás un recorrido visual completo del proceso de configu
 </details>
 
 <details>
-  <summary>🧠 Selección de Nodos (V3)</summary>
+  <summary>🧠 Selección de Nodos (V4)</summary>
   <p align="center">
     <img src="../../img/install/node_select.png" alt="Selección de nodos" width="600">
   </p>

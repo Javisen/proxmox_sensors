@@ -16,22 +16,50 @@
           "use_token": "API-Token verwenden (empfohlen)"
         }
       },
-      "credentials": {
-        "title": "3. Zugangsdaten",
-        "description": "Gib die Zugangsdaten ein, die zur Verbindung mit dem Server erforderlich sind.",
+      "credentials_pve": {
+        "title": "3. Zugangsdaten — Proxmox VE",
+        "description": "Gib deine PVE-Verbindungsdaten ein.",
         "data": {
-          "user": "Benutzername (z. B. root@pam oder admin@pve)",
+          "user": "Benutzer (z. B. root@pam)",
           "password": "Passwort",
           "token_id": "Token-ID (ohne user@pve!)",
           "token_secret": "Token-Secret",
-          "node": "Proxmox-Knotenname (nur PVE)",
+          "auto_detect_node": "Knoten automatisch aus Host-IP erkennen",
           "enable_lm_sensors": "Temperaturen überwachen (lm-sensors)",
           "verify_ssl": "SSL-Zertifikat überprüfen"
         }
       },
+      "credentials_pbs": {
+        "title": "3. Zugangsdaten — Proxmox Backup Server",
+        "description": "Gib deine PBS-Verbindungsdaten ein.",
+        "data": {
+          "user": "Benutzer (z. B. admin@pbs)",
+          "token_id": "Token-ID (ohne user@pve!)",
+          "token_secret": "Token-Secret",
+          "verify_ssl": "SSL-Zertifikat überprüfen"
+        }
+      },
+      "credentials_cluster": {
+        "title": "3. Zugangsdaten — Proxmox-Cluster",
+        "description": "Gib die Zugangsdaten für die Verbindung zum Cluster ein. Verwendet dieselbe API wie PVE (Port 8006).",
+        "data": {
+          "user": "Benutzer (z. B. root@pam)",
+          "password": "Passwort",
+          "token_id": "Token-ID (ohne user@pve!)",
+          "token_secret": "Token-Secret",
+          "verify_ssl": "SSL-Zertifikat überprüfen"
+        }
+      },
+      "select_node": {
+        "title": "4. Knoten auswählen",
+        "description": "Wähle den zu überwachenden Proxmox-Knoten aus.",
+        "data": {
+          "node": "Knoten"
+        }
+      },
       "select_resources": {
-        "title": "4. Ressourcenauswahl",
-        "description": "Wähle, welche Elemente überwacht werden sollen. Nur ausgewählte Elemente erstellen Entitäten in Home Assistant.",
+        "title": "5. Ressourcenauswahl",
+        "description": "Wähle aus, welche Ressourcen überwacht und als Entitäten in Home Assistant bereitgestellt werden sollen.",
         "data": {
           "vms": "Virtuelle Maschinen (VM)",
           "cts": "Container (LXC)",
@@ -44,124 +72,258 @@
     "error": {
       "cannot_connect": "Verbindung zum Server nicht möglich. Überprüfe die Adresse.",
       "invalid_auth": "Authentifizierung fehlgeschlagen. Überprüfe die Zugangsdaten oder Token-Berechtigungen.",
+      "insufficient_permissions": "Die Zugangsdaten konnten sich erfolgreich verbinden, haben aber nicht genügend Berechtigungen für die erforderlichen Proxmox-API-Endpunkte.",
       "unknown": "Unerwarteter Fehler. Überprüfe die Home Assistant-Protokolle."
     },
     "abort": {
-      "already_configured": "Dieser Knoten ist bereits konfiguriert."
+      "already_configured": "Dieser Knoten ist bereits konfiguriert.",
+      "no_data": "Keine Clusterdaten empfangen. Prüfe deine Konfiguration.",
+      "cluster_no_options": "Clustereinstellungen werden über die PVE-Knotenkonfiguration verwaltet."
     }
   },
-
   "options": {
     "abort": {
-      "pbs_no_options": "Dieser PBS-Server hat keine konfigurierbaren Optionen."
+      "pbs_no_options": "Dieser PBS-Server hat keine konfigurierbaren Optionen.",
+      "cluster_no_options": "Clustereinstellungen werden über die PVE-Knotenkonfiguration verwaltet.",
+      "entry_not_loaded": "Die Integration ist noch nicht geladen, bitte versuche es erneut."
     },
     "step": {
       "init": {
-        "title": "Proxmox Sensors Optionen",
-        "description": "Wähle, welche Ressourcen auf diesem Knoten weiterhin überwacht werden sollen.",
+        "title": "Proxmox Extended Sensors — Optionen",
+        "description": "Konfiguriere Überwachungs- und Verwaltungsoptionen für diese Integration.",
         "data": {
           "vms": "Virtuelle Maschinen auswählen (VM)",
           "cts": "Container auswählen (LXC)",
           "storage": "Speicher auswählen",
           "enable_lm_sensors": "Hardware-Sensoren aktivieren (lm-sensors)",
           "enable_physical_disks": "Physische Datenträger-Sensoren aktivieren",
-          "enable_smart_monitoring": "SMART-Überwachung aktivieren",
+          "enable_smart_monitoring": "SMART- und NVMe-Zustandsüberwachung aktivieren",
           "enable_node_controls": "Knotensteuerung aktivieren",
-          "enable_backup_progress": "Backup-Fortschrittssensor aktivieren",
-          "enable_storage_list": "Speicherlistensensor aktivieren",
-          "enable_nodes_list": "Knotenlistensensor aktivieren",
+          "enable_pbs_node_controls": "Energieverwaltung des PBS-Knotens aktivieren",
+          "wol_mac": "Wake-on-LAN-MAC-Adresse",
           "verify_ssl": "SSL-Zertifikat überprüfen"
         }
       }
     }
   },
-
   "entity": {
     "sensor": {
-      "cpu_usage": { "name": "CPU-Auslastung" },
-      "cpu_wait": { "name": "CPU I/O-Wartezeit" },
-      "uptime": { "name": "Betriebszeit" },
-      "kernel_version": { "name": "Kernel-Version" },
-      "pve_version": { "name": "PVE-Version" },
-      "load_average": { "name": "Durchschnittliche Last" },
-      "network_rx": { "name": "Netzwerk RX" },
-      "network_tx": { "name": "Netzwerk TX" },
-
-      "last_task": { "name": "Letzte Aufgabe" },
-      "no_tasks": { "name": "Keine Aufgaben" },
-
-      "cpu_info": { "name": "CPU-Informationen" },
-      "ksm_shared": { "name": "KSM-geteilter Speicher" },
-      "memory_usage": { "name": "Speichernutzung" },
-      "swap_usage": { "name": "Swap-Nutzung" },
-      "rootfs_usage": { "name": "Root-Dateisystemnutzung" },
-
-      "node_info": { "name": "Proxmox-Knoten" },
-      "storages": { "name": "Proxmox-Speicher" },
-      "backup_progress": { "name": "Backup-Fortschritt" },
-
-      "vm_status": { "name": "Status" },
-      "vm_cpu_usage": { "name": "CPU-Auslastung" },
-      "vm_network_rx": { "name": "Netzwerk RX" },
-      "vm_network_tx": { "name": "Netzwerk TX" },
-      "vm_memory_used": { "name": "Verwendeter Speicher" },
-      "vm_memory_total": { "name": "Gesamtspeicher" },
-      "vm_disk_used": { "name": "Verwendeter Speicherplatz" },
-      "vm_disk_total": { "name": "Gesamtspeicherplatz" },
-      "vm_uptime": { "name": "Betriebszeit" },
-
-      "ct_status": { "name": "Status" },
-      "ct_cpu_usage": { "name": "CPU-Auslastung" },
-      "ct_memory_used": { "name": "Verwendeter Speicher" },
-      "ct_memory_total": { "name": "Gesamtspeicher" },
-      "ct_disk_used": { "name": "Verwendeter Speicherplatz" },
-      "ct_disk_total": { "name": "Gesamtspeicherplatz" },
-      "ct_network_rx": { "name": "Netzwerk RX" },
-      "ct_network_tx": { "name": "Netzwerk TX" },
-      "ct_uptime": { "name": "Betriebszeit" },
-
-      "storage_usage": { "name": "Auslastung (%)" },
-      "storage_used": { "name": "Verwendet" },
-      "storage_available": { "name": "Verfügbar" },
-      "storage_total": { "name": "Gesamt" },
-      "storage_type": { "name": "Typ" },
-      "storage_path": { "name": "Pfad" },
-
-      "version": { "name": "Version" },
-      "release": { "name": "Release" },
-      "auth_status": { "name": "Authentifizierungsstatus" },
-      "node_cpu": { "name": "CPU-Auslastung" },
-      "node_ram": { "name": "RAM-Nutzung" },
-      "ram_total": { "name": "Gesamt-RAM" },
-      "ram_used": { "name": "Verwendeter RAM" },
-      "ram_free": { "name": "Freier RAM" },
-
-      "last_task_type": { "name": "Typ der letzten Aufgabe" },
-      "last_task_status": { "name": "Status der letzten Aufgabe" },
-      "last_task_message": { "name": "Meldung der letzten Aufgabe" },
-      "last_task_duration": { "name": "Dauer der letzten Aufgabe" },
-      "last_action": { "name": "Letzte Aktion" },
-
-      "datastore_usage": { "name": "Auslastung (%)" },
-      "datastore_total": { "name": "Gesamtgröße" },
-      "datastore_used": { "name": "Genutzte Größe" },
-      "datastore_free": { "name": "Freie Größe" },
-      "datastore_dedup": { "name": "Deduplizierung" },
-      "datastore_backup_count": { "name": "Anzahl der Backups" },
-      "datastore_last_backup_time": { "name": "Letzter Backup-Zeitpunkt" },
-      "datastore_last_backup_size": { "name": "Größe des letzten Backups" },
-      "datastore_last_backup_status": { "name": "Status des letzten Backups" },
-      "datastore_backup_errors": { "name": "Backup-Fehler" },
-      "datastore_backups_summary": { "name": "Backup-Zusammenfassung" },
-      "datastore_gc_status": { "name": "GC-Status" },
+      "cpu_usage": {
+        "name": "CPU-Auslastung"
+      },
+      "uptime": {
+        "name": "Betriebszeit"
+      },
+      "kernel_version": {
+        "name": "Kernel-Version"
+      },
+      "pve_version": {
+        "name": "PVE-Version"
+      },
+      "load_average": {
+        "name": "Durchschnittliche Last"
+      },
+      "network_rx": {
+        "name": "Netzwerk RX"
+      },
+      "network_tx": {
+        "name": "Netzwerk TX"
+      },
+      "last_task": {
+        "name": "Letzte Aufgabe"
+      },
+      "no_tasks": {
+        "name": "Keine Aufgaben"
+      },
+      "cpu_info": {
+        "name": "CPU-Informationen"
+      },
+      "ksm_shared": {
+        "name": "KSM-geteilter Speicher"
+      },
+      "memory_usage": {
+        "name": "Speichernutzung"
+      },
+      "swap_usage": {
+        "name": "Swap-Nutzung"
+      },
+      "rootfs_usage": {
+        "name": "Root-Dateisystemnutzung"
+      },
+      "node_info": {
+        "name": "Proxmox-Knoten"
+      },
+      "storages": {
+        "name": "Proxmox-Speicher"
+      },
+      "backup_progress": {
+        "name": "Backup-Fortschritt"
+      },
+      "vm_status": {
+        "name": "Status"
+      },
+      "vm_cpu_usage": {
+        "name": "CPU-Auslastung"
+      },
+      "vm_network_rx": {
+        "name": "Netzwerk RX"
+      },
+      "vm_network_tx": {
+        "name": "Netzwerk TX"
+      },
+      "vm_memory_used": {
+        "name": "Verwendeter Speicher"
+      },
+      "vm_memory_total": {
+        "name": "Gesamtspeicher"
+      },
+      "vm_disk_used": {
+        "name": "Verwendeter Speicherplatz"
+      },
+      "vm_disk_total": {
+        "name": "Gesamtspeicherplatz"
+      },
+      "vm_uptime": {
+        "name": "Betriebszeit"
+      },
+      "ct_status": {
+        "name": "Status"
+      },
+      "ct_cpu_usage": {
+        "name": "CPU-Auslastung"
+      },
+      "ct_memory_used": {
+        "name": "Verwendeter Speicher"
+      },
+      "ct_memory_total": {
+        "name": "Gesamtspeicher"
+      },
+      "ct_disk_used": {
+        "name": "Verwendeter Speicherplatz"
+      },
+      "ct_disk_total": {
+        "name": "Gesamtspeicherplatz"
+      },
+      "ct_network_rx": {
+        "name": "Netzwerk RX"
+      },
+      "ct_network_tx": {
+        "name": "Netzwerk TX"
+      },
+      "ct_uptime": {
+        "name": "Betriebszeit"
+      },
+      "storage_usage": {
+        "name": "Auslastung (%)"
+      },
+      "storage_used": {
+        "name": "Verwendet"
+      },
+      "storage_available": {
+        "name": "Verfügbar"
+      },
+      "storage_total": {
+        "name": "Gesamt"
+      },
+      "storage_type": {
+        "name": "Typ"
+      },
+      "storage_path": {
+        "name": "Pfad"
+      },
+      "version": {
+        "name": "Version"
+      },
+      "release": {
+        "name": "Release"
+      },
+      "auth_status": {
+        "name": "Authentifizierungsstatus"
+      },
+      "node_cpu": {
+        "name": "CPU-Auslastung"
+      },
+      "node_ram": {
+        "name": "RAM-Nutzung"
+      },
+      "ram_total": {
+        "name": "Gesamt-RAM"
+      },
+      "ram_used": {
+        "name": "Verwendeter RAM"
+      },
+      "ram_free": {
+        "name": "Freier RAM"
+      },
+      "last_task_type": {
+        "name": "Typ der letzten Aufgabe"
+      },
+      "last_task_status": {
+        "name": "Status der letzten Aufgabe"
+      },
+      "last_task_message": {
+        "name": "Meldung der letzten Aufgabe"
+      },
+      "last_task_duration": {
+        "name": "Dauer der letzten Aufgabe"
+      },
+      "last_action": {
+        "name": "Letzte Aktion"
+      },
+      "datastore_usage": {
+        "name": "Auslastung (%)"
+      },
+      "datastore_total": {
+        "name": "Gesamtgröße"
+      },
+      "datastore_used": {
+        "name": "Genutzte Größe"
+      },
+      "datastore_free": {
+        "name": "Freie Größe"
+      },
+      "datastore_dedup": {
+        "name": "Deduplizierung"
+      },
+      "datastore_backup_count": {
+        "name": "Anzahl der Backups"
+      },
+      "datastore_last_backup_time": {
+        "name": "Letzter Backup-Zeitpunkt"
+      },
+      "datastore_last_backup_size": {
+        "name": "Größe des letzten Backups"
+      },
+      "datastore_last_backup_status": {
+        "name": "Status des letzten Backups"
+      },
+      "datastore_backup_errors": {
+        "name": "Backup-Fehler"
+      },
+      "datastore_backups_summary": {
+        "name": "Backup-Zusammenfassung"
+      },
+      "datastore_gc_status": {
+        "name": "GC-Status"
+      },
       "proxmox_dimm": {
         "name": "RAM-Modul (DIMM)",
         "state_attributes": {
-          "speed": { "name": "Geschwindigkeit" },
-          "configured_speed": { "name": "Konfigurierte Geschwindigkeit" },
-          "type": { "name": "Speichertyp" },
-          "manufacturer": { "name": "Hersteller" },
-          "locator": { "name": "Steckplatz" }
+          "speed": {
+            "name": "Geschwindigkeit"
+          },
+          "configured_speed": {
+            "name": "Konfigurierte Geschwindigkeit"
+          },
+          "type": {
+            "name": "Speichertyp"
+          },
+          "manufacturer": {
+            "name": "Hersteller"
+          },
+          "locator": {
+            "name": "Steckplatz"
+          }
         }
       }
     }

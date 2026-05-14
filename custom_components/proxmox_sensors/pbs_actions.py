@@ -1,3 +1,5 @@
+"""PBS Actions for Proxmox Extended Sensors."""
+
 import logging
 
 _LOGGER = logging.getLogger(__name__)

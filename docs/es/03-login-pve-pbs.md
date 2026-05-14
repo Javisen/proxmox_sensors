@@ -39,6 +39,7 @@ Tras reiniciar:
 ---
 
 ### 🔹 Tipo de servidor
+- **CLUSTER** → Proxmox Cluster
 - **PVE** → Proxmox Virtual Environment  
 - **PBS** → Proxmox Backup Server  
 
@@ -46,8 +47,8 @@ Tras reiniciar:
 
 ### 🔹 Método de autenticación
 
-- **Usuario + contraseña** → solo en PVE  
-- **API Token** → recomendado y obligatorio en PBS  
+- **Usuario + contraseña** → solo en PVE y Cluster
+- **API Token** → Obligatorio en PBS  
 
 ---
 
@@ -59,7 +60,7 @@ Campos:
   - Ejemplo: `homeassistant@pve`  
 - **Password:** contraseña del usuario  
 
-> 💡 En V3, el nodo se detecta automáticamente. No es necesario introducirlo manualmente.
+> 💡 Desde la V3, el nodo se detecta automáticamente. No es necesario introducirlo manualmente.
 
 ---
 

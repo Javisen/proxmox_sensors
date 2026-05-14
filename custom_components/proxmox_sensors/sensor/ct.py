@@ -1,4 +1,4 @@
-"""Container (LXC) sensors for Proxmox."""
+"""Container (LXC) sensors for Proxmox Extended Sensors."""
 
 from .base import ProxmoxBaseSensor
 from ..const import DOMAIN
@@ -79,7 +79,7 @@ class ProxmoxContainerAttributeSensor(ProxmoxBaseSensor):
         }
 
         pretty = names.get(attr_name, attr_name.replace("_", " ").title())
-        name = f"{ct_id} - {pretty}"
+        name = pretty
 
         super().__init__(
             coordinator,
@@ -127,14 +127,14 @@ class ProxmoxContainerAttributeSensor(ProxmoxBaseSensor):
                 cpu = ct_data.get("cpu")
                 return round(float(cpu) * 100, 2) if cpu is not None else None
 
-            # Network MB
+            # Network GB
             if self._attr_key == "network_rx":
                 val = ct_data.get("netin")
-                return round(float(val) / (1024**2), 2) if val is not None else None
+                return round(float(val) / (1024**3), 2) if val is not None else None
 
             if self._attr_key == "network_tx":
                 val = ct_data.get("netout")
-                return round(float(val) / (1024**2), 2) if val is not None else None
+                return round(float(val) / (1024**3), 2) if val is not None else None
 
             keys = {
                 "memory_used": "mem",

@@ -1,148 +1,156 @@
 # 🔌 Passo 3: Instalação da Integração no Home Assistant
 
-Para visualizar os dados (incluindo temperaturas, sensores de hardware, discos, PBS, VMs e CTs), usaremos a integração **Proxmox Extended Sensors**.
-
-[Guia Visual de Instalação](#-Guia-Visual-de-Instalação)
+Para visualizar todos os dados (temperaturas, sensores de hardware, discos, PBS, VMs e CTs), utilizaremos a integração **Proxmox Extended Sensors**.
 
 ---
 
-## 1. Instalação via HACS
+## 1. Instalação através do HACS
 
-Por ser uma integração personalizada, primeiro precisamos adicioná-la ao HACS:
+Por ser uma integração personalizada, primeiro deves adicioná-la ao HACS:
 
-1. Vá para **HACS → Integrações**  
-2. Clique nos **três pontos** (canto superior direito)  
-3. Selecione **Repositórios personalizados**  
-4. Adicione este repositório: `https://github.com/Javisen/proxmox_sensors/`
-5. Em **Categoria**, selecione `Integração`  
-6. Instale e **reinicie o Home Assistant**
-
----
-
-## 2. Configuração da Integração
-
-Após a reinicialização:
-
-1. Vá para **Configurações → Dispositivos e Serviços**  
-2. Clique em **Adicionar integração**  
-3. Pesquise por **Proxmox Extended Sensors**
+1. Vá a **HACS → Integrações**
+2. Clique nos **três pontos** (canto superior direito)
+3. Selecione **Repositórios personalizados**
+4. Adicione este repositório:
+   `https://github.com/Javisen/proxmox_sensors/`
+5. Em **Categoria**, selecione `Integração`
+6. Instale a integração e **reinicie o Home Assistant**
 
 ---
 
-## 3. Dados de Conexão
+## 2. Adicionar a integração
 
-O formulário é simples, mas há detalhes importantes:
+Após reiniciar:
+
+1. Vá a **Configurações → Dispositivos e Serviços**
+2. Clique em **Adicionar Integração**
+3. Procure por **Proxmox Extended Sensors**
+
+---
+
+## 3. Configuração da ligação
 
 ### 🔹 Host
-- **Na rede local:** apenas o IP → `192.168.1.50`  
-*(Não adicione porta ou http/https)*  
-- **Externamente:** seu domínio → `proxmox.meudominio.com`  
-*(A integração detecta automaticamente http/https)*
+- **Rede local:** `192.168.1.50`
+- **Acesso externo:** `proxmox.meudominio.com`
+
+> Não é necessário incluir `http://` ou `https://`. Isto é detetado automaticamente.
+
+---
 
 ### 🔹 Tipo de servidor
-- **PVE** → Proxmox Virtual Environment  
-- **PBS** → Proxmox Backup Server  
+- **CLUSTER** → Cluster Proxmox
+- **PVE** → Proxmox Virtual Environment
+- **PBS** → Proxmox Backup Server
+
+---
 
 ### 🔹 Método de autenticação
-- **Login tradicional** (somente PVE)  
-- **Token da API** (obrigatório para PBS)
+
+- **Utilizador + palavra-passe** → apenas em PVE e Cluster
+- **Token API** → Obrigatório em PBS
 
 ---
 
-## 🔐 Opção A: Login com Usuário (sem Token)
-
-Válido apenas para **PVE**.
+## 🔐 Opção A: Utilizador e palavra-passe (apenas PVE)
 
 Campos:
 
-- **Usuário:** `usuario@realm`  
-Exemplos:  
-- `homeassistant@pve`  
-- `root@pam`  
-- **Senha:** a senha do usuário  
-- **Nome do Nó:** nome do nó (como aparece no Proxmox)
+- **Utilizador:** `utilizador@realm`
+  - Exemplo: `homeassistant@pve`
+- **Palavra-passe:** palavra-passe do utilizador
+
+> 💡 Desde a V3, o nó é detetado automaticamente. Não é necessário inseri-lo manualmente.
 
 ---
 
-## 🔐 Opção B: Login com Token (recomendado e obrigatório para PBS)
+## 🔐 Opção B: Token API (recomendado)
 
 Campos:
 
-- **Usuário:** `usuario@realm`  
-- **token_id:** apenas o nome do token → `ha-token`  
-*(Não coloque `usuario@pve!token`)*  
-- **Token_secret:** o Secret gerado pelo Proxmox  
+- **Utilizador:** `utilizador@realm`
+- **ID do Token:** apenas o nome → `ha-token`
+- **Segredo do Token:** o segredo gerado no Proxmox
+
+> ⚠️ Não utilize o formato `utilizador@pve!token`
 
 ---
 
-## ✅ Seleção de Entidades (somente no PVE)
+## 🧠 Seleção de recursos (PVE)
 
-Após a conexão, a integração escaneará seu servidor e você poderá escolher o que monitorar:
+Após a ligação, a integração detetará automaticamente os recursos disponíveis.
 
-- **VMs**  
-- **CTs**  
-- **Discos físicos**  
-- **Armazenamentos**
+Poderá selecionar:
 
-> [!TIP]  
-> Selecione apenas o que você precisa para manter o Home Assistant limpo e rápido.
+- Máquinas virtuais (VMs)
+- Contentores (CTs)
+- Discos físicos
+- Armazenamentos
+
+> 💡 Selecione apenas o necessário para manter o Home Assistant limpo e eficiente.
 
 ---
 
 ## 🧭 Guia Visual de Instalação
 
-**Abaixo você encontrará um guia visual completo do processo de configuração, incluindo métodos de login, seleção de recursos e etapas de configuração.**
+Segue-se o processo completo com capturas de ecrã:
 
 <details>
-  <summary>🪪 Captura de tela: Conexão do Servidor</summary>
+  <summary>🪪 Ligação ao servidor</summary>
   <p align="center">
-    <img src="../../img/install/setup_pve_1.png" alt="Login Proxmox" width="600">
+    <img src="../../img/install/setup_pve_1.png" alt="Ligação Proxmox" width="600">
   </p>
-  > Não use "http://" ou "https://". Já cuidamos disso para você.
+  <p align="center"><i>Não é necessário incluir http/https.</i></p>
 </details>
 
 <details>
-  <summary>🪪 Captura de tela: Login via Usuário e Senha (somente PVE)</summary>
+  <summary>🪪 Início de sessão com utilizador e palavra-passe (PVE)</summary>
   <p align="center">
-    <img src="../../img/install/access_passw.png" alt="Login Proxmox" width="600">
+    <img src="../../img/install/access_passw.png" alt="Início de sessão utilizador" width="600">
   </p>
-  > Certifique-se de usar o realm `pam` ou `pve` conforme a configuração do seu usuário.
-</details>
-
-<details> 
-  <summary>🪪 Captura de tela: Login via Usuário e Token (PVE e PBS)</summary>
-  <p align="center">
-    <img src="../../img/install/access_token.png" alt="Login Proxmox" width="600">
-  </p>
-  **No campo Token_id, insira apenas o nome do token**
+  <p align="center"><i>Utilize o realm correto (pam ou pve).</i></p>
 </details>
 
 <details>
-  <summary>⚙️ Captura de tela: Seleção de Recursos</summary>
+  <summary>🪪 Início de sessão com token (PVE e PBS)</summary>
   <p align="center">
-    <img src="../../img/install/resources_select.png" alt="Login Proxmox" width="600">
+    <img src="../../img/install/access_token.png" alt="Início de sessão com token" width="600">
   </p>
-  *Nota: Selecione os CTs, VMs e Armazenamentos que deseja adicionar, bem como as opções*
+  <p align="center"><i>Insira apenas o nome do token no ID do Token.</i></p>
+</details>
+
+<details>
+  <summary>🧠 Seleção de nós (V3)</summary>
+  <p align="center">
+    <img src="../../img/install/node_select.png" alt="Seleção de nós" width="600">
+  </p>
+  <p align="center"><i>Os nós são detetados automaticamente e podem ser selecionados manualmente.</i></p>
+</details>
+
+<details>
+  <summary>⚙️ Seleção de recursos</summary>
+  <p align="center">
+    <img src="../../img/install/resources_select.png" alt="Seleção de recursos" width="600">
+  </p>
 </details>
 
 ---
 
-## ⚠️ Nota importante para PBS em ambientes compartilhados (Tuxis, Hetzner, etc.)
+## ⚠️ Nota sobre PBS em ambientes geridos
 
-Se você usa um PBS **gerenciado** ou **multi‑tenant**, como o Tuxis Free PBS:
+Se utilizar um PBS **gerido ou multi-tenant** (Tuxis, Hetzner, etc.):
 
-- Você não verá sensores de hardware  
-- Você não verá temperaturas  
-- Você não verá discos físicos  
-- Você não verá métricas do nó  
+- Não terá acesso aos sensores de hardware
+- Não verá temperaturas nem discos físicos
+- Não haverá métricas do nó
 
-Isso é normal porque:
+Isto é normal porque:
 
-- Você não tem acesso ao hardware real  
-- O provedor oculta a infraestrutura  
-- Você não tem permissões de root  
-- Você não pode acessar o sistema de arquivos real  
+- Não tem acesso ao hardware real
+- O fornecedor restringe o sistema
+- Não existem permissões de baixo nível
 
-**Resultado:**  
-A integração mostrará apenas sensores vazios ou nenhum dado.  
-Em versões futuras, tentaremos exibir métricas personalizadas do datastore.
+**Resultado:**
+Apenas serão exibidos dados limitados do datastore.
+
+---

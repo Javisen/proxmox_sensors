@@ -1,148 +1,156 @@
 # 🔌 Passo 3: Installazione dell'Integrazione in Home Assistant
 
-Per visualizzare i dati (incluse temperature, sensori hardware, dischi, PBS, VM e CT), utilizzeremo l'integrazione **Proxmox Extended Sensors**.
-
-[Guida Visiva di Installazione](#-Guida-Visiva-di-Installazione)
+Per visualizzare tutti i dati (temperature, sensori hardware, dischi, PBS, VM e CT), utilizzeremo l'integrazione **Proxmox Extended Sensors**.
 
 ---
 
 ## 1. Installazione tramite HACS
 
-Essendo un'integrazione personalizzata, dobbiamo prima aggiungerla a HACS:
+Essendo un'integrazione personalizzata, devi prima aggiungerla a HACS:
 
-1. Vai su **HACS → Integrazioni**  
-2. Clicca sui **tre punti** (in alto a destra)  
-3. Seleziona **Repository personalizzati**  
-4. Aggiungi questo repository: `https://github.com/Javisen/proxmox_sensors/`
-5. In **Categoria**, seleziona `Integrazione`  
-6. Installala e **riavvia Home Assistant**
+1. Vai su **HACS → Integrazioni**
+2. Fai clic sui **tre puntini** (in alto a destra)
+3. Seleziona **Repository personalizzati**
+4. Aggiungi questo repository:
+   `https://github.com/Javisen/proxmox_sensors/`
+5. In **Categoria**, seleziona `Integrazione`
+6. Installa l'integrazione e **riavvia Home Assistant**
 
 ---
 
-## 2. Configurazione dell'Integrazione
+## 2. Aggiungere l'integrazione
 
 Dopo il riavvio:
 
-1. Vai su **Impostazioni → Dispositivi e Servizi**  
-2. Clicca su **Aggiungi integrazione**  
+1. Vai su **Impostazioni → Dispositivi e Servizi**
+2. Fai clic su **Aggiungi integrazione**
 3. Cerca **Proxmox Extended Sensors**
 
 ---
 
-## 3. Dati di Connessione
-
-Il modulo è semplice, ma ci sono dettagli importanti:
+## 3. Configurazione della connessione
 
 ### 🔹 Host
-- **In rete locale:** solo l'IP → `192.168.1.50`  
-*(Non aggiungere porta o http/https)*  
-- **Dall'esterno:** il tuo dominio → `proxmox.miodominio.com`  
-*(L'integrazione rileva automaticamente http/https)*
+- **Rete locale:** `192.168.1.50`
+- **Accesso esterno:** `proxmox.miodominio.com`
+
+> Non è necessario includere `http://` o `https://`. Viene rilevato automaticamente.
+
+---
 
 ### 🔹 Tipo di server
-- **PVE** → Proxmox Virtual Environment  
-- **PBS** → Proxmox Backup Server  
+- **CLUSTER** → Cluster Proxmox
+- **PVE** → Proxmox Virtual Environment
+- **PBS** → Proxmox Backup Server
+
+---
 
 ### 🔹 Metodo di autenticazione
-- **Login tradizionale** (solo PVE)  
-- **Token API** (obbligatorio per PBS)
+
+- **Utente + password** → solo su PVE e Cluster
+- **Token API** → Obbligatorio su PBS
 
 ---
 
-## 🔐 Opzione A: Accesso con Utente (senza Token)
-
-Valida solo per **PVE**.
+## 🔐 Opzione A: Utente e password (solo PVE)
 
 Campi:
 
-- **Utente:** `utente@realm`  
-Esempi:  
-- `homeassistant@pve`  
-- `root@pam`  
-- **Password:** la password dell'utente  
-- **Nome Nodo:** nome del nodo (come appare in Proxmox)
+- **Utente:** `utente@realm`
+  - Esempio: `homeassistant@pve`
+- **Password:** password dell'utente
+
+> 💡 Dalla V3, il nodo viene rilevato automaticamente. Non è necessario inserirlo manualmente.
 
 ---
 
-## 🔐 Opzione B: Accesso con Token (consigliato e obbligatorio per PBS)
+## 🔐 Opzione B: Token API (raccomandato)
 
 Campi:
 
-- **Utente:** `utente@realm`  
-- **token_id:** solo il nome del token → `ha-token`  
-*(Non inserire `utente@pve!token`)*  
-- **Token_secret:** il Secret generato da Proxmox  
+- **Utente:** `utente@realm`
+- **ID Token:** solo il nome → `ha-token`
+- **Segreto Token:** il segreto generato in Proxmox
+
+> ⚠️ Non utilizzare il formato `utente@pve!token`
 
 ---
 
-## ✅ Selezione delle Entità (solo in PVE)
+## 🧠 Selezione delle risorse (PVE)
 
-Dopo la connessione, l'integrazione scannerizzerà il tuo server e potrai scegliere cosa monitorare:
+Dopo la connessione, l'integrazione rileverà automaticamente le risorse disponibili.
 
-- **VM**  
-- **CT**  
-- **Dischi fisici**  
-- **Storage**
+Potrai selezionare:
 
-> [!TIP]  
-> Seleziona solo ciò di cui hai bisogno per mantenere Home Assistant pulito e veloce.
+- Macchine virtuali (VM)
+- Contenitori (CT)
+- Dischi fisici
+- Storage
 
----
-
-## 🧭 Guida Visiva di Installazione
-
-**Di seguito troverai una guida visiva completa del processo di configurazione, inclusi i metodi di accesso, la selezione delle risorse e i passaggi di configurazione.**
-
-<details>
-  <summary>🪪 Screenshot: Connessione al Server</summary>
-  <p align="center">
-    <img src="../../img/install/setup_pve_1.png" alt="Login Proxmox" width="600">
-  </p>
-  > Non usare "http://" o "https://". Lo gestiamo già per te.
-</details>
-
-<details>
-  <summary>🪪 Screenshot: Accesso tramite Utente e Password (solo PVE)</summary>
-  <p align="center">
-    <img src="../../img/install/access_passw.png" alt="Login Proxmox" width="600">
-  </p>
-  > Assicurati di usare il realm `pam` o `pve` in base alla configurazione dell'utente.
-</details>
-
-<details> 
-  <summary>🪪 Screenshot: Accesso tramite Utente e Token (PVE e PBS)</summary>
-  <p align="center">
-    <img src="../../img/install/access_token.png" alt="Login Proxmox" width="600">
-  </p>
-  **Nel campo Token_id inserire solo il nome del token**
-</details>
-
-<details>
-  <summary>⚙️ Screenshot: Selezione delle Risorse</summary>
-  <p align="center">
-    <img src="../../img/install/resources_select.png" alt="Login Proxmox" width="600">
-  </p>
-  *Nota: Seleziona i CT, VM e Storage che desideri aggiungere così come le opzioni*
-</details>
+> 💡 Seleziona solo il necessario per mantenere Home Assistant pulito ed efficiente.
 
 ---
 
-## ⚠️ Nota importante per PBS in ambienti condivisi (Tuxis, Hetzner, ecc.)
+## 🧭 Guida Visiva all'Installazione
 
-Se usi un PBS **gestito** o **multi‑tenant**, come Tuxis Free PBS:
+Di seguito è mostrato il processo completo con screenshot:
 
-- Non vedrai sensori hardware  
-- Non vedrai temperature  
-- Non vedrai dischi fisici  
-- Non vedrai metriche del nodo  
+<details>
+  <summary>🪪 Connessione al server</summary>
+  <p align="center">
+    <img src="../../img/install/setup_pve_1.png" alt="Connessione Proxmox" width="600">
+  </p>
+  <p align="center"><i>Non è necessario includere http/https.</i></p>
+</details>
+
+<details>
+  <summary>🪪 Accesso con utente e password (PVE)</summary>
+  <p align="center">
+    <img src="../../img/install/access_passw.png" alt="Accesso utente" width="600">
+  </p>
+  <p align="center"><i>Utilizza il realm corretto (pam o pve).</i></p>
+</details>
+
+<details>
+  <summary>🪪 Accesso con token (PVE e PBS)</summary>
+  <p align="center">
+    <img src="../../img/install/access_token.png" alt="Accesso con token" width="600">
+  </p>
+  <p align="center"><i>Inserisci solo il nome del token nell'ID Token.</i></p>
+</details>
+
+<details>
+  <summary>🧠 Selezione dei nodi (V3)</summary>
+  <p align="center">
+    <img src="../../img/install/node_select.png" alt="Selezione nodi" width="600">
+  </p>
+  <p align="center"><i>I nodi vengono rilevati automaticamente e possono essere selezionati manualmente.</i></p>
+</details>
+
+<details>
+  <summary>⚙️ Selezione delle risorse</summary>
+  <p align="center">
+    <img src="../../img/install/resources_select.png" alt="Selezione risorse" width="600">
+  </p>
+</details>
+
+---
+
+## ⚠️ Nota su PBS in ambienti gestiti
+
+Se utilizzi un PBS **gestito o multi-tenant** (Tuxis, Hetzner, ecc.):
+
+- Non avrai accesso ai sensori hardware
+- Non vedrai temperature né dischi fisici
+- Non ci saranno metriche del nodo
 
 Questo è normale perché:
 
-- Non hai accesso all'hardware reale  
-- Il provider nasconde l'infrastruttura  
-- Non hai permessi root  
-- Non puoi accedere al filesystem reale  
+- Non hai accesso all'hardware reale
+- Il fornitore restringe il sistema
+- Non esistono permessi di basso livello
 
-**Risultato:**  
-L'integrazione mostrerà solo sensori vuoti o nessun dato.  
-Nelle versioni future cercheremo di visualizzare metriche personalizzate del datastore.
+**Risultato:**
+Verranno visualizzati solo dati limitati del datastore.
+
+---

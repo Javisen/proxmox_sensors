@@ -1,4 +1,4 @@
-"""Node sensors for Proxmox (CPU, Memory, Tasks, and System)."""
+"""Node sensors for Proxmox Extended Sensors (CPU, Memory, Tasks, and System)."""
 
 from .base import ProxmoxBaseSensor
 from ..const import DOMAIN
@@ -39,12 +39,6 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
             icon = "mdi:cpu-64-bit"
             state_class = "measurement"
 
-        elif sensor_id == "wait":
-            name = "CPU Wait"
-            unit = "%"
-            icon = "mdi:timer-sand"
-            state_class = "measurement"
-
         elif sensor_id == "uptime":
             name = "Uptime"
             icon = "mdi:clock-outline"
@@ -63,36 +57,158 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
 
         elif sensor_id == "network_rx":
             name = "Network RX"
-            unit = "bytes"
+            unit = "kB/s"
             icon = "mdi:download-network"
             state_class = "measurement"
 
         elif sensor_id == "network_tx":
             name = "Network TX"
-            unit = "bytes"
+            unit = "kB/s"
             icon = "mdi:upload-network"
             state_class = "measurement"
 
         name = f"{name} ({node})"
-
         unique_id = f"proxmox_node_{node}_{sensor_id}"
+
         super().__init__(coordinator, sensor_id, name, unit, unique_id, node)
+
+        if sensor_id in ("network_rx", "network_tx"):
+            self._last_value = None
+            self._last_ts = None
 
         self._attr_icon = icon
         self._attr_state_class = state_class
 
     def _get_value(self):
+        # NETWORK RX
+        if self._sensor_id == "network_rx":
+            from time import time as time_now
+
+            current = self._get_network_total("rx")
+            current_ts = time_now()
+
+            if self._last_value is not None and self._last_ts is not None:
+                elapsed = current_ts - self._last_ts
+                if elapsed > 0:
+                    throughput = (current - self._last_value) / elapsed
+
+                    # save
+                    self._last_value = current
+                    self._last_ts = current_ts
+
+                    return round(max(throughput / 1024, 0), 2)
+
+            self._last_value = current
+            self._last_ts = current_ts
+            return 0
+
+        # NETWORK TX
+        if self._sensor_id == "network_tx":
+            from time import time as time_now
+
+            current = self._get_network_total("tx")
+            current_ts = time_now()
+
+            if self._last_value is not None and self._last_ts is not None:
+                elapsed = current_ts - self._last_ts
+                if elapsed > 0:
+                    throughput = (current - self._last_value) / elapsed
+
+                    # save
+                    self._last_value = current
+                    self._last_ts = current_ts
+
+                    return round(max(throughput / 1024, 0), 2)
+
+            self._last_value = current
+            self._last_ts = current_ts
+            return 0
+
         value = self.coordinator.data.get("node", {}).get(self._sensor_id)
         return format_node_sensor_value(self._sensor_id, value)
 
     @property
     def extra_state_attributes(self):
-        # Apply only to CPU sensor
-        if self._sensor_id != "cpu":
-            return {}
+        # NETWORK
+        if self._sensor_id in ("network_rx", "network_tx"):
+            direction = "rx" if self._sensor_id == "network_rx" else "tx"
+            key = "netin" if direction == "rx" else "netout"
 
-        node_data = self.coordinator.data.get("node", {})
-        return build_cpu_sensor_attributes(node_data)
+            data = self.coordinator.data
+            total = 0
+            per_guest = {}
+
+            for vm_id, vm in data.get("vms", {}).items():
+                if vm.get("node") == self._node:
+                    value = vm.get(key, 0) or 0
+                    total += value
+                    per_guest[vm.get("name", vm_id)] = value
+
+            for ct_id, ct in data.get("cts", {}).items():
+                if ct.get("node") == self._node:
+                    value = ct.get(key, 0) or 0
+                    total += value
+                    per_guest[ct.get("name", ct_id)] = value
+
+            def _format_bytes(num):
+                if num >= 1024**3:
+                    return f"{num / (1024**3):.2f} GB"
+                elif num >= 1024**2:
+                    return f"{num / (1024**2):.2f} MB"
+                elif num >= 1024:
+                    return f"{num / 1024:.2f} kB"
+                return f"{num} B"
+
+            per_guest_human = {
+                name: _format_bytes(value)
+                for name, value in sorted(
+                    per_guest.items(), key=lambda x: x[1], reverse=True
+                )
+            }
+
+            #  top 5
+            top_guests = dict(
+                sorted(per_guest.items(), key=lambda x: x[1], reverse=True)[:5]
+            )
+
+            top_guests_human = {
+                name: _format_bytes(value) for name, value in top_guests.items()
+            }
+
+            return {
+                "total": _format_bytes(total),
+                "total_bytes": total,
+                "per_guest": per_guest_human,
+                "top_guests": top_guests_human,
+                "top_guests_percent": {
+                    name: f"{(value / total * 100):.1f}%"
+                    for name, value in top_guests.items()
+                    if total > 0
+                },
+            }
+
+        if self._sensor_id == "cpu":
+            node_data = self.coordinator.data.get("node", {})
+            return build_cpu_sensor_attributes(node_data)
+
+        return {}
+
+    def _get_network_total(self, direction: str) -> int:
+        """Sum netin/netout from all VMs and CTs on this node."""
+        data = self.coordinator.data
+        total = 0
+
+        key = "netin" if direction == "rx" else "netout"
+
+        for vm in data.get("vms", {}).values():
+            if vm.get("node") == self._node:
+                total += vm.get(key, 0) or 0
+
+        for ct in data.get("cts", {}).values():
+            if ct.get("node") == self._node:
+                total += ct.get(key, 0) or 0
+
+        return total
 
 
 class ProxmoxClusterTasksSensor(ProxmoxBaseSensor):
@@ -235,105 +351,6 @@ class ProxmoxNodeUpdatesSensor(ProxmoxBaseSensor):
             return "mdi:package-up"
 
         return "mdi:package-check"
-
-
-class ProxmoxClusterNotificationsSensor(ProxmoxBaseSensor):
-    """Sensor exposing parsed cluster notification settings."""
-
-    def __init__(self, coordinator, node):
-        super().__init__(
-            coordinator,
-            "cluster_notifications",
-            "Cluster Notifications",
-            None,
-            f"p_cluster_notifications_{node}",
-            node,
-        )
-
-    def _get_value(self):
-        data = self.coordinator.data.get("cluster_notifications", {})
-        value = data.get("package_updates")
-
-        if not value or value in ("unknown", "not_configured"):
-            return "Not configured"
-
-        return value
-
-    @property
-    def icon(self):
-        value = self._get_value()
-
-        if value == "Not configured":
-            return "mdi:bell-off"
-        if value == "always":
-            return "mdi:bell-ring"
-        if value == "auto":
-            return "mdi:bell-cog"
-        if value == "never":
-            return "mdi:bell-off"
-
-        return "mdi:bell"
-
-    @property
-    def extra_state_attributes(self):
-        data = self.coordinator.data.get("cluster_notifications", {})
-        return {
-            "package_updates": data.get("package_updates"),
-            "replication": data.get("replication"),
-            "fencing": data.get("fencing"),
-            "target_package_updates": data.get("target_package_updates"),
-            "target_package_updates_type": data.get("target_package_updates_type"),
-            "target_package_updates_server": data.get("target_package_updates_server"),
-            "target_package_updates_origin": data.get("target_package_updates_origin"),
-        }
-
-
-class ProxmoxPackageUpdatesModeSensor(ProxmoxBaseSensor):
-    """Sensor exposing the configured package update notification mode."""
-
-    def __init__(self, coordinator, node):
-        super().__init__(
-            coordinator,
-            "package_updates_mode",
-            "Package Updates Mode",
-            None,
-            f"p_package_updates_mode_{node}",
-            node,
-        )
-
-    def _get_value(self):
-        data = self.coordinator.data.get("cluster_notifications", {})
-        value = data.get("package_updates")
-
-        if not value or value in ("unknown", "not_configured"):
-            return "Not configured"
-
-        return value
-
-    @property
-    def icon(self):
-        value = self._get_value()
-
-        if value == "Not configured":
-            return "mdi:package-variant-remove"
-        if value == "always":
-            return "mdi:package-variant-closed-check"
-        if value == "auto":
-            return "mdi:package-variant"
-        if value == "never":
-            return "mdi:package-variant-closed-remove"
-
-        return "mdi:package-variant-closed-alert"
-
-    @property
-    def extra_state_attributes(self):
-        data = self.coordinator.data.get("cluster_notifications", {})
-        return {
-            "target_package_updates": data.get("target_package_updates"),
-            "target_package_updates_type": data.get("target_package_updates_type"),
-            "target_package_updates_server": data.get("target_package_updates_server"),
-            "target_package_updates_origin": data.get("target_package_updates_origin"),
-        }
 
 
 class ProxmoxNodesSensor(CoordinatorEntity, SensorEntity):
@@ -502,6 +519,101 @@ class ProxmoxNodeScoreSensor(ProxmoxBaseSensor):
         return {
             "interpretation": "Lower is better",
             "state": classify_node_score(score),
+        }
+
+
+class ProxmoxNodeMountedDisksSensor(ProxmoxBaseSensor):
+    """Sensor showing mounted vs unmounted disks for a node."""
+
+    def __init__(self, coordinator, node):
+        super().__init__(
+            coordinator,
+            "mounted_disks",
+            "Mounted Disks",
+            None,
+            f"mounted_disks_{node}",
+            node,
+        )
+
+    def _get_disk_name(self, disk):
+        name = disk.get("dev") or disk.get("devpath")
+        if not name:
+            return None
+
+        name = str(name).strip()
+        if not name:
+            return None
+
+        return name.split("/")[-1]
+
+    def _get_mount_data(self):
+        mounts = self.coordinator.data.get("mounts", {})
+        if not isinstance(mounts, dict):
+            return [], []
+
+        mounted = mounts.get("mounted", [])
+        unmounted = mounts.get("unmounted", [])
+
+        mounted_disks = [
+            disk["name"]
+            for disk in mounted
+            if isinstance(disk, dict) and disk.get("name")
+        ]
+        unmounted_disks = [
+            disk["name"]
+            for disk in unmounted
+            if isinstance(disk, dict) and disk.get("name")
+        ]
+
+        mounted_disks.sort()
+        unmounted_disks.sort()
+
+        return mounted_disks, unmounted_disks
+
+    def _get_value(self):
+        mounted_disks, _ = self._get_mount_data()
+        return len(mounted_disks)
+
+    @property
+    def extra_state_attributes(self):
+        mounted_disks, unmounted_disks = self._get_mount_data()
+        mounted_count = len(mounted_disks)
+        total_disks = mounted_count + len(unmounted_disks)
+
+        mounts = self.coordinator.data.get("mounts", {})
+        mount_points_raw = mounts.get("mount_points", [])
+
+        mount_points = [
+            f"{m.get('source')} → {m.get('target')}"
+            for m in mount_points_raw
+            if m.get("source") and m.get("target")
+        ]
+
+        return {
+            "mounted_disks": mounted_disks,
+            "unmounted_disks": unmounted_disks,
+            "total_disks": total_disks,
+            "mounted_count": mounted_count,
+            "missing_mounts": len(unmounted_disks) > 0,
+            "all_mounted": len(unmounted_disks) == 0,
+            "mount_points": mount_points,
+            "mount_points_count": len(mount_points),
+            "network_mounts": [m for m in mount_points if "//" in m or ":" in m],
+            "local_mounts": [m for m in mount_points if m.startswith("/dev")],
+        }
+
+    @property
+    def icon(self):
+        _, unmounted_disks = self._get_mount_data()
+        return "mdi:alert-circle" if unmounted_disks else "mdi:harddisk"
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, f"mounted_disks_{self._node}")},
+            "name": f"6. Mounted Disks: {self._node}",
+            "manufacturer": "Proxmox",
+            "model": "Mounted Disks",
         }
 
 

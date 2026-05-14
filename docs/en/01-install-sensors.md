@@ -2,7 +2,7 @@
 
 This guide explains how to prepare the Proxmox node to expose hardware data and allow Home Assistant to obtain temperatures, physical sensors, and SMART disk attributes.
 
-This data is used by the integration to provide **advanced monitoring and System Insight (V3)**.
+This data is used by the integration to provide **advanced monitoring and System Insight (V3/V4)**.
 
 ---
 
@@ -67,27 +67,30 @@ Create the service file:
 ```bash
 cat <<EOF > /etc/systemd/system/pve-sensors.service
 [Unit]
-Description=PVE Sensors API
+Description=PVE Sensors API (User Mode)
 After=network.target
-StartLimitIntervalSec=60
-StartLimitBurst=5
 
 [Service]
 ExecStart=/usr/bin/python3 /usr/local/bin/pve-sensors-api.py
 Restart=always
 RestartSec=10s
-User=root
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOF
 
 ```
 
 5.3. **Activation**
 
+```bash
 systemctl daemon-reload
 systemctl enable --now pve-sensors.service
+```
 
 5.4. **Final verification**
 Open in your browser:

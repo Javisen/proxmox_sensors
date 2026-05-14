@@ -1,9 +1,4 @@
-"""Utilities for stable guest keys across cluster nodes.
-
-Proxmox VMIDs can collide across different nodes. This module defines helpers
-to build and match a node-aware guest key (``node:vmid``) so coordinator data
-and entities can reference the correct VM/CT instance.
-"""
+"""Utilities for stable guest keys across cluster nodes"""
 
 from __future__ import annotations
 

@@ -1,10 +1,9 @@
-"""Binary sensors for Proxmox."""
+"""Binary sensors for Proxmox Extended Sensors."""
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.binary_sensor import BinarySensorEntity
 
 from .const import DOMAIN
-from .logic.cluster_notifications import is_notification_enabled
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -71,7 +70,6 @@ class ProxmoxNodeOverloadedBinarySensor(CoordinatorEntity, BinarySensorEntity):
         )
 
         reason = []
-
         if cpu_percent > 85:
             reason.append("CPU high")
         if mem_percent > 90:
@@ -102,10 +100,8 @@ class ProxmoxNodeDiskOverloadedBinarySensor(CoordinatorEntity, BinarySensorEntit
     @property
     def is_on(self):
         wait = self.coordinator.data.get("node", {}).get("wait", 0)
-
         percent = wait * 100 if isinstance(wait, (int, float)) else 0
-
-        return percent > 10  # umbral crítico
+        return percent > 10
 
     @property
     def icon(self):
@@ -114,9 +110,7 @@ class ProxmoxNodeDiskOverloadedBinarySensor(CoordinatorEntity, BinarySensorEntit
     @property
     def extra_state_attributes(self):
         wait = self.coordinator.data.get("node", {}).get("wait", 0)
-
         percent = wait * 100 if isinstance(wait, (int, float)) else 0
-
         return {
             "io_wait_percent": round(percent, 2),
             "threshold": 10,
@@ -149,7 +143,7 @@ class ProxmoxNodeStressedBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
         try:
             load1 = float(load[0]) if len(load) > 0 else 0
-        except:
+        except Exception:
             load1 = 0
 
         cores = cpuinfo.get("cores") or cpuinfo.get("cpus") or 1
@@ -159,46 +153,17 @@ class ProxmoxNodeStressedBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self):
         cpu, io_wait, load1, cores = self._get_metrics()
-
         return cpu > 85 or io_wait > 10 or load1 > cores
 
     @property
     def extra_state_attributes(self):
         cpu, io_wait, load1, cores = self._get_metrics()
-
         return {
             "cpu": round(cpu, 2),
             "io_wait": round(io_wait, 2),
             "load_1m": round(load1, 2),
             "cores": cores,
             "load_ratio": round(load1 / cores, 2) if cores else None,
-        }
-
-
-class ProxmoxReplicationEnabledBinarySensor(CoordinatorEntity, BinarySensorEntity):
-    """Binary sensor showing whether cluster replication notifications are enabled."""
-
-    def __init__(self, coordinator, node, entry_id):
-        super().__init__(coordinator)
-        self._node = node
-        self._entry_id = entry_id
-
-        self._attr_name = f"{node} Replication Enabled"
-        self._attr_unique_id = f"{entry_id}_replication_enabled_{node}"
-        self._attr_icon = "mdi:source-branch-sync"
-
-    @property
-    def is_on(self):
-        data = self.coordinator.data.get("cluster_notifications", {})
-        return is_notification_enabled(data.get("replication"))
-
-    @property
-    def extra_state_attributes(self):
-        data = self.coordinator.data.get("cluster_notifications", {})
-        return {
-            "replication": data.get("replication"),
-            "package_updates": data.get("package_updates"),
-            "fencing": data.get("fencing"),
         }
 
 
@@ -211,24 +176,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
     node = entry.data.get("node")
     server_type = entry.data.get("platform_type", "PVE")
 
-    if node:
+    if node and server_type == "PVE":
         entities.append(
             ProxmoxNodeOverloadedBinarySensor(coordinator, node, entry.entry_id)
         )
-
         entities.append(
             ProxmoxNodeDiskOverloadedBinarySensor(coordinator, node, entry.entry_id)
         )
-
         entities.append(
             ProxmoxNodeStressedBinarySensor(coordinator, node, entry.entry_id)
         )
-
-        if server_type == "PVE":
-            entities.append(
-                ProxmoxReplicationEnabledBinarySensor(
-                    coordinator, node, entry.entry_id
-                )
-            )
 
     async_add_entities(entities)

@@ -6,7 +6,7 @@ import logging
 
 from .base import BaseNotifier
 from .factory import create_notifier
-from .models import NotificationEndpoint
+from .models import NotificationEndpoint, NotificationEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,14 +43,20 @@ class NotificationManager:
 
         return notifiers
 
-    async def send_all(self, title: str, message: str) -> None:
-        """Send a notification to every initialized backend."""
+    async def send_all(self, events: list[NotificationEvent]) -> None:
+        """Send every processed event through every initialized backend."""
+        for event in events:
+            await self.send_event(event)
+
+    async def send_event(self, event: NotificationEvent) -> None:
+        """Send a processed event to every initialized backend."""
         for endpoint, notifier in self._notifiers:
             try:
-                await notifier.send(title, message)
+                await notifier.send(event.title, event.message)
             except Exception as err:
                 _LOGGER.exception(
-                    "Failed to send notification through '%s': %s",
+                    "Failed to send %s notification through '%s': %s",
+                    event.source,
                     endpoint.name,
                     err,
                 )

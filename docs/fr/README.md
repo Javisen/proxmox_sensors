@@ -1,31 +1,31 @@
 # 📚 Documentation et Guides
 
-Pour garantir une configuration sans problèmes, veuillez suivre ces guides étape par étape :
+Ces guides couvrent les étapes nécessaires pour configurer correctement l'intégration et profiter de toutes ses fonctionnalités.
 
 ---
 
 ## 🌡️ [01. Configuration des Capteurs Matériels](01-install-sensors.md)
-Comment installer et configurer **lm-sensors** sur votre nœud Proxmox afin d’activer la surveillance des températures et des ventilateurs.
+Comment installer et configurer **lm-sensors** sur votre nœud Proxmox pour activer la surveillance de la température et des ventilateurs.
 
 ---
 
 ## 🔑 [02. Configuration de Proxmox](02-proxmox-config.md)
-Comment créer un **utilisateur** et un **API Token** sécurisés dans Proxmox (PVE et PBS) avec les permissions minimales nécessaires.
+Comment créer un **utilisateur** et un **jeton API** sécurisés dans Proxmox (PVE et PBS) avec les autorisations minimales nécessaires.
 
 ---
 
-## ⚙️ [03. Connexion de l’Intégration (PVE et PBS)](03-login-pve-pbs.md)
-Guide à travers le processus de configuration initiale dans Home Assistant et la connexion à vos serveurs.
+## ⚙️ [03. Connexion de l'Intégration (PVE et PBS)](03-login-pve-pbs.md)
+Guide pas à pas pour connecter l'intégration à vos serveurs depuis Home Assistant.
 
 ---
 
 ## ❓ [04. Foire Aux Questions et Dépannage](04-faq.md)
-Questions fréquentes, problèmes connus et comment les résoudre.
+Problèmes courants, questions fréquentes et comment les résoudre.
 
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int.png" alt="Proxmox Extended Sensors Logo" width="600"/>
+  <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int_v4.png" alt="Logo Proxmox Extended Sensors" width="600"/>
 </p>
 
 ---
@@ -34,371 +34,240 @@ Questions fréquentes, problèmes connus et comment les résoudre.
 
 ## Introduction
 
-**Proxmox Extended Sensors est l’intégration la plus complète, efficace et avancée pour Home Assistant, conçue pour offrir un contrôle réel et une surveillance approfondie de Proxmox VE et Proxmox Backup Server (PBS).**
+**Proxmox Extended Sensors est une intégration pour Home Assistant conçue pour fournir une surveillance avancée et un contrôle complet de Proxmox VE et de Proxmox Backup Server (PBS).**
 
-Cette intégration va bien au‑delà de la simple visualisation de données : elle offre une **visibilité totale** de votre infrastructure et ajoute de **véritables capacités de contrôle**, vous permettant de gérer les nœuds, machines virtuelles, conteneurs, disques, datastores et tâches PBS directement depuis Home Assistant.
+Contrairement aux solutions basées uniquement sur des métriques, cette intégration introduit une approche centrée sur les **informations utiles (insight)** , permettant de comprendre non seulement ce qui se passe dans le système, mais aussi comment il fonctionne réellement.
 
-Contrairement à d’autres solutions, Proxmox Extended Sensors est construit avec une approche professionnelle :
-
-- **Surveillance avancée** du matériel, des VMs, CTs, disques et PBS.  
-- **Actions de contrôle complètes** (démarrer, arrêter, éteindre, redémarrer, réinitialiser, mettre en pause, hiberner…).  
-- **Services de sauvegarde entièrement intégrés**, pour des backups individuels ou massifs.  
-- **Compatibilité totale avec PBS**, incluant la déduplication et la nomenclature automatique.  
-- **Authentification sécurisée basée sur des Tokens**.  
-- **Structure propre et organisée** des entités et appareils.  
-- **Utilisation minimale des ressources** grâce à un polling optimisé.
-
-Les sauvegardes créées depuis Home Assistant s’intègrent parfaitement à celles créées depuis Proxmox VE, utilisant des noms identifiables tels que :  
-**HA-{{vmid}}-{{guestname}}**  
-et conservent **tous les avantages de PBS**, y compris la déduplication et la compatibilité avec les chaînes de sauvegarde existantes.
-
-En résumé, cette intégration transforme Home Assistant en un **véritable panneau de contrôle Proxmox**, combinant surveillance détaillée, automatisation avancée et contrôle total de l’infrastructure.
+Elle offre une visibilité complète de l'infrastructure et ajoute des capacités de contrôle direct sur les nœuds, les machines virtuelles, les conteneurs, le stockage et les services de sauvegarde.
 
 ---
 
-## 🧩 Versions Compatibles
+## 🧠 System Insight (V3/V4)
 
-- Proxmox VE 7.x / 8.x / 9.x  
-- Proxmox Backup Server 3.x / 4.x  
-- Home Assistant 2024.x ou supérieur
+À partir de la version 3, l'intégration est passée d'une collection de métriques techniques à un système d'observabilité orienté infrastructure.
+
+V4 introduit des capteurs capables d'interpréter l'état global du nœud et de transformer des métriques complexes en informations utiles et exploitables :
+
+- **Nœud Proxmox** → état global du nœud (`Excellent`, `Warning`, `Critical`, etc.) avec attributs d'infrastructure enrichis
+- **Score du nœud** → évaluation numérique des performances et de la santé générale du système
+- **Charge moyenne (1m / 5m / 15m)** → charge réelle de l'hôte
+- **Attente E/S** → détection de la pression et de la saturation du disque
+- **Utilisation CPU par cœur** → disponible pour les nœuds, les VM et les conteneurs
+- **Télémétrie réseau du nœud** → calcul intelligent du trafic RX/TX agrégé depuis les VM et les CT
+- **Informations avancées de stockage** → état, capacité et métriques détaillées des disques physiques et des stockages
+
+Ces capteurs permettent de détecter les goulots d'étranglement, d'identifier la dégradation du système et de construire des automatisations beaucoup plus intelligentes sans nécessiter d'outils externes supplémentaires.
 
 ---
 
-## 📑 Table des Matières
+## 🔍 Principales capacités de V4
 
-- [Fonctionnalités Clés](#-caractéristiques-clé-v200)  
-- [État et Performance du Nœud](#-état-et-performance-du-nœud)  
-- [Disques et SMART](#-disques-et-smart)  
-- [Machines Virtuelles (QEMU)](#-machines-virtuelles-qemu)  
-- [Conteneurs (LXC)](#-conteneurs-lxc)  
-- [Services de Sauvegarde](#-services-de-sauvegarde-vms-et-cts)  
-- [Proxmox Backup Server (PBS)](#-proxmox-backup-server-pbs)  
-- [Actions de Contrôle (PVE et PBS)](#-actions-de-contrôle-pve-et-pbs)  
-- [Installation](#-installation)  
-- [Guide Visuel de Configuration](#-guide-visuel-de-configuration)  
+- Surveillance globale du cluster Proxmox
+- Détection avancée des disques montés (CIFS/NFS/local)
+- Télémétrie intelligente du réseau et du stockage
+- Capteurs agrégés de santé et d'infrastructure
+
+### Surveillance complète de :
+
+- Nœuds
+- Machines virtuelles (QEMU)
+- Conteneurs (LXC)
+- Disques et stockage
+- Proxmox Backup Server (PBS)
+
+### Fonctionnalités avancées
+
+- Actions de contrôle depuis Home Assistant
+- Services de sauvegarde intégrés
+- Compatibilité totale avec PBS (incluant la déduplication)
+- Authentification sécurisée par jetons
+- Structure d'entités propre et cohérente
+- Mises à jour optimisées et faible consommation de ressources
+
+---
+
+## 🧩 Versions supportées
+
+- Proxmox VE 7.x / 8.x / 9.x
+- Compatible avec Linux Kernel 6.x / 7.x
+- Proxmox Backup Server 3.x / 4.x
+- Home Assistant 2024.x ou ultérieur
+
+---
+
+## 📑 Table des matières
+
+- [Fonctionnalités clés](#-fonctionnalités-clés-v400)
+- [État et performance du nœud](#-état-et-performance-du-nœud)
+- [Disques et SMART](#-disques-et-smart)
+- [Machines virtuelles (QEMU)](#-machines-virtuelles-qemu)
+- [Conteneurs (LXC)](#-conteneurs-lxc)
+- [Services de sauvegarde](#-services-de-sauvegarde-vms-et-cts)
+- [Proxmox Backup Server (PBS)](#-proxmox-backup-server-pbs)
+- [Actions de contrôle (PVE et PBS)](#-actions-de-contrôle-pve-et-pbs)
+- [Installation](#-installation)
+- [Guide visuel de configuration](#-guide-visuel-de-configuration)
 - [Contributions](#-contributions-et-communauté)
 
 ---
 
-<details>
-  <summary>🖼️ Aperçu du Dashboard</summary>
-  <p align="center">
-  <img src="/img/Dashboard.png" alt="Login Proxmox">
-  </p>
-  *Exemple d’un dashboard moderne utilisant **Card-Mod** (Mode Sombre) et nos capteurs structurés :*
-</details>
+## 🔥 Fonctionnalités clés de V4
+
+### ⚙️ Configuration améliorée
+
+- Découverte automatique des nœuds
+- Sélection manuelle optionnelle
+- Configuration plus simple et guidée
+- Compatibilité avec les jetons API (PVE/PBS)
+- Détection intelligente des autorisations limitées
 
 ---
 
-## 🔥 Fonctionnalités Clés (v2.0.0)
+### 🌐 Surveillance du cluster (NOUVEAU)
 
-### 🌡️ Surveillance Matérielle Avancée (PVE et PBS)
-
-- **Températures en temps réel :** cœurs CPU, VRM, chipset, NVMe/SSD/HDD.  
-- **Capteurs mécaniques :** vitesses des ventilateurs (RPM), tensions et autres capteurs de la carte mère.  
-- **Filtrage intelligent :** seules les entités avec données valides sont créées pour garder votre système propre.  
-  > Nécessite `lm-sensors` sur l’hôte Proxmox.
-
----
-
-### 🧠 État et Performance du Nœud
-
-- Utilisation CPU, I/O wait, load average.  
-- RAM totale/utilisée/libre et pourcentage.  
-- Temps de fonctionnement (uptime) et version du kernel/PVE.  
-- Capteurs réseau RX/TX pour le nœud, les VMs et les conteneurs.
-
-<details>
-  <summary>🔳 Attributs du Nœud</summary>
-  <p align="center">
-    <img src="../../img/pve/node_attr.png" alt="Attributs du Nœud" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>⭕ Contrôles du Nœud</summary>
-  <p align="center">
-    <img src="../../img/pve/node_controls.png" alt="Contrôles du Nœud" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🌡️ Température CPU</summary>
-  <p align="center">
-    <img src="../../img/pve/cpu_temp_attr.png" alt="Température CPU" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🌡️ Température du Chipset</summary>
-  <p align="center">
-    <img src="../../img/pve/chipset_temp.png" alt="Température Chipset" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>⏳ CPU I/O Wait</summary>
-  <p align="center">
-    <img src="../../img/pve/cpu_wait.png" alt="CPU I/O Wait" width="600">
-  </p>
-</details>
+- Capteurs globaux du cluster Proxmox
+- État des sauvegardes et des tâches échouées
+- Nœuds en ligne/hors ligne
+- Utilisation agrégée du CPU et de la RAM
+- Comptage global des VM et des CT
 
 ---
 
-### 💾 Disques & SMART
+### 💽 Disques montés et stockage (NOUVEAU)
 
-- Capteurs de disques physiques regroupés comme appareils dédiés.  
-- Espace total/utilisé, niveau d’usure (NVMe wear level) et plus.  
-- Attributs SMART pour HDD/SSD/NVMe (si disponibles).  
-- Capteurs de température dédiés selon le type de disque (SATA, NVMe, etc.).
-
-<details>
-  <summary>💾 Capteurs de Disque</summary>
-  <p align="center">
-    <img src="../../img/pve/disks_sensors.png" alt="Capteurs de Disque" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🩺 Attributs SMART HDD/SSD</summary>
-  <p align="center">
-    <img src="../../img/pve/disk_hd_smart_attr.png" alt="SMART HDD" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🩺 Attributs SMART NVMe</summary>
-  <p align="center">
-    <img src="../../img/pve/disk_nvme_smart_attr.png" alt="SMART NVMe" width="600">
-  </p>
-</details>
+- Détection automatique des disques montés
+- Compatibilité avec CIFS / SMB et NFS
+- Capteurs d'intégrité et de montages manquants
+- Exclusion intelligente de tmpfs et des pseudo-montages
+- Métriques détaillées d'utilisation et de capacité
 
 ---
 
-### 🖥️ Machines Virtuelles (QEMU)
+### 🌡️ Surveillance matérielle avancée
 
-- État, utilisation CPU, RAM utilisée/totale, disque utilisé/total.  
-- Réseau RX/TX par VM.  
-- Uptime et capteurs d’information de base.  
-- Organisation propre des appareils par VM dans Home Assistant.
+- Températures en temps réel (CPU, VRM, chipset, disques)
+- Capteurs de ventilateurs et de tensions
+- Filtrage intelligent des capteurs valides
+- Capteurs de température unifiés (CPU + NVMe)
+- Compatibilité avancée Intel / AMD / ACPI / NVMe
 
-<details>
-  <summary>🖥️ Contrôles et Capteurs de VM</summary>
-  <p align="center">
-    <img src="../../img/pve/vm_control.png" alt="Contrôle VM" width="600">
-  </p>
-</details>
+> Nécessite `lm-sensors` sur l'hôte Proxmox
+
+---
+
+### 🧠 État et performance du nœud
+
+- CPU, RAM, uptime, noyau et version PVE
+- Surveillance réseau (RX/TX)
+- Tâches et état du système
+- Métriques avancées de charge et de performance
+- Score du nœud et état global de l'infrastructure
+
+---
+
+### 💾 Disques et SMART
+
+- Capteurs regroupés par disque physique
+- Espace total/utilisé et métriques avancées
+- Attributs SMART (HDD, SSD, NVMe)
+- Températures par type de disque
+- Métriques NVMe avancées et état de santé
+
+---
+
+### 🖥️ Machines virtuelles (QEMU)
+
+- État, CPU, mémoire et disque
+- Réseau RX/TX
+- Informations de base et uptime
+- Utilisation CPU par cœur
+- Actions de contrôle depuis Home Assistant
 
 ---
 
 ### 📦 Conteneurs (LXC)
 
-- État, utilisation CPU, RAM utilisée/totale, disque utilisé/total.  
-- Réseau RX/TX par conteneur.  
-- Uptime et capteurs d’information de base.  
-- Même organisation propre que pour les VMs.
-
-<details>
-  <summary>📦 Contrôles et Capteurs de Conteneurs</summary>
-  <p align="center">
-    <img src="../../img/pve/ct_control.png" alt="Contrôle CT" width="600">
-  </p>
-</details>
+- État, CPU, mémoire et disque
+- Réseau RX/TX
+- Informations de base et uptime
+- Utilisation CPU par cœur
+- Actions de contrôle depuis Home Assistant
 
 ---
 
-## 💾 Services de Sauvegarde (VMs et CTs)
+## 💾 Services de sauvegarde (VM et CT)
 
-L’intégration inclut deux puissants services de sauvegarde permettant de créer **des backups Proxmox directement depuis Home Assistant**, totalement compatibles avec Proxmox VE et Proxmox Backup Server (PBS).
+L'intégration permet de créer des sauvegardes directement depuis Home Assistant, entièrement compatibles avec Proxmox VE et PBS.
 
----
+### 🟦 Sauvegarde individuelle
 
-### 🟦 1. Service de Sauvegarde Individuelle  
-Crée une sauvegarde d’une VM ou d’un CT spécifique.
+- Supporte plusieurs ID (séparés par des virgules)
+- Modes : snapshot / suspend / stop
+- Compression : zstd / gzip / lzo / none
+- Compatible avec PBS et la déduplication
 
-**Service :** `proxmox_sensors.create_vzdump_backup`
+### 🟩 Sauvegarde massive
 
-**Options disponibles :**
+- Sauvegarde de toutes les ressources d'un nœud
+- Contrôle de la concurrence et du timing
+- Idéal pour l'automatisation
+- Compatible avec les grandes infrastructures
 
-- **Nœud** – Sélectionne le nœud Proxmox.  
-- **Stockage de destination** – Tout stockage compatible avec les sauvegardes (local, NFS, PBS, etc.).  
-- **ID de VM/CT** – ID de la machine à sauvegarder.  
-- **Mode de sauvegarde :**  
-  - `snapshot`  
-  - `suspend`  
-  - `stop`  
-- **Compression :**  
-  - `zstd`  
-  - `gzip`  
-  - `lzo`  
-  - `none`
+Les sauvegardes sont automatiquement nommées comme suit :
 
-Les sauvegardes créées depuis Home Assistant sont automatiquement nommées :  
-**HA-{{vmid}}-{{guestname}}**
+```text
+HA-{{vmid}}-{{guestname}}
+```
 
-Cela garantit une identification facile tout en maintenant une **compatibilité totale avec les sauvegardes existantes de Proxmox**.
-
-<details>
-  <summary>📦 Service de Sauvegarde Individuelle</summary>
-  <p align="center">
-    <img src="../../img/pve/single_backup.png" alt="Service de Sauvegarde Individuelle" width="600">
-  </p>
-</details>
+Entièrement compatibles avec PBS, incluant la déduplication et les chaînes existantes.
 
 ---
 
-### 🟩 2. Service de Sauvegarde Massive  
-Effectue des sauvegardes de **toutes les VMs et/ou CTs** d’un nœud sélectionné.
+## 🗄️ Proxmox Backup Server (PBS)
 
-**Service :** `proxmox_sensors.backup_all`
+Surveillance avancée du datastore et des tâches :
 
-**Options disponibles :**
-
-- **Nœud** – Sélectionne le nœud à sauvegarder.  
-- **Stockage de destination** – Tout stockage compatible avec les sauvegardes.  
-- **Mode de sauvegarde :** snapshot / suspend / stop.  
-- **Compression :** zstd / gzip / lzo / none.  
-- **Nombre maximal de sauvegardes simultanées** – Contrôle l’exécution en parallèle.  
-- **Délai entre sauvegardes** – Secondes entre chaque sauvegarde.  
-- **Inclure les VMs** – Interrupteur (Oui/Non).  
-- **Inclure les CTs** – Interrupteur (Oui/Non).
-
-Ce service est idéal pour les sauvegardes nocturnes planifiées ou les routines de maintenance automatisées.
-
-<details>
-  <summary>📦 Service de Sauvegarde Massive</summary>
-  <p align="center">
-    <img src="../../img/pve/massive_backups.png" alt="Service de Sauvegarde Massive" width="600">
-  </p>
-</details>
+- Utilisation totale, libre et pourcentage
+- Taux de déduplication
+- État de la dernière sauvegarde
+- Erreurs et résumé des tâches
+- État du Garbage Collector
+- Informations détaillées des tâches
 
 ---
 
-### 🟧 Compatibilité PBS et Déduplication
+## 🎛️ Actions de contrôle (PVE & PBS)
 
-Les sauvegardes créées via ces services :
+**Nœud :**
+- Éteindre / Redémarrer / Wake-on-LAN
 
-- Sont stockées exactement comme celles créées depuis Proxmox VE  
-- Utilisent la même structure de noms et de métadonnées  
-- Supportent automatiquement la **déduplication PBS**  
-- S’intègrent parfaitement aux chaînes de sauvegardes existantes  
-- Apparaissent dans le datastore PBS avec une compatibilité totale  
+**Machines virtuelles :**
+- Démarrer / Arrêter / Éteindre / Redémarrer / Réinitialiser
+- Pause / Reprendre / Hiberner
 
-Aucune configuration spéciale n’est requise : PBS gère la déduplication et l’indexation exactement comme si la sauvegarde avait été créée depuis l’interface graphique ou la CLI de Proxmox.
+**Conteneurs :**
+- Démarrer / Arrêter / Éteindre / Redémarrer
 
----
-
-### 🗄️ Proxmox Backup Server (PBS)
-
-**Supervision avancée du datastore et des tâches :**
-
-- Utilisation du datastore (GB et %), total, utilisé et libre.  
-- Ratio de déduplication et nombre de sauvegardes.  
-- Heure, taille et état de la dernière sauvegarde.  
-- Erreurs de sauvegarde et résumé des tâches.  
-- État du Garbage Collector (GC) et capteurs associés.  
-- Dernière tâche : type, état, message et durée.
-
-<details>
-  <summary>🗄️ Vue d’ensemble du Datastore</summary>
-  <p align="center">
-    <img src="../../img/pbs/datastore.png" alt="Datastore" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🗄️ Serveur PBS</summary>
-  <p align="center">
-    <img src="../../img/pbs/pbs_server.png" alt="Serveur PBS" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🗄️ Détails des Tâches</summary>
-  <p align="center">
-    <img src="../../img/pbs/task.png" alt="Tâche PBS" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🗄️ État du Garbage Collector</summary>
-  <p align="center">
-    <img src="../../img/pbs/gc_status_attr.png" alt="État GC" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🗄️ Maintenance du Datastore</summary>
-  <p align="center">
-    <img src="../../img/pbs/datastore_maintenance.png" alt="Maintenance Datastore" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🗄️ Résumé de la Dernière Tâche</summary>
-  <p align="center">
-    <img src="../../img/pbs/last_task_stat.png" alt="Dernière Tâche" width="600">
-  </p>
-</details>
+**PBS :**
+- Garbage Collector
+- Élaguer (Prune)
+- Vérifier
+- Synchroniser
 
 ---
 
-## Actions de contrôle PBS :
+## 🎨 Organisation et structure
 
-- Exécuter **Garbage Collector (GC)**  
-- Exécuter **Prune**  
-- Exécuter **Verify**  
-- Exécuter **Sync**  
+- Capteurs automatiquement regroupés en :
+  1. Cluster
+  2. Nœud
+  3. Disques physiques
+  4. Machines virtuelles
+  5. Conteneurs
+  6. Stockage / Datastores
+  7. PBS et tâches
 
-<details>
-  <summary>🗄️ Maintenance du Datastore</summary>
-  <p align="center">
-    <img src="../../img/pbs/datastore_maintenance.png" alt="Maintenance Datastore" width="600">
-  </p>
-</details>
-
-<details>
-  <summary>🗄️ Dernière Tâche</summary>
-  <p align="center">
-    <img src="../../img/pbs/last_task_stat.png" alt="Dernière Tâche" width="600">
-  </p>
-</details>
-
----
-
-### 🎛️ Actions de Contrôle (PVE & PBS)
-
-**Contrôles du nœud :**
-
-- Éteindre le nœud  
-- Redémarrer le nœud  
-
-**Contrôles des machines virtuelles (QEMU) :**
-
-- Démarrer, Arrêter, Éteindre, Redémarrer, Reset  
-- Pause, Reprise, Hibernation  
-
-**Contrôles des conteneurs (LXC) :**
-
-- Démarrer, Arrêter, Éteindre, Redémarrer  
-
-**Contrôles PBS :**
-
-- GC, Prune, Verify, Sync (par datastore)
-
----
-
-### 🎨 Organisation Visuelle et Nommage
-
-- Les capteurs sont automatiquement regroupés en appareils logiques :
-  1. Nœud  
-  2. Disques physiques  
-  3. Machines virtuelles  
-  4. Conteneurs  
-  5. Stockages / Datastores  
-  6. Serveur PBS et tâches  
-
-- Nommage cohérent et clair pour garder les dashboards lisibles et évolutifs.
+- Noms cohérents et clairs pour faciliter les tableaux de bord et les automatisations
 
 ---
 
@@ -406,70 +275,75 @@ Aucune configuration spéciale n’est requise : PBS gère la déduplication et 
 
 ### 🔹 Via HACS (recommandé)
 
-1. Ouvre **HACS → Intégrations**  
-2. Clique sur les trois points (⋮) → **Custom repositories**  
-3. Ajoute ce dépôt :  
-   - URL : `https://github.com/Javisen/proxmox_sensors`  
-   - Catégorie : **Integration**  
-4. Recherche **“Proxmox Extended Sensors”** dans HACS et installe‑le  
-5. Redémarre Home Assistant  
-6. Va dans **Paramètres → Appareils & Services → Ajouter une intégration** et cherche **Proxmox Extended Sensors**
+1. Ouvrir **HACS → Intégrations**
+2. Ajouter un dépôt personnalisé
+3. Rechercher **Proxmox Extended Sensors**
+4. Installer et redémarrer Home Assistant
+5. Ajouter l'intégration depuis les paramètres
 
 ### 🔹 Installation manuelle
 
-1. Copie le dossier `custom_components/proxmox_sensors` dans :  
-   - `/config/custom_components/proxmox_sensors`  
-2. Redémarre Home Assistant  
-3. Ajoute l’intégration depuis **Paramètres → Appareils & Services**
+1. Copier dans `/config/custom_components/proxmox_sensors`
+2. Redémarrer Home Assistant
+3. Ajouter l'intégration
 
 ---
 
-## 🧭 Guide Visuel de Configuration
+## 🧭 Guide visuel de configuration
 
-Ci‑dessous, un guide visuel complet du processus de configuration, incluant les méthodes de connexion, la sélection des ressources et les étapes d’installation.
+Vous trouverez ci-dessous un parcours visuel complet du processus de configuration, incluant les méthodes d'accès, la sélection des ressources et les étapes d'installation.
 
 <details>
-  <summary>🪪 Connexion au Serveur</summary>
+  <summary>🪪 Connexion au serveur</summary>
   <p align="center">
     <img src="../../img/install/setup_pve_1.png" alt="Connexion Proxmox" width="600">
   </p>
-  > Pas besoin de saisir "http://" ou "https://". Nous le faisons automatiquement.
+  <p align="center"><i>Il n'est pas nécessaire d'inclure "http://" ou "https://". Cela est géré automatiquement.</i></p>
 </details>
 
 <details>
-  <summary>🪪 Connexion avec Nom d’utilisateur et Mot de passe (PVE uniquement)</summary>
+  <summary>🪪 Connexion avec nom d'utilisateur et mot de passe (PVE uniquement)</summary>
   <p align="center">
-    <img src="../../img/install/access_passw.png" alt="Connexion Proxmox" width="600">
+    <img src="../../img/install/access_passw.png" alt="Connexion nom d'utilisateur et mot de passe" width="600">
   </p>
-  > Assure‑toi d’utiliser le bon realm (`pam` ou `pve`).
+  <p align="center"><i>Assurez-vous d'utiliser le bon domaine (`pam` ou `pve`).</i></p>
 </details>
 
 <details> 
-  <summary>🪪 Connexion avec Utilisateur et Token (PVE et PBS)</summary>
+  <summary>🪪 Connexion avec utilisateur et jeton (PVE et PBS)</summary>
   <p align="center">
-    <img src="../../img/install/access_token.png" alt="Connexion Proxmox" width="600">
+    <img src="../../img/install/access_token.png" alt="Connexion par jeton" width="600">
   </p>
-  **Dans le champ Token_id, tu dois uniquement entrer le nom du token.**
+  <p align="center"><i>Dans le champ Token_id, vous devez uniquement saisir le nom du jeton.</i></p>
 </details>
 
 <details>
-  <summary>⚙️ Sélection des Ressources</summary>
+  <summary>🧠 Sélection des nœuds (V4)</summary>
   <p align="center">
-    <img src="../../img/install/resources_select.png" alt="Sélection des Ressources" width="600">
+    <img src="../../img/install/node_select.png" alt="Sélection des nœuds" width="600">
   </p>
-  *Note : sélectionne les CTs, VMs et Stockages que tu veux ajouter, ainsi que les options correspondantes.*
+  <p align="center"><i>Sélectionnez les nœuds détectés automatiquement ou définissez manuellement lesquels inclure.</i></p>
+</details>
+
+<details>
+  <summary>⚙️ Sélection des ressources</summary>
+  <p align="center">
+    <img src="../../img/install/resources_select.png" alt="Sélection des ressources" width="600">
+  </p>
+  <p align="center"><i>Sélectionnez les CT, VM et stockages que vous souhaitez inclure, ainsi que les options correspondantes.</i></p>
 </details>
 
 ---
 
-**Si tu apprécies cette intégration ou la trouves utile, pense à laisser une ⭐ sur GitHub.**  
-**Cela aide à la visibilité, motive le développement et soutient les futures fonctionnalités.**
-
-## 🤝 Contributions & Communauté
-
-Les contributions sont les bienvenues ! Tu peux ouvrir des issues ou des pull requests.  
-**[Voir le dépôt GitHub](https://github.com/Javisen/proxmox_sensors)**
+**Si cette intégration vous est utile, pensez à laisser une ⭐ sur GitHub.**
 
 ---
 
-<p align="center"><i>Maintenu par Javisen – Licence MIT</i></p>
+## 🤝 Contributions et communauté
+
+Les contributions sont les bienvenues. Vous pouvez ouvrir des issues ou des pull requests.
+Dépôt : https://github.com/Javisen/proxmox_sensors
+
+---
+
+<p align="center"><i>Maintenu par Javisen - Licence MIT</i></p>

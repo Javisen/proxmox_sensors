@@ -97,7 +97,7 @@ Du hast keinen Zugriff auf:
 
 ---
 
-## 🧠 System Insight (V3)
+## 🧠 System Insight (V3/V4)
 
 ### ❓ Was ist der Node Score?
 

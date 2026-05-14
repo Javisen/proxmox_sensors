@@ -79,15 +79,20 @@ Maak het servicebestand aan:
 ```bash
 cat <<EOF > /etc/systemd/system/pve-sensors.service
 [Unit]
-Description=PVE Sensors API
+Description=PVE Sensors API (User Mode)
 After=network.target
 
 [Service]
 ExecStart=/usr/bin/python3 /usr/local/bin/pve-sensors-api.py
 Restart=always
+RestartSec=10s
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOF
 ```
 

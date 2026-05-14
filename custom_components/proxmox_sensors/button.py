@@ -1,4 +1,4 @@
-"""Button entities for Proxmox Virtual Environment (PVE) and Proxmox Backup Server (PBS)."""
+"""Button entities for Proxmox Extended Sensors."""
 
 import asyncio
 import logging
@@ -180,9 +180,19 @@ class PBSBaseButton(CoordinatorEntity, ButtonEntity):
 
     def __init__(self, coordinator, client, datastore, command_name, command_display):
         super().__init__(coordinator)
+
+        clean_datastore = (
+            datastore.lower()
+            .replace("-", "_")
+            .replace(" ", "_")
+        )
+
         self._client = client
         self._datastore = datastore
-        self._sensor_entity_id = f"sensor.{datastore.lower()}_last_action"
+
+        # ONLY for HA entity_id safety
+        self._sensor_entity_id = f"sensor.{clean_datastore}_last_action"
+
         self._command_name = command_name
         self._command_display = command_display
 

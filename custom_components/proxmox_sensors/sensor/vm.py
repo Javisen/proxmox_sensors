@@ -1,4 +1,4 @@
-"""Virtual Machine sensors for Proxmox."""
+"""Virtual Machine sensors for Proxmox Extended Sensors."""
 
 from .base import ProxmoxBaseSensor
 from ..const import DOMAIN
@@ -93,13 +93,14 @@ class ProxmoxVMAttributeSensor(ProxmoxBaseSensor):
                 val = vm_data.get("cpu")
                 return round(float(val) * 100, 2) if val is not None else None
 
+            # Network GB
             if self._attr_key == "network_rx":
                 val = vm_data.get("netin")
-                return round(float(val) / (1024**2), 2) if val is not None else None
+                return round(float(val) / (1024**3), 2) if val is not None else None
 
             if self._attr_key == "network_tx":
                 val = vm_data.get("netout")
-                return round(float(val) / (1024**2), 2) if val is not None else None
+                return round(float(val) / (1024**3), 2) if val is not None else None
 
             keys = {
                 "memory_used": "mem",

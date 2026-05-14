@@ -11,33 +11,63 @@
       },
       "auth_method": {
         "title": "2. Authentication Method",
-        "description": "Select whether to use secure API Token. Required for PBS",
+        "description": "Select authentication method. API Tokens are required for PBS and recommended for PVE.",
         "data": {
           "use_token": "Use API Token (Recommended)"
         }
       },
-      "credentials": {
-        "title": "3. Access Credentials",
-        "description": "Enter the required details to connect to the server.",
+      "credentials_pve": {
+        "title": "3. Access Credentials — Proxmox VE",
+        "description": "Enter your PVE connection details.",
         "data": {
-          "user": "User (e.g., root@pam or admin@pve)",
+          "user": "User (e.g., root@pam)",
           "password": "Password",
           "token_id": "Token ID (without user@pve!)",
           "token_secret": "Token Secret",
-          "node": "Proxmox Node Name (PVE only)",
-          "enable_lm_sensors": "Monitor temperatures (lm-sensors)",
+          "auto_detect_node": "Auto-detect node from host IP",
+          "enable_lm_sensors": "Enable hardware sensors & temperatures",
+          "enable_cluster": "Enable cluster-wide monitoring",
           "verify_ssl": "Verify SSL Certificate"
         }
       },
+      "credentials_pbs": {
+        "title": "3. Access Credentials — Proxmox Backup Server",
+        "description": "Enter your PBS connection details.",
+        "data": {
+          "user": "User (e.g., admin@pbs)",
+          "password": "Password",
+          "token_id": "Token ID",
+          "token_secret": "Token Secret",
+          "verify_ssl": "Verify SSL Certificate"
+        }
+      },
+      "credentials_cluster": {
+        "title": "3. Access Credentials — Proxmox Cluster",
+        "description": "Enter credentials to connect to the cluster. Uses the same API as PVE (port 8006).",
+        "data": {
+          "user": "User (e.g., root@pam)",
+          "password": "Password",
+          "token_id": "Token ID (without user@pve!)",
+          "token_secret": "Token Secret",
+          "verify_ssl": "Verify SSL Certificate"
+        }
+      },
+      "select_node": {
+        "title": "4. Select Node",
+        "description": "Select the Proxmox node to monitor.",
+        "data": {
+          "node": "Node"
+        }
+      },
       "select_resources": {
-        "title": "4. Resource Selection",
-        "description": "Select which items you want to monitor. Only checked items will create entities in Home Assistant.",
+        "title": "5. Resource Selection",
+        "description": "Select which resources should be monitored and exposed as entities in Home Assistant.",
         "data": {
           "vms": "Virtual Machines (VM)",
           "cts": "Containers (LXC)",
           "storage": "Storage",
-          "enable_physical_disks": "Monitor Physical Disks",
-          "enable_node_controls": "Enable node control actions (shutdown/restart)"
+          "enable_physical_disks": "Enable physical disk monitoring",
+          "enable_node_controls": "Enable node power controls"
         }
       }
     },
@@ -47,28 +77,35 @@
       "unknown": "Unexpected error. Check Home Assistant logs."
     },
     "abort": {
-      "already_configured": "This node is already configured."
+      "already_configured": "This node is already configured.",
+      "no_data": "No cluster data received. Check your configuration.",
+      "cluster_no_options": "Cluster settings are managed from the PVE node configuration."
     }
   },
   "options": {
     "abort": {
-      "pbs_no_options": "This PBS server has no configurable options."
+      "pbs_no_options": "This PBS server has no configurable options.",
+      "cluster_no_options": "Cluster settings are managed from the PVE node configuration.",
+      "entry_not_loaded": "Integration not loaded yet, please try again."
     },
     "step": {
       "init": {
-        "title": "Proxmox Sensors Options",
-        "description": "Select which resources you want to continue monitoring on this node.",
+        "title": "Proxmox Extended Sensors — Options",
+        "description": "Configure monitoring and management options for this integration.",
         "data": {
           "vms": "Select Virtual Machines (VM)",
           "cts": "Select Containers (LXC)",
           "storage": "Select Storage",
-          "enable_lm_sensors": "Enable hardware sensors (lm-sensors)",
-          "enable_physical_disks": "Enable physical disk sensors",
-          "enable_smart_monitoring": "Enable SMART monitoring",
-          "enable_node_controls": "Enable node control actions",
+          "enable_lm_sensors": "Enable hardware sensors & temperatures",
+          "enable_physical_disks": "Enable physical disk monitoring",
+          "enable_smart_monitoring": "Enable SMART & NVMe health monitoring",
+          "enable_node_controls": "Enable node power controls",
           "enable_backup_progress": "Enable backup progress sensor",
           "enable_storage_list": "Enable storage list sensor",
           "enable_nodes_list": "Enable nodes list sensor",
+          "enable_cluster": "Enable cluster-wide monitoring",
+          "enable_pbs_node_controls": "Enable PBS node power controls",
+          "wol_mac": "Wake-on-LAN MAC address",
           "verify_ssl": "Verify SSL Certificate"
         }
       }
@@ -77,7 +114,6 @@
   "entity": {
     "sensor": {
       "cpu_usage": { "name": "CPU Usage" },
-      "cpu_wait": { "name": "CPU (I/O Wait)" },
       "uptime": { "name": "Uptime" },
       "kernel_version": { "name": "Kernel Version" },
       "pve_version": { "name": "PVE Version" },
