@@ -40,6 +40,9 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         super().__init__(coordinator, sensor_id, None, unit, unique_id, node)
         if self._is_cpu:
             self._attr_translation_key = "cpu_temperature"
+        elif not self._is_chipset:
+            # For non-CPU, non-chipset hardware sensors, use the key as name
+            self._attr_name = sensor_key.replace("_", " ").title()
 
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"
