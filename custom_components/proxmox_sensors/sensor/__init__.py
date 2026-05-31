@@ -317,7 +317,6 @@ async def async_setup_entry(
 
                     # Mark as primary
                     sensor._attr_translation_key = "chipset_temp"
-                    sensor._attr_name = "Chipset Temp"
 
                     if sensor.is_valid():
                         entities.append(sensor)

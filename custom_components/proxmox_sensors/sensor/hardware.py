@@ -28,18 +28,18 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         )
 
         if self._is_cpu:
-            name = f"CPU Temperature"
             unique_id = f"proxmox_cpu_temp_{node}"
             unit = "°C"
             sensor_id = "cpu_temperature"
         else:
-            name = sensor_key
             clean_id = self._key.replace(" ", "_").replace("-", "_")
             unique_id = f"proxmox_hw_{node}_{clean_id}"
             unit = "°C"
             sensor_id = sensor_key
 
-        super().__init__(coordinator, sensor_id, name, unit, unique_id, node)
+        super().__init__(coordinator, sensor_id, None, unit, unique_id, node)
+        if self._is_cpu:
+            self._attr_translation_key = "cpu_temperature"
 
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"

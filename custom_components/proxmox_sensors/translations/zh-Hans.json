@@ -518,10 +518,13 @@
         "name": "NVMe 温度"
       },
       "proxmox_node": {
-        "name": "Proxmox 节点：{node}"
+        "name": "节点状态"
       },
       "proxmox_storages": {
-        "name": "Proxmox 存储（{node}）"
+        "name": "存储"
+      },
+      "cpu_temperature": {
+        "name": "CPU 温度"
       }
     },
     "button": {

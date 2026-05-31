@@ -518,10 +518,13 @@
         "name": "NVMe Temperature"
       },
       "proxmox_node": {
-        "name": "Proxmox Node: {node}"
+        "name": "Node Status"
       },
       "proxmox_storages": {
-        "name": "Proxmox Storages ({node})"
+        "name": "Storages"
+      },
+      "cpu_temperature": {
+        "name": "CPU Temperature"
       }
     },
     "button": {
