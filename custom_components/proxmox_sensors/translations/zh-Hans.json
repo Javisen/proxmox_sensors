@@ -177,10 +177,10 @@
         "name": "网络发送"
       },
       "vm_memory_used": {
-        "name": "已用内存"
+        "name": "已用 RAM"
       },
       "vm_memory_total": {
-        "name": "内存总量"
+        "name": "RAM 总量"
       },
       "vm_disk_used": {
         "name": "已用磁盘"
@@ -198,10 +198,10 @@
         "name": "CPU 使用率"
       },
       "ct_memory_used": {
-        "name": "已用内存"
+        "name": "已用 RAM"
       },
       "ct_memory_total": {
-        "name": "内存总量"
+        "name": "RAM 总量"
       },
       "ct_disk_used": {
         "name": "已用磁盘"
@@ -330,6 +330,53 @@
             "name": "插槽"
           }
         }
+      }
+    },
+    "button": {
+      "ct_start": {
+        "name": "启动 {name}"
+      },
+      "ct_shutdown": {
+        "name": "关闭 {name}"
+      },
+      "ct_stop": {
+        "name": "停止 {name}"
+      },
+      "ct_reboot": {
+        "name": "重启 {name}"
+      },
+      "vm_start": {
+        "name": "启动 {name}"
+      },
+      "vm_shutdown": {
+        "name": "关闭 {name}"
+      },
+      "vm_stop": {
+        "name": "停止 {name}"
+      },
+      "vm_reboot": {
+        "name": "重启 {name}"
+      },
+      "vm_reset": {
+        "name": "重置 {name}"
+      },
+      "vm_pause": {
+        "name": "暂停 {name}"
+      },
+      "vm_hibernate": {
+        "name": "休眠 {name}"
+      },
+      "vm_resume": {
+        "name": "恢复 {name}"
+      },
+      "node_reboot": {
+        "name": "重启 {name}"
+      },
+      "node_shutdown": {
+        "name": "关闭 {name}"
+      },
+      "node_wake": {
+        "name": "唤醒 {name}"
       }
     }
   },

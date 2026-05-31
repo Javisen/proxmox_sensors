@@ -424,7 +424,8 @@ class ProxmoxBaseButton(CoordinatorEntity, ButtonEntity):
         self._guest_key = guest_key or make_guest_key(node, vmid)
 
         self._attr_unique_id = f"proxmox_{node}_{vmid}_{command}"
-        self._attr_name = f"{command.capitalize()} {label}"
+        self._attr_translation_key = f"{guest_type or 'guest'}_{command}"
+        self._attr_translation_placeholders = {"name": str(label)}
         self._attr_icon = icon
 
     async def async_press(self):
@@ -549,7 +550,8 @@ class ProxmoxNodeButton(CoordinatorEntity, ButtonEntity):
         node_id = node.lower()
 
         self._attr_unique_id = f"pve_{server_id}_node_{node_id}_{command}"
-        self._attr_name = f"{label} – {command.capitalize()}"
+        self._attr_translation_key = f"node_{command}"
+        self._attr_translation_placeholders = {"name": str(node)}
 
     @property
     def device_info(self):

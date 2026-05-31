@@ -113,81 +113,270 @@
   },
   "entity": {
     "sensor": {
-      "cpu_usage": { "name": "CPU Usage" },
-      "uptime": { "name": "Uptime" },
-      "kernel_version": { "name": "Kernel Version" },
-      "pve_version": { "name": "PVE Version" },
-      "load_average": { "name": "Load Average" },
-      "network_rx": { "name": "Network RX" },
-      "network_tx": { "name": "Network TX" },
-      "last_task": { "name": "Last Task" },
-      "no_tasks": { "name": "No Tasks" },
-      "cpu_info": { "name": "CPU Information" },
-      "ksm_shared": { "name": "KSM Shared Memory" },
-      "memory_usage": { "name": "Memory Usage" },
-      "swap_usage": { "name": "Swap Usage" },
-      "rootfs_usage": { "name": "Root Filesystem Usage" },
-      "node_info": { "name": "Proxmox Node" },
-      "storages": { "name": "Proxmox Storages" },
-      "backup_progress": { "name": "Backup Progress" },
-      "vm_status": { "name": "Status" },
-      "vm_cpu_usage": { "name": "CPU Usage" },
-      "vm_network_rx": { "name": "Network RX" },
-      "vm_network_tx": { "name": "Network TX" },
-      "vm_memory_used": { "name": "Memory Used" },
-      "vm_memory_total": { "name": "Memory Total" },
-      "vm_disk_used": { "name": "Disk Used" },
-      "vm_disk_total": { "name": "Disk Total" },
-      "vm_uptime": { "name": "Uptime" },
-      "ct_status": { "name": "Status" },
-      "ct_cpu_usage": { "name": "CPU Usage" },
-      "ct_memory_used": { "name": "Memory Used" },
-      "ct_memory_total": { "name": "Memory Total" },
-      "ct_disk_used": { "name": "Disk Used" },
-      "ct_disk_total": { "name": "Disk Total" },
-      "ct_network_rx": { "name": "Network RX" },
-      "ct_network_tx": { "name": "Network TX" },
-      "ct_uptime": { "name": "Uptime" },
-      "storage_usage": { "name": "Usage" },
-      "storage_used": { "name": "Used" },
-      "storage_available": { "name": "Available" },
-      "storage_total": { "name": "Total" },
-      "storage_type": { "name": "Type" },
-      "storage_path": { "name": "Path" },
-      "version": { "name": "Version" },
-      "release": { "name": "Release" },
-      "auth_status": { "name": "Authentication Status" },
-      "node_cpu": { "name": "CPU Usage" },
-      "node_ram": { "name": "RAM Usage" },
-      "ram_total": { "name": "RAM Total" },
-      "ram_used": { "name": "RAM Used" },
-      "ram_free": { "name": "RAM Free" },
-      "last_task_type": { "name": "Last Task Type" },
-      "last_task_status": { "name": "Last Task Status" },
-      "last_task_message": { "name": "Last Task Message" },
-      "last_task_duration": { "name": "Last Task Duration" },
-      "last_action": { "name": "Last Action" },
-      "datastore_usage": { "name": "Usage" },
-      "datastore_total": { "name": "Total Size" },
-      "datastore_used": { "name": "Used Size" },
-      "datastore_free": { "name": "Free Size" },
-      "datastore_dedup": { "name": "Deduplication" },
-      "datastore_backup_count": { "name": "Backup Count" },
-      "datastore_last_backup_time": { "name": "Last Backup Time" },
-      "datastore_last_backup_size": { "name": "Last Backup Size" },
-      "datastore_last_backup_status": { "name": "Last Backup Status" },
-      "datastore_backup_errors": { "name": "Backup Errors" },
-      "datastore_backups_summary": { "name": "Backup Summary" },
-      "datastore_gc_status": { "name": "GC Status" },
+      "cpu_usage": {
+        "name": "CPU Usage"
+      },
+      "uptime": {
+        "name": "Uptime"
+      },
+      "kernel_version": {
+        "name": "Kernel Version"
+      },
+      "pve_version": {
+        "name": "PVE Version"
+      },
+      "load_average": {
+        "name": "Load Average"
+      },
+      "network_rx": {
+        "name": "Network RX"
+      },
+      "network_tx": {
+        "name": "Network TX"
+      },
+      "last_task": {
+        "name": "Last Task"
+      },
+      "no_tasks": {
+        "name": "No Tasks"
+      },
+      "cpu_info": {
+        "name": "CPU Information"
+      },
+      "ksm_shared": {
+        "name": "KSM Shared Memory"
+      },
+      "memory_usage": {
+        "name": "Memory Usage"
+      },
+      "swap_usage": {
+        "name": "Swap Usage"
+      },
+      "rootfs_usage": {
+        "name": "Root Filesystem Usage"
+      },
+      "node_info": {
+        "name": "Proxmox Node"
+      },
+      "storages": {
+        "name": "Proxmox Storages"
+      },
+      "backup_progress": {
+        "name": "Backup Progress"
+      },
+      "vm_status": {
+        "name": "Status"
+      },
+      "vm_cpu_usage": {
+        "name": "CPU Usage"
+      },
+      "vm_network_rx": {
+        "name": "Network RX"
+      },
+      "vm_network_tx": {
+        "name": "Network TX"
+      },
+      "vm_memory_used": {
+        "name": "RAM Used"
+      },
+      "vm_memory_total": {
+        "name": "RAM Total"
+      },
+      "vm_disk_used": {
+        "name": "Disk Used"
+      },
+      "vm_disk_total": {
+        "name": "Disk Total"
+      },
+      "vm_uptime": {
+        "name": "Uptime"
+      },
+      "ct_status": {
+        "name": "Status"
+      },
+      "ct_cpu_usage": {
+        "name": "CPU Usage"
+      },
+      "ct_memory_used": {
+        "name": "RAM Used"
+      },
+      "ct_memory_total": {
+        "name": "RAM Total"
+      },
+      "ct_disk_used": {
+        "name": "Disk Used"
+      },
+      "ct_disk_total": {
+        "name": "Disk Total"
+      },
+      "ct_network_rx": {
+        "name": "Network RX"
+      },
+      "ct_network_tx": {
+        "name": "Network TX"
+      },
+      "ct_uptime": {
+        "name": "Uptime"
+      },
+      "storage_usage": {
+        "name": "Usage"
+      },
+      "storage_used": {
+        "name": "Used"
+      },
+      "storage_available": {
+        "name": "Available"
+      },
+      "storage_total": {
+        "name": "Total"
+      },
+      "storage_type": {
+        "name": "Type"
+      },
+      "storage_path": {
+        "name": "Path"
+      },
+      "version": {
+        "name": "Version"
+      },
+      "release": {
+        "name": "Release"
+      },
+      "auth_status": {
+        "name": "Authentication Status"
+      },
+      "node_cpu": {
+        "name": "CPU Usage"
+      },
+      "node_ram": {
+        "name": "RAM Usage"
+      },
+      "ram_total": {
+        "name": "RAM Total"
+      },
+      "ram_used": {
+        "name": "RAM Used"
+      },
+      "ram_free": {
+        "name": "RAM Free"
+      },
+      "last_task_type": {
+        "name": "Last Task Type"
+      },
+      "last_task_status": {
+        "name": "Last Task Status"
+      },
+      "last_task_message": {
+        "name": "Last Task Message"
+      },
+      "last_task_duration": {
+        "name": "Last Task Duration"
+      },
+      "last_action": {
+        "name": "Last Action"
+      },
+      "datastore_usage": {
+        "name": "Usage"
+      },
+      "datastore_total": {
+        "name": "Total Size"
+      },
+      "datastore_used": {
+        "name": "Used Size"
+      },
+      "datastore_free": {
+        "name": "Free Size"
+      },
+      "datastore_dedup": {
+        "name": "Deduplication"
+      },
+      "datastore_backup_count": {
+        "name": "Backup Count"
+      },
+      "datastore_last_backup_time": {
+        "name": "Last Backup Time"
+      },
+      "datastore_last_backup_size": {
+        "name": "Last Backup Size"
+      },
+      "datastore_last_backup_status": {
+        "name": "Last Backup Status"
+      },
+      "datastore_backup_errors": {
+        "name": "Backup Errors"
+      },
+      "datastore_backups_summary": {
+        "name": "Backup Summary"
+      },
+      "datastore_gc_status": {
+        "name": "GC Status"
+      },
       "proxmox_dimm": {
         "name": "RAM Module (DIMM)",
         "state_attributes": {
-          "speed": { "name": "Speed" },
-          "configured_speed": { "name": "Configured Speed" },
-          "type": { "name": "Memory Type" },
-          "manufacturer": { "name": "Manufacturer" },
-          "locator": { "name": "Slot" }
+          "speed": {
+            "name": "Speed"
+          },
+          "configured_speed": {
+            "name": "Configured Speed"
+          },
+          "type": {
+            "name": "Memory Type"
+          },
+          "manufacturer": {
+            "name": "Manufacturer"
+          },
+          "locator": {
+            "name": "Slot"
+          }
         }
+      }
+    },
+    "button": {
+      "ct_start": {
+        "name": "Start {name}"
+      },
+      "ct_shutdown": {
+        "name": "Shutdown {name}"
+      },
+      "ct_stop": {
+        "name": "Stop {name}"
+      },
+      "ct_reboot": {
+        "name": "Reboot {name}"
+      },
+      "vm_start": {
+        "name": "Start {name}"
+      },
+      "vm_shutdown": {
+        "name": "Shutdown {name}"
+      },
+      "vm_stop": {
+        "name": "Stop {name}"
+      },
+      "vm_reboot": {
+        "name": "Reboot {name}"
+      },
+      "vm_reset": {
+        "name": "Reset {name}"
+      },
+      "vm_pause": {
+        "name": "Pause {name}"
+      },
+      "vm_hibernate": {
+        "name": "Hibernate {name}"
+      },
+      "vm_resume": {
+        "name": "Resume {name}"
+      },
+      "node_reboot": {
+        "name": "Reboot {name}"
+      },
+      "node_shutdown": {
+        "name": "Shutdown {name}"
+      },
+      "node_wake": {
+        "name": "Wake {name}"
       }
     }
   }

@@ -67,24 +67,10 @@ class ProxmoxContainerAttributeSensor(ProxmoxBaseSensor):
 
         uid = f"proxmox_ct_{node}_{ct_id}_{attr_name}_v1"
 
-        names = {
-            "cpu_usage": "CPU Usage",
-            "memory_used": "RAM Used",
-            "memory_total": "RAM Total",
-            "disk_used": "Disk Used",
-            "disk_total": "Disk Total",
-            "network_rx": "Network RX",
-            "network_tx": "Network TX",
-            "uptime": "Uptime",
-        }
-
-        pretty = names.get(attr_name, attr_name.replace("_", " ").title())
-        name = pretty
-
         super().__init__(
             coordinator,
             self._guest_key,
-            name,
+            None,
             unit,
             uid,
             node,
