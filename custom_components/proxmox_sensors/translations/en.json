@@ -330,6 +330,177 @@
             "name": "Slot"
           }
         }
+      },
+      "cluster_status": {
+        "name": "Status"
+      },
+      "cluster_nodes_online": {
+        "name": "Nodes Online"
+      },
+      "cluster_cpu_usage": {
+        "name": "CPU Usage"
+      },
+      "cluster_ram_usage": {
+        "name": "RAM Usage"
+      },
+      "cluster_vms_running": {
+        "name": "VMs Running"
+      },
+      "cluster_cts_running": {
+        "name": "CTs Running"
+      },
+      "cluster_storage_usage": {
+        "name": "Storage Usage"
+      },
+      "cluster_ha_status": {
+        "name": "HA Status"
+      },
+      "cluster_firewall": {
+        "name": "Firewall"
+      },
+      "cluster_backup_jobs": {
+        "name": "Backup Jobs"
+      },
+      "cluster_backup_age": {
+        "name": "Backup Age"
+      },
+      "cluster_backup_health": {
+        "name": "Backup Health"
+      },
+      "cluster_failed_tasks": {
+        "name": "Failed Tasks"
+      },
+      "node_uptime": {
+        "name": "Uptime"
+      },
+      "node_kernel_version": {
+        "name": "Kernel Version"
+      },
+      "node_pve_version": {
+        "name": "PVE Version"
+      },
+      "node_load_average": {
+        "name": "Load Average"
+      },
+      "node_network_rx": {
+        "name": "Network RX"
+      },
+      "node_network_tx": {
+        "name": "Network TX"
+      },
+      "node_last_task": {
+        "name": "Last Task"
+      },
+      "node_cpu_info": {
+        "name": "CPU Information"
+      },
+      "node_ksm_shared": {
+        "name": "KSM Shared Memory"
+      },
+      "node_memory_usage": {
+        "name": "Memory Usage"
+      },
+      "node_swap_usage": {
+        "name": "Swap Usage"
+      },
+      "node_rootfs_usage": {
+        "name": "Root Filesystem Usage"
+      },
+      "node_updates": {
+        "name": "Node Updates"
+      },
+      "node_iowait": {
+        "name": "IO Wait"
+      },
+      "node_load_1m": {
+        "name": "Load Average (1m)"
+      },
+      "node_score": {
+        "name": "Node Score"
+      },
+      "node_mounted_disks": {
+        "name": "Mounted Disks"
+      },
+      "node_backup_progress": {
+        "name": "Backup Progress"
+      },
+      "pbs_version": {
+        "name": "Version"
+      },
+      "pbs_release": {
+        "name": "Release"
+      },
+      "pbs_auth_status": {
+        "name": "Authentication Status"
+      },
+      "pbs_ram_total": {
+        "name": "RAM Total"
+      },
+      "pbs_ram_used": {
+        "name": "RAM Used"
+      },
+      "pbs_ram_free": {
+        "name": "RAM Free"
+      },
+      "pbs_last_task": {
+        "name": "Last Task"
+      },
+      "pbs_last_task_type": {
+        "name": "Last Task Type"
+      },
+      "pbs_last_task_status": {
+        "name": "Last Task Status"
+      },
+      "pbs_last_task_message": {
+        "name": "Last Task Message"
+      },
+      "pbs_last_task_duration": {
+        "name": "Last Task Duration"
+      },
+      "pbs_datastore_usage": {
+        "name": "Usage"
+      },
+      "pbs_dedup": {
+        "name": "Deduplication"
+      },
+      "pbs_last_backup_time": {
+        "name": "Last Backup Time"
+      },
+      "pbs_last_backup_size": {
+        "name": "Last Backup Size"
+      },
+      "pbs_last_backup_status": {
+        "name": "Last Backup Status"
+      },
+      "pbs_backup_errors": {
+        "name": "Backup Errors"
+      },
+      "pbs_backups_summary": {
+        "name": "Backup Summary"
+      },
+      "pbs_gc_status": {
+        "name": "GC Status"
+      },
+      "pbs_verify_status": {
+        "name": "Verify Status"
+      },
+      "pbs_prune_status": {
+        "name": "Prune Status"
+      },
+      "hw_cpu_temp": {
+        "name": "CPU Temperature"
+      },
+      "hw_nvme_composite": {
+        "name": "Composite Temp"
+      },
+      "hw_nvme_nand": {
+        "name": "NAND Temp"
+      },
+      "hw_nvme_controller": {
+        "name": "Controller Temp"
+      },
+      "chipset_temp": {
+        "name": "Chipset Temp"
       }
     },
     "button": {
@@ -377,6 +548,38 @@
       },
       "node_wake": {
         "name": "Wake {name}"
+      },
+      "pbs_gc": {
+        "name": "Garbage Collect {name}"
+      },
+      "pbs_prune": {
+        "name": "Prune {name}"
+      },
+      "pbs_verify": {
+        "name": "Verify {name}"
+      },
+      "pbs_sync": {
+        "name": "Sync {name}"
+      },
+      "pbs_node_shutdown": {
+        "name": "Shutdown {name}"
+      },
+      "pbs_node_reboot": {
+        "name": "Reboot {name}"
+      },
+      "pbs_node_wake": {
+        "name": "Wake {name}"
+      }
+    },
+    "binary_sensor": {
+      "node_overloaded": {
+        "name": "Overloaded"
+      },
+      "node_disk_overloaded": {
+        "name": "Disk Overloaded"
+      },
+      "node_stressed": {
+        "name": "Stressed"
       }
     }
   }

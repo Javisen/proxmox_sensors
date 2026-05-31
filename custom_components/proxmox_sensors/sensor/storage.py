@@ -9,7 +9,7 @@ class ProxmoxStorageSensor(ProxmoxBaseSensor):
 
     def __init__(self, coordinator, storage_name, st, node=None):
         uid = f"proxmox_storage_{node}_{storage_name}_percent_v1"
-        super().__init__(coordinator, storage_name, "Usage", "%", uid, node)
+        super().__init__(coordinator, storage_name, None, "%", uid, node)
 
         self._storage_name = storage_name
         self._attr_state_class = "measurement"

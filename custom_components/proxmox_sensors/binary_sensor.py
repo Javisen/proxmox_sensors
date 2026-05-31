@@ -17,7 +17,7 @@ class ProxmoxNodeOverloadedBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._node = node
         self._entry_id = entry_id
 
-        self._attr_name = f"{node} Overloaded"
+        self._attr_translation_key = "node_overloaded"
         self._attr_unique_id = f"{entry_id}_node_overloaded_{node}"
         self._attr_icon = "mdi:alert-circle"
 
@@ -93,7 +93,7 @@ class ProxmoxNodeDiskOverloadedBinarySensor(CoordinatorEntity, BinarySensorEntit
         self._node = node
         self._entry_id = entry_id
 
-        self._attr_name = f"{node} Disk Overloaded"
+        self._attr_translation_key = "node_disk_overloaded"
         self._attr_unique_id = f"{entry_id}_node_disk_overloaded_{node}"
         self._attr_device_class = "problem"
 
@@ -126,7 +126,7 @@ class ProxmoxNodeStressedBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._node = node
         self._entry_id = entry_id
 
-        self._attr_name = f"{node} Stressed"
+        self._attr_translation_key = "node_stressed"
         self._attr_unique_id = f"{entry_id}_node_stressed_{node}"
         self._attr_device_class = "problem"
 

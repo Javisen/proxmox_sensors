@@ -27,8 +27,10 @@ class ProxmoxPBSVersionSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="version",
-            name="Version",
+            name=None,
         )
+        self._attr_translation_key = "pbs_version"
+        self._attr_translation_key = "pbs_version"
         self._attr_icon = "mdi:information-outline"
 
     def _get_value(self):
@@ -43,8 +45,10 @@ class ProxmoxPBSReleaseSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="release",
-            name="Release",
+            name=None,
         )
+        self._attr_translation_key = "pbs_release"
+        self._attr_translation_key = "pbs_release"
         self._attr_icon = "mdi:tag"
 
     def _get_value(self):
@@ -59,8 +63,9 @@ class ProxmoxPBSAuthStatusSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="auth_status",
-            name="Auth Status",
+            name=None,
         )
+        self._attr_translation_key = "pbs_auth_status"
         self._attr_icon = "mdi:shield-check"
 
     def _get_value(self):
@@ -133,9 +138,10 @@ class ProxmoxPBSRamTotalSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="ram_total",
-            name="RAM Total",
+            name=None,
             unit="GB",
         )
+        self._attr_translation_key = "pbs_ram_total"
         self._attr_icon = "mdi:memory"
         self._attr_native_unit_of_measurement = "GB"
 
@@ -152,9 +158,10 @@ class ProxmoxPBSRamUsedSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="ram_used",
-            name="RAM Used",
+            name=None,
             unit="GB",
         )
+        self._attr_translation_key = "pbs_ram_used"
         self._attr_icon = "mdi:memory"
         self._attr_native_unit_of_measurement = "GB"
 
@@ -171,9 +178,10 @@ class ProxmoxPBSRamFreeSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="ram_free",
-            name="RAM Free",
+            name=None,
             unit="GB",
         )
+        self._attr_translation_key = "pbs_ram_free"
         self._attr_icon = "mdi:memory"
         self._attr_native_unit_of_measurement = "GB"
 
@@ -190,8 +198,9 @@ class ProxmoxPBSTaskSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="last_task",
-            name="Last Task",
+            name=None,
         )
+        self._attr_translation_key = "pbs_last_task"
         self._attr_icon = "mdi:clipboard-list"
 
     def _get_value(self):
@@ -223,8 +232,9 @@ class ProxmoxPBSTaskTypeSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="last_task_type",
-            name="Last Task Type",
+            name=None,
         )
+        self._attr_translation_key = "pbs_last_task_type"
         self._attr_icon = "mdi:clipboard-text"
 
     def _get_value(self):
@@ -253,8 +263,9 @@ class ProxmoxPBSTaskStatusSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="last_task_status",
-            name="Last Task Status",
+            name=None,
         )
+        self._attr_translation_key = "pbs_last_task_status"
         self._attr_icon = "mdi:information"
 
     def _get_value(self):
@@ -316,8 +327,9 @@ class ProxmoxPBSTaskMessageSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="last_task_message",
-            name="Last Task Message",
+            name=None,
         )
+        self._attr_translation_key = "pbs_last_task_message"
         self._attr_icon = "mdi:message-text-outline"
 
     def _get_value(self):
@@ -347,9 +359,10 @@ class ProxmoxPBSTaskDurationSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id="last_task_duration",
-            name="Last Task Duration",
+            name=None,
             unit="s",
         )
+        self._attr_translation_key = "pbs_last_task_duration"
         self._attr_icon = "mdi:timer-outline"
 
     def _get_value(self):
@@ -390,9 +403,10 @@ class ProxmoxPBSDatastoreUsageSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_usage",
-            name="Usage",
+            name=None,
             unit=PERCENTAGE,
         )
+        self._attr_translation_key = "pbs_datastore_usage"
         self._store = store
         self._attr_icon = "mdi:database-clock"
 
@@ -458,9 +472,10 @@ class ProxmoxPBSDedupSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_dedup",
-            name="Deduplication",
+            name=None,
             unit="x",
         )
+        self._attr_translation_key = "pbs_dedup"
         self._store = store
         self._attr_icon = "mdi:clippy"
 
@@ -488,8 +503,9 @@ class ProxmoxPBSLastBackupTimeSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_last_backup_time",
-            name="Last Backup Time",
+            name=None,
         )
+        self._attr_translation_key = "pbs_last_backup_time"
         self._store = store
         self._attr_icon = "mdi:clock-outline"
 
@@ -521,9 +537,10 @@ class ProxmoxPBSLastBackupSizeSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_last_backup_size",
-            name="Last Backup Size",
+            name=None,
             unit=UnitOfInformation.GIGABYTES,
         )
+        self._attr_translation_key = "pbs_last_backup_size"
         self._store = store
         self._attr_icon = "mdi:database"
 
@@ -551,8 +568,9 @@ class ProxmoxPBSLastBackupStatusSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_last_backup_status",
-            name="Last Backup Status",
+            name=None,
         )
+        self._attr_translation_key = "pbs_last_backup_status"
         self._store = store
         self._attr_icon = "mdi:check-circle-outline"
 
@@ -603,8 +621,9 @@ class ProxmoxPBSBackupErrorsSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_backup_errors",
-            name="Backup Errors",
+            name=None,
         )
+        self._attr_translation_key = "pbs_backup_errors"
         self._store = store
         self._attr_icon = "mdi:alert-circle-outline"
 
@@ -630,8 +649,9 @@ class ProxmoxPBSBackupsListSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_backups_summary",
-            name="Backups Summary",
+            name=None,
         )
+        self._attr_translation_key = "pbs_backups_summary"
         self._store = store
         self._attr_icon = "mdi:archive-clock-outline"
 
@@ -685,8 +705,9 @@ class ProxmoxPBSMaintenanceSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_gc_status",
-            name="GC Status",
+            name=None,
         )
+        self._attr_translation_key = "pbs_gc_status"
         self._store = store
         self._attr_icon = "mdi:recycle-variant"
 
@@ -752,8 +773,9 @@ class ProxmoxPBSVerifySensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_verify_status",
-            name="Verify Status",
+            name=None,
         )
+        self._attr_translation_key = "pbs_verify_status"
         self._store = store
         self._attr_icon = "mdi:check-decagram"
 
@@ -843,8 +865,9 @@ class ProxmoxPBSPruneSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_prune_status",
-            name="Prune Status",
+            name=None,
         )
+        self._attr_translation_key = "pbs_prune_status"
         self._store = store
         self._attr_icon = "mdi:delete-sweep"
 

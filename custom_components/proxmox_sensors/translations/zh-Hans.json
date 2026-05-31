@@ -330,6 +330,177 @@
             "name": "插槽"
           }
         }
+      },
+      "cluster_status": {
+        "name": "状态"
+      },
+      "cluster_nodes_online": {
+        "name": "在线节点"
+      },
+      "cluster_cpu_usage": {
+        "name": "CPU 使用率"
+      },
+      "cluster_ram_usage": {
+        "name": "RAM 使用率"
+      },
+      "cluster_vms_running": {
+        "name": "运行中 VM"
+      },
+      "cluster_cts_running": {
+        "name": "运行中 CT"
+      },
+      "cluster_storage_usage": {
+        "name": "存储使用率"
+      },
+      "cluster_ha_status": {
+        "name": "HA 状态"
+      },
+      "cluster_firewall": {
+        "name": "防火墙"
+      },
+      "cluster_backup_jobs": {
+        "name": "备份任务数"
+      },
+      "cluster_backup_age": {
+        "name": "备份时长"
+      },
+      "cluster_backup_health": {
+        "name": "备份健康度"
+      },
+      "cluster_failed_tasks": {
+        "name": "失败任务"
+      },
+      "node_uptime": {
+        "name": "运行时间"
+      },
+      "node_kernel_version": {
+        "name": "内核版本"
+      },
+      "node_pve_version": {
+        "name": "PVE 版本"
+      },
+      "node_load_average": {
+        "name": "平均负载"
+      },
+      "node_network_rx": {
+        "name": "网络接收"
+      },
+      "node_network_tx": {
+        "name": "网络发送"
+      },
+      "node_last_task": {
+        "name": "最近任务"
+      },
+      "node_cpu_info": {
+        "name": "CPU 信息"
+      },
+      "node_ksm_shared": {
+        "name": "KSM 共享内存"
+      },
+      "node_memory_usage": {
+        "name": "内存使用率"
+      },
+      "node_swap_usage": {
+        "name": "Swap 使用率"
+      },
+      "node_rootfs_usage": {
+        "name": "根文件系统使用率"
+      },
+      "node_updates": {
+        "name": "更新数量"
+      },
+      "node_iowait": {
+        "name": "IO 等待"
+      },
+      "node_load_1m": {
+        "name": "平均负载（1分钟）"
+      },
+      "node_score": {
+        "name": "节点评分"
+      },
+      "node_mounted_disks": {
+        "name": "已挂载磁盘"
+      },
+      "node_backup_progress": {
+        "name": "备份进度"
+      },
+      "pbs_version": {
+        "name": "版本"
+      },
+      "pbs_release": {
+        "name": "发行版"
+      },
+      "pbs_auth_status": {
+        "name": "认证状态"
+      },
+      "pbs_ram_total": {
+        "name": "RAM 总量"
+      },
+      "pbs_ram_used": {
+        "name": "已用 RAM"
+      },
+      "pbs_ram_free": {
+        "name": "可用 RAM"
+      },
+      "pbs_last_task": {
+        "name": "最近任务"
+      },
+      "pbs_last_task_type": {
+        "name": "最近任务类型"
+      },
+      "pbs_last_task_status": {
+        "name": "最近任务状态"
+      },
+      "pbs_last_task_message": {
+        "name": "最近任务消息"
+      },
+      "pbs_last_task_duration": {
+        "name": "最近任务耗时"
+      },
+      "pbs_datastore_usage": {
+        "name": "使用率"
+      },
+      "pbs_dedup": {
+        "name": "去重率"
+      },
+      "pbs_last_backup_time": {
+        "name": "最近备份时间"
+      },
+      "pbs_last_backup_size": {
+        "name": "最近备份大小"
+      },
+      "pbs_last_backup_status": {
+        "name": "最近备份状态"
+      },
+      "pbs_backup_errors": {
+        "name": "备份错误"
+      },
+      "pbs_backups_summary": {
+        "name": "备份摘要"
+      },
+      "pbs_gc_status": {
+        "name": "GC 状态"
+      },
+      "pbs_verify_status": {
+        "name": "验证状态"
+      },
+      "pbs_prune_status": {
+        "name": "剪枝状态"
+      },
+      "hw_cpu_temp": {
+        "name": "CPU 温度"
+      },
+      "hw_nvme_composite": {
+        "name": "NVMe 综合温度"
+      },
+      "hw_nvme_nand": {
+        "name": "NAND 温度"
+      },
+      "hw_nvme_controller": {
+        "name": "控制器温度"
+      },
+      "chipset_temp": {
+        "name": "芯片组温度"
       }
     },
     "button": {
@@ -377,6 +548,38 @@
       },
       "node_wake": {
         "name": "唤醒 {name}"
+      },
+      "pbs_gc": {
+        "name": "垃圾回收 {name}"
+      },
+      "pbs_prune": {
+        "name": "剪枝 {name}"
+      },
+      "pbs_verify": {
+        "name": "验证 {name}"
+      },
+      "pbs_sync": {
+        "name": "同步 {name}"
+      },
+      "pbs_node_shutdown": {
+        "name": "关闭 {name}"
+      },
+      "pbs_node_reboot": {
+        "name": "重启 {name}"
+      },
+      "pbs_node_wake": {
+        "name": "唤醒 {name}"
+      }
+    },
+    "binary_sensor": {
+      "node_overloaded": {
+        "name": "节点过载"
+      },
+      "node_disk_overloaded": {
+        "name": "磁盘过载"
+      },
+      "node_stressed": {
+        "name": "节点压力"
       }
     }
   },

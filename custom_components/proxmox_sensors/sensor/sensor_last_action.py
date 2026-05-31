@@ -16,7 +16,7 @@ class PBSLastActionSensor(CoordinatorEntity, SensorEntity):
 
         self._datastore = datastore
 
-        self._attr_name = "Last Action"
+        self._attr_name = "last_action"
         self._attr_unique_id = f"{datastore.lower()}_last_action"
         self._attr_should_poll = False
 
