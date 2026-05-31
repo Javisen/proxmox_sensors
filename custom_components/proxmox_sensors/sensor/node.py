@@ -51,7 +51,7 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
             name = "node_pve_version"
             icon = "mdi:numeric"
 
-        elif sensor_id == "current_kernel":
+        elif sensor_id == "current-kernel":
             name = "node_kernel_version"
             icon = "mdi:linux"
 
