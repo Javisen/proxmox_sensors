@@ -198,7 +198,7 @@ class PBSBaseButton(CoordinatorEntity, ButtonEntity):
 
         self._attr_unique_id = f"{datastore.lower()}_{command_name}"
         self._attr_translation_key = f"pbs_{command_name}"
-        self._attr_name = command_display
+        self._attr_translation_placeholders = {"name": str(self._datastore)}
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, f"maintenance_{datastore}")},
@@ -284,7 +284,7 @@ class PBSNodeBaseButton(CoordinatorEntity, ButtonEntity):
 
         self._attr_unique_id = f"pbs_{server_id}_node_{command_name}"
         self._attr_translation_key = f"pbs_node_{command_name}"
-        self._attr_name = f"PBS Node – {command_display}"
+        self._attr_translation_placeholders = {"name": str(self._server_id)}
         self._attr_icon = icon
 
         self._attr_device_info = {

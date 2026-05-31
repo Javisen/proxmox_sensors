@@ -11,17 +11,18 @@ class ProxmoxZFSPoolSensor(ProxmoxBaseSensor):
         self._pool = pool_name
         self._node = node
 
-        name = f"ZFS {pool_name} ({node})"
         unique_id = f"proxmox_zfs_{node}_{pool_name}"
 
         super().__init__(
             coordinator,
             sensor_id="zfs_health",
-            name=name,
+            name=None,
             unit=None,
             unique_id=unique_id,
             node=node,
         )
+        self._attr_translation_key = "zfs_health"
+        self._attr_translation_placeholders = {"pool": str(pool_name)}
 
         self._attr_icon = "mdi:database"
         self._attr_state_class = None

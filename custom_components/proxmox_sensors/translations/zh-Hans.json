@@ -501,6 +501,27 @@
       },
       "chipset_temp": {
         "name": "芯片组温度"
+      },
+      "disk_size": {
+        "name": "{model} 容量"
+      },
+      "zfs_health": {
+        "name": "ZFS {pool}"
+      },
+      "dimm_capacity": {
+        "name": "{dimm} 容量"
+      },
+      "hw_nvme_temperature": {
+        "name": "{name}"
+      },
+      "hw_nvme_temp1": {
+        "name": "NVMe 温度"
+      },
+      "proxmox_node": {
+        "name": "Proxmox 节点：{node}"
+      },
+      "proxmox_storages": {
+        "name": "Proxmox 存储（{node}）"
       }
     },
     "button": {

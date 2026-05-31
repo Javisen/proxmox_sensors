@@ -501,6 +501,27 @@
       },
       "chipset_temp": {
         "name": "Chipset Temp"
+      },
+      "disk_size": {
+        "name": "{model} Size"
+      },
+      "zfs_health": {
+        "name": "ZFS {pool}"
+      },
+      "dimm_capacity": {
+        "name": "{dimm} Capacity"
+      },
+      "hw_nvme_temperature": {
+        "name": "{name}"
+      },
+      "hw_nvme_temp1": {
+        "name": "NVMe Temperature"
+      },
+      "proxmox_node": {
+        "name": "Proxmox Node: {node}"
+      },
+      "proxmox_storages": {
+        "name": "Proxmox Storages ({node})"
       }
     },
     "button": {

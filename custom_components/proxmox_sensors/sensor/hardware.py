@@ -223,10 +223,10 @@ class ProxmoxHardwareNVMeSensor(ProxmoxBaseSensor):
 
         # Nombre provisional (fallback)
         display_name = device_prefix.replace("nvme-pci-", "NVMe ").replace("_", " ")
-        name = f"{display_name} ({node})"
         unique_id = f"proxmox_nvme_{device_prefix}_{node}"
 
-        super().__init__(coordinator, "nvme_temperature", name, "°C", unique_id, node)
+        super().__init__(coordinator, "nvme_temperature", None, "°C", unique_id, node)
+        self._attr_translation_key = "hw_nvme_temperature"
 
         smart = self._get_smart_info()
 
@@ -240,7 +240,9 @@ class ProxmoxHardwareNVMeSensor(ProxmoxBaseSensor):
                 display_name = model
 
             # dynamic name
-            self._attr_name = f"{display_name} ({node})"
+            self._attr_translation_placeholders = {"name": display_name}
+        else:
+            self._attr_translation_placeholders = {"name": display_name}
 
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"

@@ -361,7 +361,8 @@ class ProxmoxNodesSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry_id
         self._node = node
-        self._attr_name = f"Proxmox Node: {node}"
+        self._attr_translation_key = "proxmox_node"
+        self._attr_translation_placeholders = {"node": str(node)}
         self._attr_unique_id = f"{entry_id}_node_info"
         self._attr_icon = "mdi:server"
 
@@ -395,7 +396,8 @@ class ProxmoxStoragesSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry_id
         self._node = node
-        self._attr_name = f"Proxmox Storages ({node})"
+        self._attr_translation_key = "proxmox_storages"
+        self._attr_translation_placeholders = {"node": str(node)}
         self._attr_unique_id = f"{entry_id}_storages_{node}"
         self._attr_icon = "mdi:database"
 
