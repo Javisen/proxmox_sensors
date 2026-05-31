@@ -404,6 +404,8 @@ class PBSWakeButton(PBSNodeBaseButton):
 
 
 class ProxmoxBaseButton(CoordinatorEntity, ButtonEntity):
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         coordinator,
@@ -548,6 +550,7 @@ class ProxmoxNodeButton(CoordinatorEntity, ButtonEntity):
         self._command = command
         self._attr_icon = icon
 
+        self._attr_has_entity_name = True
         server_id = coordinator.config_entry.data.get("server_id", "default").lower()
         node_id = node.lower()
 

@@ -525,6 +525,9 @@
       },
       "cpu_temperature": {
         "name": "CPU Temperature"
+      },
+      "storage_free": {
+        "name": "Free"
       }
     },
     "button": {
