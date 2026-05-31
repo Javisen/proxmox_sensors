@@ -1,0 +1,450 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "1. 服务器连接",
+        "description": "请输入 Proxmox 服务器地址。端口会自动管理（PVE 使用 8006 / PBS 使用 8007）。",
+        "data": {
+          "host": "服务器地址（IP 或 FQDN）",
+          "platform_type": "服务器类型"
+        }
+      },
+      "auth_method": {
+        "title": "2. 认证方式",
+        "description": "请选择认证方式。PBS 必须使用 API Token，PVE 推荐使用 API Token。",
+        "data": {
+          "use_token": "使用 API Token（推荐）"
+        }
+      },
+      "credentials_pve": {
+        "title": "3. 访问凭据 — Proxmox VE",
+        "description": "请输入 PVE 连接信息。",
+        "data": {
+          "user": "用户（例如 root@pam）",
+          "password": "密码",
+          "token_id": "Token ID（不包含 user@pve!）",
+          "token_secret": "Token Secret",
+          "auto_detect_node": "从主机 IP 自动检测节点",
+          "enable_lm_sensors": "启用硬件传感器与温度监控",
+          "enable_cluster": "启用集群级监控",
+          "verify_ssl": "验证 SSL 证书"
+        }
+      },
+      "credentials_pbs": {
+        "title": "3. 访问凭据 — Proxmox Backup Server",
+        "description": "请输入 PBS 连接信息。",
+        "data": {
+          "user": "用户（例如 admin@pbs）",
+          "password": "密码",
+          "token_id": "Token ID",
+          "token_secret": "Token Secret",
+          "verify_ssl": "验证 SSL 证书"
+        }
+      },
+      "credentials_cluster": {
+        "title": "3. 访问凭据 — Proxmox 集群",
+        "description": "请输入用于连接集群的凭据。集群使用与 PVE 相同的 API（端口 8006）。",
+        "data": {
+          "user": "用户（例如 root@pam）",
+          "password": "密码",
+          "token_id": "Token ID（不包含 user@pve!）",
+          "token_secret": "Token Secret",
+          "verify_ssl": "验证 SSL 证书"
+        }
+      },
+      "select_node": {
+        "title": "4. 选择节点",
+        "description": "请选择要监控的 Proxmox 节点。",
+        "data": {
+          "node": "节点"
+        }
+      },
+      "select_resources": {
+        "title": "5. 资源选择",
+        "description": "请选择要在 Home Assistant 中监控并公开为实体的资源。",
+        "data": {
+          "vms": "虚拟机（VM）",
+          "cts": "容器（LXC）",
+          "storage": "存储",
+          "enable_physical_disks": "启用物理磁盘监控",
+          "enable_node_controls": "启用节点电源控制"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "连接错误。请检查服务器地址。",
+      "invalid_auth": "认证失败。请检查凭据或 Token 权限。",
+      "unknown": "未知错误。请查看 Home Assistant 日志。"
+    },
+    "abort": {
+      "already_configured": "该节点已经配置过。",
+      "no_data": "未收到集群数据。请检查配置。",
+      "cluster_no_options": "集群设置由 PVE 节点配置统一管理。"
+    }
+  },
+  "options": {
+    "abort": {
+      "pbs_no_options": "该 PBS 服务器没有可配置选项。",
+      "cluster_no_options": "集群设置由 PVE 节点配置统一管理。",
+      "entry_not_loaded": "集成尚未加载，请稍后重试。"
+    },
+    "step": {
+      "init": {
+        "title": "Proxmox Extended Sensors — 选项",
+        "description": "配置此集成的监控与管理选项。",
+        "data": {
+          "vms": "选择虚拟机（VM）",
+          "cts": "选择容器（LXC）",
+          "storage": "选择存储",
+          "enable_lm_sensors": "启用硬件传感器与温度监控",
+          "enable_physical_disks": "启用物理磁盘监控",
+          "enable_smart_monitoring": "启用 SMART 与 NVMe 健康监控",
+          "enable_node_controls": "启用节点电源控制",
+          "enable_backup_progress": "启用备份进度传感器",
+          "enable_storage_list": "启用存储列表传感器",
+          "enable_nodes_list": "启用节点列表传感器",
+          "enable_cluster": "启用集群级监控",
+          "enable_pbs_node_controls": "启用 PBS 节点电源控制",
+          "wol_mac": "Wake-on-LAN MAC 地址",
+          "verify_ssl": "验证 SSL 证书"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cpu_usage": {
+        "name": "CPU 使用率"
+      },
+      "uptime": {
+        "name": "运行时间"
+      },
+      "kernel_version": {
+        "name": "内核版本"
+      },
+      "pve_version": {
+        "name": "PVE 版本"
+      },
+      "load_average": {
+        "name": "平均负载"
+      },
+      "network_rx": {
+        "name": "网络接收"
+      },
+      "network_tx": {
+        "name": "网络发送"
+      },
+      "last_task": {
+        "name": "最近任务"
+      },
+      "no_tasks": {
+        "name": "无任务"
+      },
+      "cpu_info": {
+        "name": "CPU 信息"
+      },
+      "ksm_shared": {
+        "name": "KSM 共享内存"
+      },
+      "memory_usage": {
+        "name": "内存使用率"
+      },
+      "swap_usage": {
+        "name": "Swap 使用率"
+      },
+      "rootfs_usage": {
+        "name": "根文件系统使用率"
+      },
+      "node_info": {
+        "name": "Proxmox 节点"
+      },
+      "storages": {
+        "name": "Proxmox 存储"
+      },
+      "backup_progress": {
+        "name": "备份进度"
+      },
+      "vm_status": {
+        "name": "状态"
+      },
+      "vm_cpu_usage": {
+        "name": "CPU 使用率"
+      },
+      "vm_network_rx": {
+        "name": "网络接收"
+      },
+      "vm_network_tx": {
+        "name": "网络发送"
+      },
+      "vm_memory_used": {
+        "name": "已用内存"
+      },
+      "vm_memory_total": {
+        "name": "内存总量"
+      },
+      "vm_disk_used": {
+        "name": "已用磁盘"
+      },
+      "vm_disk_total": {
+        "name": "磁盘总量"
+      },
+      "vm_uptime": {
+        "name": "运行时间"
+      },
+      "ct_status": {
+        "name": "状态"
+      },
+      "ct_cpu_usage": {
+        "name": "CPU 使用率"
+      },
+      "ct_memory_used": {
+        "name": "已用内存"
+      },
+      "ct_memory_total": {
+        "name": "内存总量"
+      },
+      "ct_disk_used": {
+        "name": "已用磁盘"
+      },
+      "ct_disk_total": {
+        "name": "磁盘总量"
+      },
+      "ct_network_rx": {
+        "name": "网络接收"
+      },
+      "ct_network_tx": {
+        "name": "网络发送"
+      },
+      "ct_uptime": {
+        "name": "运行时间"
+      },
+      "storage_usage": {
+        "name": "使用率"
+      },
+      "storage_used": {
+        "name": "已用"
+      },
+      "storage_available": {
+        "name": "可用"
+      },
+      "storage_total": {
+        "name": "总计"
+      },
+      "storage_type": {
+        "name": "类型"
+      },
+      "storage_path": {
+        "name": "路径"
+      },
+      "version": {
+        "name": "版本"
+      },
+      "release": {
+        "name": "发行版本"
+      },
+      "auth_status": {
+        "name": "认证状态"
+      },
+      "node_cpu": {
+        "name": "CPU 使用率"
+      },
+      "node_ram": {
+        "name": "RAM 使用率"
+      },
+      "ram_total": {
+        "name": "RAM 总量"
+      },
+      "ram_used": {
+        "name": "已用 RAM"
+      },
+      "ram_free": {
+        "name": "可用 RAM"
+      },
+      "last_task_type": {
+        "name": "最近任务类型"
+      },
+      "last_task_status": {
+        "name": "最近任务状态"
+      },
+      "last_task_message": {
+        "name": "最近任务消息"
+      },
+      "last_task_duration": {
+        "name": "最近任务耗时"
+      },
+      "last_action": {
+        "name": "最近操作"
+      },
+      "datastore_usage": {
+        "name": "使用率"
+      },
+      "datastore_total": {
+        "name": "总容量"
+      },
+      "datastore_used": {
+        "name": "已用容量"
+      },
+      "datastore_free": {
+        "name": "可用容量"
+      },
+      "datastore_dedup": {
+        "name": "去重率"
+      },
+      "datastore_backup_count": {
+        "name": "备份数量"
+      },
+      "datastore_last_backup_time": {
+        "name": "最近备份时间"
+      },
+      "datastore_last_backup_size": {
+        "name": "最近备份大小"
+      },
+      "datastore_last_backup_status": {
+        "name": "最近备份状态"
+      },
+      "datastore_backup_errors": {
+        "name": "备份错误"
+      },
+      "datastore_backups_summary": {
+        "name": "备份摘要"
+      },
+      "datastore_gc_status": {
+        "name": "GC 状态"
+      },
+      "proxmox_dimm": {
+        "name": "内存模块（DIMM）",
+        "state_attributes": {
+          "speed": {
+            "name": "速度"
+          },
+          "configured_speed": {
+            "name": "配置速度"
+          },
+          "type": {
+            "name": "内存类型"
+          },
+          "manufacturer": {
+            "name": "制造商"
+          },
+          "locator": {
+            "name": "插槽"
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "create_vzdump_backup": {
+      "name": "Proxmox：启动备份",
+      "description": "将选定的虚拟机和/或容器备份到指定存储。",
+      "fields": {
+        "node": {
+          "name": "节点",
+          "description": "节点名称（例如 server）"
+        },
+        "storage": {
+          "name": "目标存储",
+          "description": "存储名称（例如 local、PBS_Local）"
+        },
+        "guests": {
+          "name": "Guest（VM/CT ID）",
+          "description": "VM/CT 数字 ID 列表（例如 100,101 或 YAML 列表）"
+        },
+        "mode": {
+          "name": "备份模式",
+          "description": "snapshot、suspend 或 stop"
+        },
+        "compress": {
+          "name": "压缩方式",
+          "description": "备份压缩方法"
+        },
+        "max_concurrent": {
+          "name": "最大并发数",
+          "description": "同时执行的最大备份数量（1 = 顺序执行）"
+        },
+        "delay_between": {
+          "name": "备份间隔",
+          "description": "两次备份之间等待的秒数"
+        }
+      }
+    },
+    "backup_all": {
+      "name": "Proxmox：大规模备份",
+      "description": "备份所选节点上的所有虚拟机和/或容器。",
+      "fields": {
+        "node": {
+          "name": "节点",
+          "description": "节点名称（例如 pve）"
+        },
+        "storage": {
+          "name": "目标存储",
+          "description": "存储名称（例如 local、local-lvm、pbs）"
+        },
+        "mode": {
+          "name": "备份模式",
+          "description": "snapshot、suspend 或 stop"
+        },
+        "compress": {
+          "name": "压缩方式",
+          "description": "备份压缩方法"
+        },
+        "max_concurrent": {
+          "name": "最大并发数",
+          "description": "同时执行的最大备份数量（1 = 逐个执行）"
+        },
+        "delay_between": {
+          "name": "备份间隔",
+          "description": "两次备份之间等待的秒数（0 = 无间隔）"
+        },
+        "include_vms": {
+          "name": "包含虚拟机",
+          "description": "启用后会包含该节点上的所有 VM。"
+        },
+        "include_cts": {
+          "name": "包含容器",
+          "description": "启用后会包含该节点上的所有 CT。"
+        }
+      }
+    },
+    "confirm_shutdown_node": {
+      "name": "Proxmox：关闭节点",
+      "description": "请求确认并关闭所选节点。",
+      "fields": {
+        "node": {
+          "name": "节点",
+          "description": "节点名称（例如 pve）"
+        },
+        "confirm": {
+          "name": "确认",
+          "description": "必须为 true 才会执行关机。"
+        }
+      }
+    },
+    "confirm_reboot_node": {
+      "name": "Proxmox：重启节点",
+      "description": "请求确认并重启所选节点。",
+      "fields": {
+        "node": {
+          "name": "节点",
+          "description": "节点名称（例如 pve）"
+        },
+        "confirm": {
+          "name": "确认",
+          "description": "必须为 true 才会执行重启。"
+        }
+      }
+    },
+    "wake_node": {
+      "name": "Proxmox：唤醒节点",
+      "description": "使用 Wake-on-LAN 唤醒 Proxmox 节点。",
+      "fields": {
+        "node": {
+          "name": "节点"
+        },
+        "mac": {
+          "name": "MAC 地址"
+        }
+      }
+    }
+  }
+}
