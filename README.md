@@ -16,6 +16,23 @@ To support this intelligence, V4 introduces a high-performance asynchronous arch
 
 ---
 
+## 🇨🇳 中文项目说明
+
+**Proxmox Extended Sensors v4** 是一个面向 Home Assistant 的 Proxmox VE / Proxmox Backup Server（PBS）高级监控与控制集成。它不仅提供节点、虚拟机、容器、存储、硬盘、备份任务和 PBS 数据，还把复杂指标整理成更容易理解的健康状态、评分和告警信号，适合用于仪表盘展示与自动化。
+
+本次中文文档升级新增了完整的 `docs/zh/` 文档目录，并在项目首页加入中文入口，方便中文用户按步骤完成硬件传感器、Proxmox 权限、PVE/PBS 登录和常见故障排查。
+
+**本次升级内容：**
+
+- 新增中文文档首页：[`docs/zh/README.md`](docs/zh/README.md)
+- 新增硬件传感器配置指南：[`docs/zh/01-install-sensors.md`](docs/zh/01-install-sensors.md)
+- 新增 Proxmox 用户、角色和 API Token 配置指南：[`docs/zh/02-proxmox-config.md`](docs/zh/02-proxmox-config.md)
+- 新增 Home Assistant 中安装并登录 PVE/PBS 的指南：[`docs/zh/03-login-pve-pbs.md`](docs/zh/03-login-pve-pbs.md)
+- 新增中文常见问题与故障排查：[`docs/zh/04-faq.md`](docs/zh/04-faq.md)
+- 在根 README 的语言入口中加入中文徽章。
+
+---
+
 ## 🔍 V4 Key Capabilities
 
 *   **[NEW] Cluster-Wide Monitoring:** Centralized sensors for the entire Proxmox cluster state (backups, failed tasks, nodes online).

@@ -30,6 +30,24 @@
 
 ---
 
+
+## 🆕 本次中文文档升级
+
+本次升级为项目补齐中文说明与安装配置文档，让中文用户可以不依赖英文文档完成完整部署流程。
+
+新增内容包括：
+
+- 根目录 `README.md` 新增中文项目说明与中文文档入口。
+- `docs/zh/README.md` 作为中文文档导航页。
+- `01-install-sensors.md`：硬件传感器、SMART 与 sensor API bridge 配置。
+- `02-proxmox-config.md`：PVE/PBS 专用用户、角色、权限与 API Token 配置。
+- `03-login-pve-pbs.md`：Home Assistant / HACS 安装以及 PVE/PBS 登录流程。
+- `04-faq.md`：常见连接、权限、PBS、硬件指标和性能问题排查。
+
+这次文档升级只补充说明和中文指南，不改变集成本身的运行逻辑或 Home Assistant 实体行为。
+
+---
+
 # 🚀 Proxmox Extended Sensors
 
 ## 简介
