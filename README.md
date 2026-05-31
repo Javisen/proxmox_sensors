@@ -42,6 +42,7 @@ The v4 upgrade shifts the focus toward **Infrastructure Reliability**:
 **Select your language to start the installation and configuration:**
 
 [![English](https://img.shields.io/badge/ENGLISH-blue?style=for-the-badge&logo=translate&logoColor=white)](docs/en/README.md)
+[![中文](https://img.shields.io/badge/%E4%B8%AD%E6%96%87-red?style=for-the-badge&logo=translate&logoColor=white)](docs/zh/README.md)
 [![Español](https://img.shields.io/badge/ESPA%C3%91OL-orange?style=for-the-badge&logo=translate&logoColor=white)](docs/es/README.md)
 [![Italiano](https://img.shields.io/badge/ITALIANO-green?style=for-the-badge&logo=translate&logoColor=white)](docs/it/README.md)
 [![Français](https://img.shields.io/badge/FRAN%C3%87AIS-blue?style=for-the-badge&logo=translate&logoColor=white)](docs/fr/README.md)
