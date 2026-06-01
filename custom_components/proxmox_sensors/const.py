@@ -1,6 +1,6 @@
 """Constants for Proxmox Extended Sensors."""
 
-DOMAIN = "proxmox_sensors_cn"
+DOMAIN = "proxmox_sensors"
 
 # Connection settings
 CONF_HOST = "host"

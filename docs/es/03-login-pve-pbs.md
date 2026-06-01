@@ -8,12 +8,12 @@ Para visualizar todos los datos (temperaturas, sensores de hardware, discos, PBS
 
 Al ser una integración personalizada, primero debes añadirla a HACS:
 
-1. Ve a **HACS → Integraciones**
-2. Haz clic en los **tres puntos** (arriba a la derecha)
-3. Selecciona **Repositorios personalizados**
-4. Añade este repositorio:
-   `https://github.com/ha-china/proxmox_sensors_cn/`
-5. En **Categoría**, selecciona `Integración`
+1. Ve a **HACS → Integraciones**  
+2. Haz clic en los **tres puntos** (arriba a la derecha)  
+3. Selecciona **Repositorios personalizados**  
+4. Añade este repositorio:  
+   `https://github.com/Javisen/proxmox_sensors/`  
+5. En **Categoría**, selecciona `Integración`  
 6. Instala la integración y **reinicia Home Assistant**
 
 ---
@@ -22,8 +22,8 @@ Al ser una integración personalizada, primero debes añadirla a HACS:
 
 Tras reiniciar:
 
-1. Ve a **Ajustes → Dispositivos y Servicios**
-2. Haz clic en **Añadir Integración**
+1. Ve a **Ajustes → Dispositivos y Servicios**  
+2. Haz clic en **Añadir Integración**  
 3. Busca **Proxmox Extended Sensors**
 
 ---
@@ -31,8 +31,8 @@ Tras reiniciar:
 ## 3. Configuración de conexión
 
 ### 🔹 Host
-- **Red local:** `192.168.1.50`
-- **Acceso externo:** `proxmox.midominio.com`
+- **Red local:** `192.168.1.50`  
+- **Acceso externo:** `proxmox.midominio.com`  
 
 > No es necesario incluir `http://` o `https://`. Se detecta automáticamente.
 
@@ -40,15 +40,15 @@ Tras reiniciar:
 
 ### 🔹 Tipo de servidor
 - **CLUSTER** → Proxmox Cluster
-- **PVE** → Proxmox Virtual Environment
-- **PBS** → Proxmox Backup Server
+- **PVE** → Proxmox Virtual Environment  
+- **PBS** → Proxmox Backup Server  
 
 ---
 
 ### 🔹 Método de autenticación
 
 - **Usuario + contraseña** → solo en PVE y Cluster
-- **API Token** → Obligatorio en PBS
+- **API Token** → Obligatorio en PBS  
 
 ---
 
@@ -56,9 +56,9 @@ Tras reiniciar:
 
 Campos:
 
-- **User:** `usuario@realm`
-  - Ejemplo: `homeassistant@pve`
-- **Password:** contraseña del usuario
+- **User:** `usuario@realm`  
+  - Ejemplo: `homeassistant@pve`  
+- **Password:** contraseña del usuario  
 
 > 💡 Desde la V3, el nodo se detecta automáticamente. No es necesario introducirlo manualmente.
 
@@ -68,9 +68,9 @@ Campos:
 
 Campos:
 
-- **User:** `usuario@realm`
-- **Token ID:** solo el nombre → `ha-token`
-- **Token Secret:** el secret generado en Proxmox
+- **User:** `usuario@realm`  
+- **Token ID:** solo el nombre → `ha-token`  
+- **Token Secret:** el secret generado en Proxmox  
 
 > ⚠️ No uses el formato `usuario@pve!token`
 
@@ -82,10 +82,10 @@ Tras conectar, la integración detectará automáticamente los recursos disponib
 
 Podrás seleccionar:
 
-- Máquinas virtuales (VMs)
-- Contenedores (CTs)
-- Discos físicos
-- Storages
+- Máquinas virtuales (VMs)  
+- Contenedores (CTs)  
+- Discos físicos  
+- Storages  
 
 > 💡 Selecciona solo lo necesario para mantener Home Assistant limpio y eficiente.
 
@@ -140,17 +140,17 @@ A continuación se muestra el proceso completo con capturas:
 
 Si utilizas un PBS **gestionado o multi-tenant** (Tuxis, Hetzner, etc.):
 
-- No tendrás acceso a sensores de hardware
-- No verás temperaturas ni discos físicos
-- No habrá métricas de nodo
+- No tendrás acceso a sensores de hardware  
+- No verás temperaturas ni discos físicos  
+- No habrá métricas de nodo  
 
 Esto es normal porque:
 
-- No tienes acceso al hardware real
-- El proveedor restringe el sistema
-- No existen permisos de bajo nivel
+- No tienes acceso al hardware real  
+- El proveedor restringe el sistema  
+- No existen permisos de bajo nivel  
 
-**Resultado:**
+**Resultado:**  
 Solo se mostrarán datos limitados del datastore.
 
 ---

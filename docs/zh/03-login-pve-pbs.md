@@ -12,7 +12,7 @@
 2. 点击右上角 **三个点**
 3. 选择 **Custom repositories**
 4. 添加仓库：
-   `https://github.com/ha-china/proxmox_sensors_cn/`
+   `https://github.com/Javisen/proxmox_sensors/`
 5. **Category** 选择 `Integration`
 6. 安装集成并 **重启 Home Assistant**
 

@@ -70,7 +70,7 @@ sensors
 Exécutez ces commandes dans le terminal de votre serveur Proxmox :
 ```bash
 # Télécharger le script depuis le dépôt
-wget https://raw.githubusercontent.com/ha-china/proxmox_sensors_cn/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
+wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
 
 # Donner les permissions d'exécution
 chmod +x /usr/local/bin/pve-sensors-api.py

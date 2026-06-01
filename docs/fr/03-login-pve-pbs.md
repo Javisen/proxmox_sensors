@@ -12,7 +12,7 @@ Comme il s'agit d'une intégration personnalisée, vous devez d'abord l'ajouter 
 2. Cliquez sur les **trois points** (en haut à droite)
 3. Sélectionnez **Dépôts personnalisés**
 4. Ajoutez ce dépôt :
-   `https://github.com/ha-china/proxmox_sensors_cn/`
+   `https://github.com/Javisen/proxmox_sensors/`
 5. Dans **Catégorie**, sélectionnez `Intégration`
 6. Installez l'intégration et **redémarrez Home Assistant**
 

@@ -25,7 +25,7 @@ Problèmes courants, questions fréquentes et comment les résoudre.
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ha-china/proxmox_sensors_cn/main/img/logo_int_v4.png" alt="Logo Proxmox Extended Sensors" width="600"/>
+  <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int_v4.png" alt="Logo Proxmox Extended Sensors" width="600"/>
 </p>
 
 ---
@@ -283,7 +283,7 @@ Surveillance avancée du datastore et des tâches :
 
 ### 🔹 Installation manuelle
 
-1. Copier dans `/config/custom_components/proxmox_sensors_cn`
+1. Copier dans `/config/custom_components/proxmox_sensors`
 2. Redémarrer Home Assistant
 3. Ajouter l'intégration
 
@@ -342,7 +342,7 @@ Vous trouverez ci-dessous un parcours visuel complet du processus de configurati
 ## 🤝 Contributions et communauté
 
 Les contributions sont les bienvenues. Vous pouvez ouvrir des issues ou des pull requests.
-Dépôt : https://github.com/ha-china/proxmox_sensors_cn
+Dépôt : https://github.com/Javisen/proxmox_sensors
 
 ---
 

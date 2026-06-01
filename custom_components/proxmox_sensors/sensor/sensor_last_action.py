@@ -24,7 +24,7 @@ class PBSLastActionSensor(CoordinatorEntity, SensorEntity):
         self._attr_extra_state_attributes = {}
 
         self._attr_device_info = {
-            "identifiers": {("proxmox_sensors_cn", f"maintenance_{datastore}")},
+            "identifiers": {("proxmox_sensors", f"maintenance_{datastore}")},
             "name": f"Maintenance: {datastore}",
             "manufacturer": "Proxmox",
             "model": "Proxmox Backup Server",
