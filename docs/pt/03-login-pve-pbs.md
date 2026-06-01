@@ -12,7 +12,7 @@ Por ser uma integração personalizada, primeiro deves adicioná-la ao HACS:
 2. Clique nos **três pontos** (canto superior direito)
 3. Selecione **Repositórios personalizados**
 4. Adicione este repositório:
-   `https://github.com/Javisen/proxmox_sensors/`
+   `https://github.com/ha-china/proxmox_sensors_cn/`
 5. Em **Categoria**, selecione `Integração`
 6. Instale a integração e **reinicie o Home Assistant**
 

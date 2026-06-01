@@ -68,7 +68,7 @@ Proxmox 官方 API 不暴露所有硬件传感器。因此，本集成使用一�
 在 Proxmox 服务器终端执行：
 
 ```bash
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
+wget https://raw.githubusercontent.com/ha-china/proxmox_sensors_cn/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
 chmod +x /usr/local/bin/pve-sensors-api.py
 ```
 

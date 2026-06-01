@@ -8,12 +8,12 @@ To visualize all data (temperatures, hardware sensors, disks, PBS, VMs and CTs),
 
 As this is a custom integration, you must first add it to HACS:
 
-1. Go to **HACS → Integrations**  
-2. Click the **three dots** (top right)  
-3. Select **Custom repositories**  
-4. Add this repository:  
-   `https://github.com/Javisen/proxmox_sensors/`  
-5. In **Category**, select `Integration`  
+1. Go to **HACS → Integrations**
+2. Click the **three dots** (top right)
+3. Select **Custom repositories**
+4. Add this repository:
+   `https://github.com/ha-china/proxmox_sensors_cn/`
+5. In **Category**, select `Integration`
 6. Install the integration and **restart Home Assistant**
 
 ---
@@ -22,8 +22,8 @@ As this is a custom integration, you must first add it to HACS:
 
 After restarting:
 
-1. Go to **Settings → Devices & Services**  
-2. Click **Add Integration**  
+1. Go to **Settings → Devices & Services**
+2. Click **Add Integration**
 3. Search for **Proxmox Extended Sensors**
 
 ---
@@ -31,23 +31,23 @@ After restarting:
 ## 3. Connection configuration
 
 ### 🔹 Host
-- **Local network:** `192.168.1.50`  
-- **External access:** `proxmox.mydomain.com`  
+- **Local network:** `192.168.1.50`
+- **External access:** `proxmox.mydomain.com`
 
 > It is not necessary to include `http://` or `https://`. This is detected automatically.
 
 ---
 
 ### 🔹 Server type
-- **PVE** → Proxmox Virtual Environment  
-- **PBS** → Proxmox Backup Server  
+- **PVE** → Proxmox Virtual Environment
+- **PBS** → Proxmox Backup Server
 
 ---
 
 ### 🔹 Authentication method
 
-- **Username + password** → PVE only  
-- **API Token** → Recommended and mandatory for PBS  
+- **Username + password** → PVE only
+- **API Token** → Recommended and mandatory for PBS
 
 ---
 
@@ -55,9 +55,9 @@ After restarting:
 
 Fields:
 
-- **User:** `user@realm`  
-  - Example: `homeassistant@pve`  
-- **Password:** user password  
+- **User:** `user@realm`
+  - Example: `homeassistant@pve`
+- **Password:** user password
 
 > 💡 Since V3, the node is detected automatically. Manual entry is not required.
 
@@ -67,9 +67,9 @@ Fields:
 
 Fields:
 
-- **User:** `user@realm`  
-- **Token ID:** only the name → `ha-token`  
-- **Token Secret:** the secret generated in Proxmox  
+- **User:** `user@realm`
+- **Token ID:** only the name → `ha-token`
+- **Token Secret:** the secret generated in Proxmox
 
 > ⚠️ Do not use the format `user@pve!token`
 
@@ -81,10 +81,10 @@ After connecting, the integration will automatically detect available resources.
 
 You can select:
 
-- Virtual machines (VMs)  
-- Containers (CTs)  
-- Physical disks  
-- Storages  
+- Virtual machines (VMs)
+- Containers (CTs)
+- Physical disks
+- Storages
 
 > 💡 Select only what you need to keep Home Assistant clean and efficient.
 
@@ -139,17 +139,17 @@ Below is the complete process with screenshots:
 
 If you are using a **managed or multi-tenant PBS** (Tuxis, Hetzner, etc.):
 
-- You will not have access to hardware sensors  
-- You will not see temperatures or physical disks  
-- There will be no node metrics  
+- You will not have access to hardware sensors
+- You will not see temperatures or physical disks
+- There will be no node metrics
 
 This is normal because:
 
-- You do not have access to the actual hardware  
-- The provider restricts the system  
-- Low-level permissions do not exist  
+- You do not have access to the actual hardware
+- The provider restricts the system
+- Low-level permissions do not exist
 
-**Result:**  
+**Result:**
 Only limited datastore data will be displayed.
 
---- 
+---

@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int_v4.png" alt="Proxmox Extended Sensors Logo" width="600"/>
+  <img src="https://raw.githubusercontent.com/ha-china/proxmox_sensors_cn/main/img/logo_int_v4.png" alt="Proxmox Extended Sensors Logo" width="600"/>
 </p>
 
 > **适用于 Home Assistant 的 Proxmox VE 与 PBS 高可靠、细粒度监控和控制系统。**
 
-# 🚀 Proxmox Extended Sensors（v4）中文版
+# 🚀 Proxmox Extended Sensors CN（proxmox_sensors_cn）中文版
 
 ## 🚀 简介
 
-**Proxmox Extended Sensors v4** 是原集成的一次完整演进，经过从底层重新设计，为 Home Assistant 提供工业级稳定性和更深入的系统洞察能力。
+**Proxmox Extended Sensors CN（proxmox_sensors_cn）v4** 是原集成的一次完整演进，经过从底层重新设计，为 Home Assistant 提供工业级稳定性和更深入的系统洞察能力。
 
 在 V3 的基础上，本集成从单纯展示原始指标，升级为提供更有意义、可解释的信息。V4 继续提供高价值传感器，例如 Node Score 和 Node Status（Excellent/Warning），让你无需逐个分析传感器，就能一眼判断系统健康状态，非常适合智能自动化和清爽的仪表盘展示。
 
@@ -150,8 +150,8 @@ V4 会自动把传感器分组，从而整理你的 HA 仪表盘：
 
 ### 🔹 通过 HACS（推荐）
 1. 打开 **HACS → Integrations**。
-2. 点击 **Custom repositories** 并添加：`https://github.com/Javisen/proxmox_sensors`
-3. 搜索 **"Proxmox Extended Sensors"** 并安装。
+2. 点击 **Custom repositories** 并添加：`https://github.com/ha-china/proxmox_sensors_cn`
+3. 搜索 **"Proxmox Extended Sensors CN"** 并安装。
 4. 重启 Home Assistant。
 
 ---
@@ -174,7 +174,7 @@ V4 会自动把传感器分组，从而整理你的 HA 仪表盘：
 
 欢迎贡献！如果你觉得这个集成有用，请考虑在 GitHub 上给项目点一个 ⭐。
 
-**[访问 GitHub 仓库](https://github.com/Javisen/proxmox_sensors)**
+**[访问 GitHub 仓库](https://github.com/ha-china/proxmox_sensors_cn)**
 
 ---
 

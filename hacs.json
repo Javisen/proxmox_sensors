@@ -1,9 +1,9 @@
 {
-  "name": "Proxmox Extended Sensors",
+  "name": "Proxmox Extended Sensors CN",
   "render_readme": true,
   "homeassistant": "2023.8.0",
   "hide_default_branch": true,
   "zip_release": false,
-  "filename": "proxmox_sensors.zip",
-  "persistent_directory": "proxmox_sensors"
+  "filename": "proxmox_sensors_cn.zip",
+  "persistent_directory": "proxmox_sensors_cn"
 }

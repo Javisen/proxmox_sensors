@@ -69,7 +69,7 @@ sensors
 Voer deze commando's uit in de terminal van uw Proxmox-server:
 ```bash
 # Download het script uit de repository
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
+wget https://raw.githubusercontent.com/ha-china/proxmox_sensors_cn/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
 
 # Geef uitvoeringsrechten
 chmod +x /usr/local/bin/pve-sensors-api.py

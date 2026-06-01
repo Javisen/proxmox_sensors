@@ -56,7 +56,7 @@ Therefore, this integration uses a small service that acts as a bridge.
 Run these commands on your Proxmox server terminal:
 
 ```bash
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
+wget https://raw.githubusercontent.com/ha-china/proxmox_sensors_cn/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
 chmod +x /usr/local/bin/pve-sensors-api.py
 ```
 

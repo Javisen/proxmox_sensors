@@ -25,7 +25,7 @@
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int_v4.png" alt="Логотип Proxmox Extended Sensors" width="600"/>
+  <img src="https://raw.githubusercontent.com/ha-china/proxmox_sensors_cn/main/img/logo_int_v4.png" alt="Логотип Proxmox Extended Sensors" width="600"/>
 </p>
 
 ---
@@ -283,7 +283,7 @@ HA-{{vmid}}-{{guestname}}
 
 ### 🔹 Ручная установка
 
-1. Скопируйте в `/config/custom_components/proxmox_sensors`
+1. Скопируйте в `/config/custom_components/proxmox_sensors_cn`
 2. Перезапустите Home Assistant
 3. Добавьте интеграцию
 
@@ -342,7 +342,7 @@ HA-{{vmid}}-{{guestname}}
 ## 🤝 Вклад в развитие и сообщество
 
 Вклад приветствуется. Вы можете открывать issues или pull requests.
-Репозиторий: https://github.com/Javisen/proxmox_sensors
+Репозиторий: https://github.com/ha-china/proxmox_sensors_cn
 
 ---
 

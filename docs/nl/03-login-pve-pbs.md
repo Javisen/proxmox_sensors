@@ -12,7 +12,7 @@ Omdat het een aangepaste integratie betreft, moet je deze eerst toevoegen aan HA
 2. Klik op de **drie puntjes** (rechtsboven)
 3. Selecteer **Aangepaste repositories**
 4. Voeg deze repository toe:
-   `https://github.com/Javisen/proxmox_sensors/`
+   `https://github.com/ha-china/proxmox_sensors_cn/`
 5. Selecteer bij **Categorie** de optie `Integratie`
 6. Installeer de integratie en **herstart Home Assistant**
 
