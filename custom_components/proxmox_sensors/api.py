@@ -244,6 +244,7 @@ class ProxmoxClient:
             "suspend",
             "resume",
             "hibernate",
+            "pause",
         ]
         if command not in valid_vm_commands:
             LOGGER.error(f"Invalid VM command: {command}")
@@ -252,6 +253,9 @@ class ProxmoxClient:
         if command == "hibernate":
             path = f"nodes/{node}/qemu/{vmid}/status/suspend"
             data = {"todisk": 1}
+        elif command == "pause":
+            path = f"nodes/{node}/qemu/{vmid}/status/suspend"
+            data = {}
         else:
             path = f"nodes/{node}/qemu/{vmid}/status/{command}"
             data = {}
