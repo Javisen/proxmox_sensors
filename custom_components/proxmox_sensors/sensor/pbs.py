@@ -30,7 +30,6 @@ class ProxmoxPBSVersionSensor(ProxmoxPbsBaseSensor):
             name=None,
         )
         self._attr_translation_key = "pbs_version"
-        self._attr_translation_key = "pbs_version"
         self._attr_icon = "mdi:information-outline"
 
     def _get_value(self):
@@ -47,7 +46,6 @@ class ProxmoxPBSReleaseSensor(ProxmoxPbsBaseSensor):
             sensor_id="release",
             name=None,
         )
-        self._attr_translation_key = "pbs_release"
         self._attr_translation_key = "pbs_release"
         self._attr_icon = "mdi:tag"
 
@@ -76,7 +74,8 @@ class ProxmoxPBSCpuSensor(ProxmoxPbsBaseSensor):
     """Sensor for CPU usage."""
 
     def __init__(self, coordinator, server_id):
-        super().__init__(coordinator, server_id, "node_cpu", "CPU Usage", "%")
+        super().__init__(coordinator, server_id, "node_cpu", None, "%")
+        self._attr_translation_key = "pbs_cpu_usage"
         self._attr_icon = "mdi:cpu-64-bit"
 
     def _get_value(self):
@@ -107,7 +106,8 @@ class ProxmoxPBSRamSensor(ProxmoxPbsBaseSensor):
     """Sensor for RAM usage percentage."""
 
     def __init__(self, coordinator, server_id):
-        super().__init__(coordinator, server_id, "node_ram", "RAM Usage", "%")
+        super().__init__(coordinator, server_id, "node_ram", None, "%")
+        self._attr_translation_key = "pbs_ram_usage"
         self._attr_icon = "mdi:memory"
 
     def _get_value(self):
@@ -434,11 +434,17 @@ class ProxmoxPBSDatastoreSizeSensor(ProxmoxPbsBaseSensor):
             coordinator=coordinator,
             server_id=server_id,
             sensor_id=f"{store}_{key}",
-            name=label,
+            name=None,
             unit=UnitOfInformation.GIGABYTES,
         )
         self._store = store
         self._key = key
+        translation_key_map = {
+            "total": "pbs_datastore_total",
+            "used": "pbs_datastore_used",
+            "avail": "pbs_datastore_free",
+        }
+        self._attr_translation_key = translation_key_map.get(key)
 
         if icon:
             self._attr_icon = icon

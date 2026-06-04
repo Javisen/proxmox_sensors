@@ -42,6 +42,8 @@ def _safe(data: dict, *keys, default=None):
 class ProxmoxClusterBaseSensor(CoordinatorEntity, SensorEntity):
     """Base sensor for cluster-level data."""
 
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator)
         self._entry_id = entry_id
@@ -426,6 +428,8 @@ class ProxmoxClusterHASensor(ProxmoxClusterBaseSensor):
 
 class ProxmoxClusterFirewallSensor(CoordinatorEntity, SensorEntity):
     """Cluster Firewall status sensor."""
+
+    _attr_has_entity_name = True
 
     def __init__(self, coordinator, cluster_name, entry_id):
         super().__init__(coordinator)

@@ -528,6 +528,21 @@
       },
       "storage_free": {
         "name": "空闲"
+      },
+      "pbs_cpu_usage": {
+        "name": "CPU 使用率"
+      },
+      "pbs_ram_usage": {
+        "name": "RAM 使用率"
+      },
+      "pbs_datastore_total": {
+        "name": "总量"
+      },
+      "pbs_datastore_used": {
+        "name": "已用"
+      },
+      "pbs_datastore_free": {
+        "name": "可用"
       }
     },
     "button": {
@@ -577,25 +592,25 @@
         "name": "唤醒 {name}"
       },
       "pbs_gc": {
-        "name": "垃圾回收 {name}"
+        "name": "垃圾回收"
       },
       "pbs_prune": {
-        "name": "剪枝 {name}"
+        "name": "剪枝"
       },
       "pbs_verify": {
-        "name": "验证 {name}"
+        "name": "验证"
       },
       "pbs_sync": {
-        "name": "同步 {name}"
+        "name": "同步"
       },
       "pbs_node_shutdown": {
-        "name": "关闭 {name}"
+        "name": "关闭"
       },
       "pbs_node_reboot": {
-        "name": "重启 {name}"
+        "name": "重启"
       },
       "pbs_node_wake": {
-        "name": "唤醒 {name}"
+        "name": "唤醒"
       }
     },
     "binary_sensor": {

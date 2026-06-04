@@ -528,6 +528,21 @@
       },
       "storage_free": {
         "name": "Free"
+      },
+      "pbs_cpu_usage": {
+        "name": "CPU Usage"
+      },
+      "pbs_ram_usage": {
+        "name": "RAM Usage"
+      },
+      "pbs_datastore_total": {
+        "name": "Total"
+      },
+      "pbs_datastore_used": {
+        "name": "Used"
+      },
+      "pbs_datastore_free": {
+        "name": "Free"
       }
     },
     "button": {
@@ -577,25 +592,25 @@
         "name": "Wake {name}"
       },
       "pbs_gc": {
-        "name": "Garbage Collect {name}"
+        "name": "Garbage Collect"
       },
       "pbs_prune": {
-        "name": "Prune {name}"
+        "name": "Prune"
       },
       "pbs_verify": {
-        "name": "Verify {name}"
+        "name": "Verify"
       },
       "pbs_sync": {
-        "name": "Sync {name}"
+        "name": "Sync"
       },
       "pbs_node_shutdown": {
-        "name": "Shutdown {name}"
+        "name": "Shutdown"
       },
       "pbs_node_reboot": {
-        "name": "Reboot {name}"
+        "name": "Reboot"
       },
       "pbs_node_wake": {
-        "name": "Wake {name}"
+        "name": "Wake"
       }
     },
     "binary_sensor": {
