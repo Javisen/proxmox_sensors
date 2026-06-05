@@ -11,6 +11,8 @@ _logger = logging.getLogger(__name__)
 
 class PBSLastActionSensor(CoordinatorEntity, SensorEntity):
 
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, datastore):
         super().__init__(coordinator)
 

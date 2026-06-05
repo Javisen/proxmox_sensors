@@ -424,6 +424,9 @@
       "node_backup_progress": {
         "name": "备份进度"
       },
+      "node_metric": {
+        "name": "{name}"
+      },
       "pbs_version": {
         "name": "版本"
       },
@@ -525,6 +528,9 @@
       },
       "cpu_temperature": {
         "name": "CPU 温度"
+      },
+      "hardware_temperature": {
+        "name": "{name}"
       },
       "storage_free": {
         "name": "空闲"

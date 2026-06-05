@@ -41,8 +41,10 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         if self._is_cpu:
             self._attr_translation_key = "cpu_temperature"
         elif not self._is_chipset:
-            # For non-CPU, non-chipset hardware sensors, use the key as name
-            self._attr_name = sensor_key.replace("_", " ").title()
+            self._attr_translation_key = "hardware_temperature"
+            self._attr_translation_placeholders = {
+                "name": sensor_key.replace("_", " ").replace("-", " ").title()
+            }
 
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"

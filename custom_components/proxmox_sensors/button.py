@@ -178,6 +178,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class PBSBaseButton(CoordinatorEntity, ButtonEntity):
     """Base class for PBS maintenance buttons."""
 
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, client, datastore, command_name, command_display):
         super().__init__(coordinator)
 
@@ -271,6 +273,8 @@ class PBSSyncButton(PBSBaseButton):
 
 class PBSNodeBaseButton(CoordinatorEntity, ButtonEntity):
     """Base class for PBS node control buttons (shutdown/reboot)."""
+
+    _attr_has_entity_name = True
 
     def __init__(
         self, coordinator, client, server_id, command_name, command_display, icon

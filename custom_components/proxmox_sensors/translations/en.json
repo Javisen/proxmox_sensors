@@ -424,6 +424,9 @@
       "node_backup_progress": {
         "name": "Backup Progress"
       },
+      "node_metric": {
+        "name": "{name}"
+      },
       "pbs_version": {
         "name": "Version"
       },
@@ -525,6 +528,9 @@
       },
       "cpu_temperature": {
         "name": "CPU Temperature"
+      },
+      "hardware_temperature": {
+        "name": "{name}"
       },
       "storage_free": {
         "name": "Free"

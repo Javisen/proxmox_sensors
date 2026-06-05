@@ -125,6 +125,7 @@
       "node_info": { "name": "Proxmox Node" },
       "storages": { "name": "Proxmox Storages" },
       "backup_progress": { "name": "Backup Progress" },
+      "node_metric": { "name": "{name}" },
       "vm_status": { "name": "Status" },
       "vm_cpu_usage": { "name": "CPU Usage" },
       "vm_network_rx": { "name": "Network RX" },
@@ -183,7 +184,8 @@
           "manufacturer": { "name": "Manufacturer" },
           "locator": { "name": "Slot" }
         }
-      }
+      },
+      "hardware_temperature": { "name": "{name}" }
     }
   }
 }

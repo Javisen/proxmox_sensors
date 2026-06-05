@@ -75,10 +75,14 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
 
         super().__init__(coordinator, sensor_id, None, unit, unique_id, node)
         if name == sensor_id:
-            self._attr_name = sensor_id.replace("_", " ").title()
+            self._attr_translation_key = "node_metric"
+            self._attr_translation_placeholders = {
+                "name": sensor_id.replace("_", " ").title(),
+                "node_name": node,
+            }
         else:
             self._attr_translation_key = name
-        self._attr_translation_placeholders = {"node_name": node}
+            self._attr_translation_placeholders = {"node_name": node}
 
         if sensor_id in ("network_rx", "network_tx"):
             self._last_value = None
