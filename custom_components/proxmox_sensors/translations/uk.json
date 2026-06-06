@@ -3,49 +3,51 @@
     "step": {
       "user": {
         "title": "1. Підключення до сервера",
-        "description": "Введіть адресу вашого сервера Proxmox (без http:// або https://). Порт вибирається автоматично (8006 для PVE / 8007 для PBS).",
+        "description": "Введіть адресу вашого сервера Proxmox. Порт керується автоматично (8006 для PVE / 8007 для PBS).",
         "data": {
-          "host": "Адреса сервера (IP або домен)",
+          "host": "Адреса сервера (IP або FQDN)",
           "platform_type": "Тип сервера"
         }
       },
       "auth_method": {
         "title": "2. Метод автентифікації",
-        "description": "Оберіть, чи використовувати безпечний API-токен. Обов’язково для PBS.",
+        "description": "Виберіть метод автентифікації. API-токени обов'язкові для PBS та рекомендовані для PVE.",
         "data": {
-          "use_token": "Використовувати API-токен (рекомендовано)"
+          "use_token": "Використовувати API-токен (Рекомендовано)"
         }
       },
       "credentials_pve": {
-        "title": "3. Облікові дані доступу — Proxmox VE",
-        "description": "Введіть параметри підключення PVE.",
+        "title": "3. Облікові дані — Proxmox VE",
+        "description": "Введіть дані для підключення до вашого PVE.",
         "data": {
           "user": "Користувач (наприклад, root@pam)",
           "password": "Пароль",
-          "token_id": "ID токена (без user@pve!)",
+          "token_id": "ID токена (без користувача@pve!)",
           "token_secret": "Секрет токена",
           "auto_detect_node": "Автоматично визначати вузол за IP хоста",
-          "enable_lm_sensors": "Відстежувати температури (lm-sensors)",
+          "enable_lm_sensors": "Увімкнути апаратні датчики та температури",
+          "enable_cluster": "Увімкнути моніторинг всього кластера",
           "verify_ssl": "Перевіряти SSL-сертифікат"
         }
       },
       "credentials_pbs": {
-        "title": "3. Облікові дані доступу — Proxmox Backup Server",
-        "description": "Введіть параметри підключення PBS.",
+        "title": "3. Облікові дані — Proxmox Backup Server",
+        "description": "Введіть дані для підключення до вашого PBS.",
         "data": {
           "user": "Користувач (наприклад, admin@pbs)",
-          "token_id": "ID токена (без user@pve!)",
+          "password": "Пароль",
+          "token_id": "ID токена",
           "token_secret": "Секрет токена",
           "verify_ssl": "Перевіряти SSL-сертифікат"
         }
       },
       "credentials_cluster": {
-        "title": "3. Облікові дані доступу — кластер Proxmox",
-        "description": "Введіть облікові дані для підключення до кластера. Використовується той самий API, що й у PVE (порт 8006).",
+        "title": "3. Облікові дані — Кластер Proxmox",
+        "description": "Введіть облікові дані для підключення до кластера. Використовує той самий API, що й PVE (порт 8006).",
         "data": {
           "user": "Користувач (наприклад, root@pam)",
           "password": "Пароль",
-          "token_id": "ID токена (без user@pve!)",
+          "token_id": "ID токена (без користувача@pve!)",
           "token_secret": "Секрет токена",
           "verify_ssl": "Перевіряти SSL-сертифікат"
         }
@@ -59,46 +61,49 @@
       },
       "select_resources": {
         "title": "5. Вибір ресурсів",
-        "description": "Виберіть ресурси, які потрібно моніторити й показувати як сутності в Home Assistant.",
+        "description": "Виберіть, які ресурси слід відстежувати та відображати як сутності в Home Assistant.",
         "data": {
           "vms": "Віртуальні машини (VM)",
           "cts": "Контейнери (LXC)",
           "storage": "Сховище",
-          "enable_physical_disks": "Моніторинг фізичних дисків",
-          "enable_node_controls": "Увімкнути керування вузлом (вимкнення/перезавантаження)"
+          "enable_physical_disks": "Увімкнути моніторинг фізичних дисків",
+          "enable_node_controls": "Увімкнути керування живленням вузла"
         }
       }
     },
     "error": {
-      "cannot_connect": "Не вдалося підключитися до сервера. Перевірте адресу.",
+      "cannot_connect": "Помилка підключення. Перевірте адресу сервера.",
       "invalid_auth": "Помилка автентифікації. Перевірте облікові дані або права токена.",
-      "insufficient_permissions": "Підключення з цими обліковими даними успішне, але прав недостатньо для потрібних endpoints API Proxmox.",
-      "unknown": "Невідома помилка. Перевірте журнали Home Assistant."
+      "unknown": "Неочікувана помилка. Перевірте логи Home Assistant."
     },
     "abort": {
-      "already_configured": "Цей вузол уже налаштований.",
-      "no_data": "Дані кластера не отримано. Перевірте конфігурацію.",
+      "already_configured": "Цей вузол вже налаштовано.",
+      "no_data": "Дані кластера не отримано. Перевірте вашу конфігурацію.",
       "cluster_no_options": "Налаштування кластера керуються з конфігурації вузла PVE."
     }
   },
   "options": {
     "abort": {
-      "pbs_no_options": "Цей сервер PBS не має налаштовуваних параметрів.",
+      "pbs_no_options": "Цей сервер PBS не має налаштовуваних опцій.",
       "cluster_no_options": "Налаштування кластера керуються з конфігурації вузла PVE.",
-      "entry_not_loaded": "Інтеграцію ще не завантажено, спробуйте ще раз."
+      "entry_not_loaded": "Інтеграцію ще не завантажено, будь ласка, спробуйте знову."
     },
     "step": {
       "init": {
-        "title": "Параметри Proxmox Extended Sensors",
-        "description": "Налаштуйте параметри моніторингу й керування для цієї інтеграції.",
+        "title": "Proxmox Extended Sensors — Опції",
+        "description": "Налаштуйте параметри моніторингу та керування для цієї інтеграції.",
         "data": {
-          "vms": "Обрати віртуальні машини (VM)",
-          "cts": "Обрати контейнери (LXC)",
-          "storage": "Обрати сховище",
-          "enable_lm_sensors": "Увімкнути апаратні сенсори (lm-sensors)",
-          "enable_physical_disks": "Увімкнути сенсори фізичних дисків",
-          "enable_smart_monitoring": "Увімкнути моніторинг стану SMART і NVMe",
-          "enable_node_controls": "Увімкнути керування вузлом",
+          "vms": "Вибрати віртуальні машини (VM)",
+          "cts": "Вибрати контейнери (LXC)",
+          "storage": "Вибрати сховище",
+          "enable_lm_sensors": "Увімкнути апаратні датчики та температури",
+          "enable_physical_disks": "Увімкнути моніторинг фізичних дисків",
+          "enable_smart_monitoring": "Увімкнути моніторинг здоров'я SMART та NVMe",
+          "enable_node_controls": "Увімкнути керування живленням вузла",
+          "enable_backup_progress": "Увімкнути датчик прогресу резервного копіювання",
+          "enable_storage_list": "Увімкнути датчик списку сховищ",
+          "enable_nodes_list": "Увімкнути датчик списку вузлів",
+          "enable_cluster": "Увімкнути моніторинг всього кластера",
           "enable_pbs_node_controls": "Увімкнути керування живленням вузла PBS",
           "wol_mac": "MAC-адреса Wake-on-LAN",
           "verify_ssl": "Перевіряти SSL-сертифікат"
@@ -109,7 +114,7 @@
   "entity": {
     "sensor": {
       "cpu_usage": {
-        "name": "Завантаження CPU"
+        "name": "Використання ЦП"
       },
       "uptime": {
         "name": "Час роботи"
@@ -136,25 +141,25 @@
         "name": "Немає завдань"
       },
       "cpu_info": {
-        "name": "Інформація про CPU"
+        "name": "Інформація про ЦП"
       },
       "ksm_shared": {
-        "name": "Спільна пам’ять KSM"
+        "name": "Розділювана пам'ять KSM"
       },
       "memory_usage": {
-        "name": "Використання пам’яті"
+        "name": "Використання пам'яті"
       },
       "swap_usage": {
         "name": "Використання swap"
       },
       "rootfs_usage": {
-        "name": "Використання кореневої файлової системи"
+        "name": "Використання кореневої ФС"
       },
       "node_info": {
         "name": "Вузол Proxmox"
       },
       "storages": {
-        "name": "Сховище Proxmox"
+        "name": "Сховища Proxmox"
       },
       "backup_progress": {
         "name": "Прогрес резервного копіювання"
@@ -163,7 +168,7 @@
         "name": "Статус"
       },
       "vm_cpu_usage": {
-        "name": "Завантаження CPU"
+        "name": "Використання ЦП"
       },
       "vm_network_rx": {
         "name": "Мережа RX"
@@ -172,16 +177,16 @@
         "name": "Мережа TX"
       },
       "vm_memory_used": {
-        "name": "Використана пам’ять"
+        "name": "Використано ОЗП"
       },
       "vm_memory_total": {
-        "name": "Загальна пам’ять"
+        "name": "Всього ОЗП"
       },
       "vm_disk_used": {
-        "name": "Використаний диск"
+        "name": "Використано диска"
       },
       "vm_disk_total": {
-        "name": "Загальний диск"
+        "name": "Всього диска"
       },
       "vm_uptime": {
         "name": "Час роботи"
@@ -190,19 +195,19 @@
         "name": "Статус"
       },
       "ct_cpu_usage": {
-        "name": "Завантаження CPU"
+        "name": "Використання ЦП"
       },
       "ct_memory_used": {
-        "name": "Використана пам’ять"
+        "name": "Використано ОЗП"
       },
       "ct_memory_total": {
-        "name": "Загальна пам’ять"
+        "name": "Всього ОЗП"
       },
       "ct_disk_used": {
-        "name": "Використаний диск"
+        "name": "Використано диска"
       },
       "ct_disk_total": {
-        "name": "Загальний диск"
+        "name": "Всього диска"
       },
       "ct_network_rx": {
         "name": "Мережа RX"
@@ -214,7 +219,7 @@
         "name": "Час роботи"
       },
       "storage_usage": {
-        "name": "Використання (%)"
+        "name": "Використання"
       },
       "storage_used": {
         "name": "Використано"
@@ -235,25 +240,25 @@
         "name": "Версія"
       },
       "release": {
-        "name": "Release"
+        "name": "Релиз"
       },
       "auth_status": {
         "name": "Статус автентифікації"
       },
       "node_cpu": {
-        "name": "Завантаження CPU"
+        "name": "Використання ЦП"
       },
       "node_ram": {
-        "name": "Використання RAM"
+        "name": "Використання ОЗП"
       },
       "ram_total": {
-        "name": "Загальна RAM"
+        "name": "Всього ОЗП"
       },
       "ram_used": {
-        "name": "Використана RAM"
+        "name": "Використано ОЗП"
       },
       "ram_free": {
-        "name": "Вільна RAM"
+        "name": "Вільно ОЗП"
       },
       "last_task_type": {
         "name": "Тип останнього завдання"
@@ -271,7 +276,7 @@
         "name": "Остання дія"
       },
       "datastore_usage": {
-        "name": "Використання (%)"
+        "name": "Використання"
       },
       "datastore_total": {
         "name": "Загальний розмір"
@@ -289,13 +294,13 @@
         "name": "Кількість резервних копій"
       },
       "datastore_last_backup_time": {
-        "name": "Останній бекап"
+        "name": "Остання резервна копія"
       },
       "datastore_last_backup_size": {
-        "name": "Розмір останнього бекапу"
+        "name": "Розмір останньої копії"
       },
       "datastore_last_backup_status": {
-        "name": "Статус останнього бекапу"
+        "name": "Статус останньої копії"
       },
       "datastore_backup_errors": {
         "name": "Помилки резервного копіювання"
@@ -307,7 +312,7 @@
         "name": "Статус GC"
       },
       "proxmox_dimm": {
-        "name": "Модуль RAM (DIMM)",
+        "name": "Модуль ОЗП (DIMM)",
         "state_attributes": {
           "speed": {
             "name": "Швидкість"
@@ -316,7 +321,7 @@
             "name": "Налаштована швидкість"
           },
           "type": {
-            "name": "Тип пам’яті"
+            "name": "Тип пам'яті"
           },
           "manufacturer": {
             "name": "Виробник"
@@ -324,6 +329,418 @@
           "locator": {
             "name": "Слот"
           }
+        }
+      },
+      "cluster_status": {
+        "name": "Статус"
+      },
+      "cluster_nodes_online": {
+        "name": "Вузлів онлайн"
+      },
+      "cluster_cpu_usage": {
+        "name": "Використання ЦП"
+      },
+      "cluster_ram_usage": {
+        "name": "Використання ОЗП"
+      },
+      "cluster_vms_running": {
+        "name": "ВМ запущено"
+      },
+      "cluster_cts_running": {
+        "name": "КТ запущено"
+      },
+      "cluster_storage_usage": {
+        "name": "Використання сховища"
+      },
+      "cluster_ha_status": {
+        "name": "Статус HA"
+      },
+      "cluster_firewall": {
+        "name": "Файрвол"
+      },
+      "cluster_backup_jobs": {
+        "name": "Завдання резервного копіювання"
+      },
+      "cluster_backup_age": {
+        "name": "Вік резервної копії"
+      },
+      "cluster_backup_health": {
+        "name": "Здоров'я резервних копій"
+      },
+      "cluster_failed_tasks": {
+        "name": "Невдалі завдання"
+      },
+      "node_uptime": {
+        "name": "Час роботи"
+      },
+      "node_kernel_version": {
+        "name": "Версія ядра"
+      },
+      "node_pve_version": {
+        "name": "Версія PVE"
+      },
+      "node_load_average": {
+        "name": "Середнє навантаження"
+      },
+      "node_network_rx": {
+        "name": "Мережа RX"
+      },
+      "node_network_tx": {
+        "name": "Мережа TX"
+      },
+      "node_last_task": {
+        "name": "Останнє завдання"
+      },
+      "node_cpu_info": {
+        "name": "Інформація про ЦП"
+      },
+      "node_ksm_shared": {
+        "name": "Розділювана пам'ять KSM"
+      },
+      "node_memory_usage": {
+        "name": "Використання пам'яті"
+      },
+      "node_swap_usage": {
+        "name": "Використання swap"
+      },
+      "node_rootfs_usage": {
+        "name": "Використання кореневої ФС"
+      },
+      "node_updates": {
+        "name": "Оновлення вузла"
+      },
+      "node_iowait": {
+        "name": "Очікування введення-виведення"
+      },
+      "node_load_1m": {
+        "name": "Середнє навантаження (1хв)"
+      },
+      "node_score": {
+        "name": "Оцінка вузла"
+      },
+      "node_mounted_disks": {
+        "name": "Змонтовані диски"
+      },
+      "node_backup_progress": {
+        "name": "Прогрес резервного копіювання"
+      },
+      "node_metric": {
+        "name": "{name}"
+      },
+      "pbs_version": {
+        "name": "Версія"
+      },
+      "pbs_release": {
+        "name": "Релиз"
+      },
+      "pbs_auth_status": {
+        "name": "Статус автентифікації"
+      },
+      "pbs_ram_total": {
+        "name": "Всього ОЗП"
+      },
+      "pbs_ram_used": {
+        "name": "Використано ОЗП"
+      },
+      "pbs_ram_free": {
+        "name": "Вільно ОЗП"
+      },
+      "pbs_last_task": {
+        "name": "Останнє завдання"
+      },
+      "pbs_last_task_type": {
+        "name": "Тип останнього завдання"
+      },
+      "pbs_last_task_status": {
+        "name": "Статус останнього завдання"
+      },
+      "pbs_last_task_message": {
+        "name": "Повідомлення останнього завдання"
+      },
+      "pbs_last_task_duration": {
+        "name": "Тривалість останнього завдання"
+      },
+      "pbs_datastore_usage": {
+        "name": "Використання"
+      },
+      "pbs_dedup": {
+        "name": "Дедуплікація"
+      },
+      "pbs_last_backup_time": {
+        "name": "Остання резервна копія"
+      },
+      "pbs_last_backup_size": {
+        "name": "Розмір останньої копії"
+      },
+      "pbs_last_backup_status": {
+        "name": "Статус останньої копії"
+      },
+      "pbs_backup_errors": {
+        "name": "Помилки резервного копіювання"
+      },
+      "pbs_backups_summary": {
+        "name": "Зведення резервних копій"
+      },
+      "pbs_gc_status": {
+        "name": "Статус GC"
+      },
+      "pbs_verify_status": {
+        "name": "Статус перевірки"
+      },
+      "pbs_prune_status": {
+        "name": "Статус очищення"
+      },
+      "hw_cpu_temp": {
+        "name": "Температура ЦП"
+      },
+      "hw_nvme_composite": {
+        "name": "Складена температура"
+      },
+      "hw_nvme_nand": {
+        "name": "Температура NAND"
+      },
+      "hw_nvme_controller": {
+        "name": "Температура контролера"
+      },
+      "chipset_temp": {
+        "name": "Температура чіпсету"
+      },
+      "disk_size": {
+        "name": "Розмір {model}"
+      },
+      "zfs_health": {
+        "name": "Здоров'я ZFS {pool}"
+      },
+      "dimm_capacity": {
+        "name": "Ємність {dimm}"
+      },
+      "hw_nvme_temperature": {
+        "name": "{name}"
+      },
+      "hw_nvme_temp1": {
+        "name": "Температура NVMe"
+      },
+      "proxmox_node": {
+        "name": "Статус вузла"
+      },
+      "proxmox_storages": {
+        "name": "Сховища"
+      },
+      "cpu_temperature": {
+        "name": "Температура ЦП"
+      },
+      "hardware_temperature": {
+        "name": "{name}"
+      },
+      "storage_free": {
+        "name": "Вільно"
+      },
+      "pbs_cpu_usage": {
+        "name": "Використання ЦП"
+      },
+      "pbs_ram_usage": {
+        "name": "Використання ОЗП"
+      },
+      "pbs_datastore_total": {
+        "name": "Всього"
+      },
+      "pbs_datastore_used": {
+        "name": "Використано"
+      },
+      "pbs_datastore_free": {
+        "name": "Вільно"
+      }
+    },
+    "button": {
+      "ct_start": {
+        "name": "Запустити {name}"
+      },
+      "ct_shutdown": {
+        "name": "Вимкнути {name}"
+      },
+      "ct_stop": {
+        "name": "Зупинити {name}"
+      },
+      "ct_reboot": {
+        "name": "Перезавантажити {name}"
+      },
+      "vm_start": {
+        "name": "Запустити {name}"
+      },
+      "vm_shutdown": {
+        "name": "Вимкнути {name}"
+      },
+      "vm_stop": {
+        "name": "Зупинити {name}"
+      },
+      "vm_reboot": {
+        "name": "Перезавантажити {name}"
+      },
+      "vm_reset": {
+        "name": "Скинути {name}"
+      },
+      "vm_pause": {
+        "name": "Призупинити {name}"
+      },
+      "vm_hibernate": {
+        "name": "Гібернувати {name}"
+      },
+      "vm_resume": {
+        "name": "Відновити {name}"
+      },
+      "node_reboot": {
+        "name": "Перезавантажити {name}"
+      },
+      "node_shutdown": {
+        "name": "Вимкнути {name}"
+      },
+      "node_wake": {
+        "name": "Розбудити {name}"
+      },
+      "pbs_gc": {
+        "name": "Збирання сміття"
+      },
+      "pbs_prune": {
+        "name": "Очищення"
+      },
+      "pbs_verify": {
+        "name": "Перевірити"
+      },
+      "pbs_sync": {
+        "name": "Синхронізувати"
+      },
+      "pbs_node_shutdown": {
+        "name": "Вимкнути"
+      },
+      "pbs_node_reboot": {
+        "name": "Перезавантажити"
+      },
+      "pbs_node_wake": {
+        "name": "Розбудити"
+      }
+    },
+    "binary_sensor": {
+      "node_overloaded": {
+        "name": "Перевантажений"
+      },
+      "node_disk_overloaded": {
+        "name": "Диск перевантажений"
+      },
+      "node_stressed": {
+        "name": "Навантажений"
+      }
+    }
+  },
+  "services": {
+    "create_vzdump_backup": {
+      "name": "Proxmox: Запустити резервне копіювання",
+      "description": "Резервне копіювання вибраних ВМ та/або контейнерів у вказане сховище.",
+      "fields": {
+        "node": {
+          "name": "Вузол",
+          "description": "Ім'я вузла (наприклад, server)"
+        },
+        "storage": {
+          "name": "Цільове сховище",
+          "description": "Ім'я сховища (наприклад, local, PBS_Local)"
+        },
+        "guests": {
+          "name": "Гості (ID VM/CT)",
+          "description": "Список числових ID VM/CT (наприклад, 100,101 або список YAML)"
+        },
+        "mode": {
+          "name": "Режим резервного копіювання",
+          "description": "snapshot, suspend або stop"
+        },
+        "compress": {
+          "name": "Метод стиснення",
+          "description": "Метод стиснення резервної копії"
+        },
+        "max_concurrent": {
+          "name": "Макс. одночасно",
+          "description": "Максимальна кількість одночасних резервних копій (1 = послідовно)"
+        },
+        "delay_between": {
+          "name": "Інтервал між копіями",
+          "description": "Секунди очікування між резервними копіями"
+        }
+      }
+    },
+    "backup_all": {
+      "name": "Proxmox: Масове резервне копіювання",
+      "description": "Резервне копіювання всіх ВМ та/або контейнерів на вибраному вузлі.",
+      "fields": {
+        "node": {
+          "name": "Вузол",
+          "description": "Ім'я вузла (наприклад, pve)"
+        },
+        "storage": {
+          "name": "Цільове сховище",
+          "description": "Ім'я сховища (наприклад, local, local-lvm, pbs)"
+        },
+        "mode": {
+          "name": "Режим резервного копіювання",
+          "description": "snapshot, suspend або stop"
+        },
+        "compress": {
+          "name": "Метод стиснення",
+          "description": "Метод стиснення резервної копії"
+        },
+        "max_concurrent": {
+          "name": "Макс. одночасно",
+          "description": "Максимальна кількість одночасних резервних копій (1 = послідовно)"
+        },
+        "delay_between": {
+          "name": "Інтервал між копіями",
+          "description": "Секунди між резервними копіями (0 = без інтервалу)"
+        },
+        "include_vms": {
+          "name": "Включати ВМ",
+          "description": "Якщо увімкнено, включає всі ВМ на вузлі."
+        },
+        "include_cts": {
+          "name": "Включати контейнери",
+          "description": "Якщо увімкнено, включає всі CT на вузлі."
+        }
+      }
+    },
+    "confirm_shutdown_node": {
+      "name": "Proxmox: Вимкнути вузол",
+      "description": "Запитує підтвердження та вимикає вибраний вузол.",
+      "fields": {
+        "node": {
+          "name": "Вузол",
+          "description": "Ім'я вузла (наприклад, pve)"
+        },
+        "confirm": {
+          "name": "Підтвердження",
+          "description": "Має бути true для виконання вимкнення."
+        }
+      }
+    },
+    "confirm_reboot_node": {
+      "name": "Proxmox: Перезавантажити вузол",
+      "description": "Запитує підтвердження та перезавантажує вибраний вузол.",
+      "fields": {
+        "node": {
+          "name": "Вузол",
+          "description": "Ім'я вузла (наприклад, pve)"
+        },
+        "confirm": {
+          "name": "Підтвердження",
+          "description": "Має бути true для виконання перезавантаження."
+        }
+      }
+    },
+    "wake_node": {
+      "name": "Proxmox: Розбудити вузол",
+      "description": "Будить вузол Proxmox через Wake-on-LAN.",
+      "fields": {
+        "node": {
+          "name": "Вузол"
+        },
+        "mac": {
+          "name": "MAC-адреса"
         }
       }
     }

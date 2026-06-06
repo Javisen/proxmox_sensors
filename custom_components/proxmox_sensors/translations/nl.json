@@ -3,103 +3,108 @@
     "step": {
       "user": {
         "title": "1. Serververbinding",
-        "description": "Voer het adres van je Proxmox-server in (zonder http:// of https://). De poort wordt automatisch geselecteerd (8006 voor PVE / 8007 voor PBS).",
+        "description": "Voer het adres van uw Proxmox-server in. De poort wordt automatisch beheerd (8006 voor PVE / 8007 voor PBS).",
         "data": {
-          "host": "Serveradres (IP of domein)",
+          "host": "Serveradres (IP of FQDN)",
           "platform_type": "Servertype"
         }
       },
       "auth_method": {
         "title": "2. Authenticatiemethode",
-        "description": "Kies of je een beveiligde API-token wilt gebruiken. Verplicht voor PBS.",
+        "description": "Selecteer de authenticatiemethode. API-tokens zijn verplicht voor PBS en aanbevolen voor PVE.",
         "data": {
-          "use_token": "API-token gebruiken (aanbevolen)"
+          "use_token": "API-token gebruiken (Aanbevolen)"
         }
       },
       "credentials_pve": {
         "title": "3. Toegangsgegevens — Proxmox VE",
-        "description": "Voer je PVE-verbindingsgegevens in.",
+        "description": "Voer de verbindingsdetails van uw PVE in.",
         "data": {
           "user": "Gebruiker (bijv. root@pam)",
           "password": "Wachtwoord",
-          "token_id": "Token-ID (zonder user@pve!)",
-          "token_secret": "Token-secret",
-          "auto_detect_node": "Node automatisch detecteren via host-IP",
-          "enable_lm_sensors": "Temperaturen bewaken (lm-sensors)",
+          "token_id": "Token-ID (zonder gebruiker@pve!)",
+          "token_secret": "Token Geheim",
+          "auto_detect_node": "Knooppunt automatisch detecteren van host-IP",
+          "enable_lm_sensors": "Hardwaresensoren en temperaturen inschakelen",
+          "enable_cluster": "Cluster-brede bewaking inschakelen",
           "verify_ssl": "SSL-certificaat verifiëren"
         }
       },
       "credentials_pbs": {
         "title": "3. Toegangsgegevens — Proxmox Backup Server",
-        "description": "Voer je PBS-verbindingsgegevens in.",
+        "description": "Voer de verbindingsdetails van uw PBS in.",
         "data": {
           "user": "Gebruiker (bijv. admin@pbs)",
-          "token_id": "Token-ID (zonder user@pve!)",
-          "token_secret": "Token-secret",
+          "password": "Wachtwoord",
+          "token_id": "Token-ID",
+          "token_secret": "Token Geheim",
           "verify_ssl": "SSL-certificaat verifiëren"
         }
       },
       "credentials_cluster": {
-        "title": "3. Toegangsgegevens — Proxmox-cluster",
-        "description": "Voer de toegangsgegevens in om met het cluster te verbinden. Gebruikt dezelfde API als PVE (poort 8006).",
+        "title": "3. Toegangsgegevens — Proxmox Cluster",
+        "description": "Voer de gegevens in om verbinding te maken met het cluster. Gebruikt dezelfde API als PVE (poort 8006).",
         "data": {
           "user": "Gebruiker (bijv. root@pam)",
           "password": "Wachtwoord",
-          "token_id": "Token-ID (zonder user@pve!)",
-          "token_secret": "Token-secret",
+          "token_id": "Token-ID (zonder gebruiker@pve!)",
+          "token_secret": "Token Geheim",
           "verify_ssl": "SSL-certificaat verifiëren"
         }
       },
       "select_node": {
-        "title": "4. Node selecteren",
-        "description": "Selecteer de Proxmox-node om te bewaken.",
+        "title": "4. Selecteer Knooppunt",
+        "description": "Selecteer het Proxmox-knooppunt om te bewaken.",
         "data": {
-          "node": "Node"
+          "node": "Knooppunt"
         }
       },
       "select_resources": {
-        "title": "5. Resourceselectie",
-        "description": "Selecteer welke resources bewaakt en als entiteiten in Home Assistant getoond moeten worden.",
+        "title": "5. Resource Selectie",
+        "description": "Selecteer welke bronnen moeten worden bewaakt en als entiteiten in Home Assistant moeten worden weergegeven.",
         "data": {
-          "vms": "Virtuele machines (VM)",
+          "vms": "Virtuele Machines (VM)",
           "cts": "Containers (LXC)",
           "storage": "Opslag",
-          "enable_physical_disks": "Fysieke schijven monitoren",
-          "enable_node_controls": "Node-acties inschakelen (uitschakelen/herstarten)"
+          "enable_physical_disks": "Bewaking van fysieke schijven inschakelen",
+          "enable_node_controls": "Knooppunt-energiebediening inschakelen"
         }
       }
     },
     "error": {
-      "cannot_connect": "Kan geen verbinding maken met de server. Controleer het adres.",
+      "cannot_connect": "Verbindingsfout. Controleer het serveradres.",
       "invalid_auth": "Authenticatie mislukt. Controleer de gegevens of tokenrechten.",
-      "insufficient_permissions": "De toegangsgegevens konden verbinden, maar hebben onvoldoende machtigingen voor de vereiste Proxmox API-endpoints.",
-      "unknown": "Onverwachte fout. Controleer de Home Assistant logs."
+      "unknown": "Onverwachte fout. Controleer de Home Assistant-logboeken."
     },
     "abort": {
-      "already_configured": "Deze node is al geconfigureerd.",
-      "no_data": "Geen clustergegevens ontvangen. Controleer je configuratie.",
-      "cluster_no_options": "Clusterinstellingen worden beheerd vanuit de PVE-nodeconfiguratie."
+      "already_configured": "Dit knooppunt is al geconfigureerd.",
+      "no_data": "Geen clustergegevens ontvangen. Controleer uw configuratie.",
+      "cluster_no_options": "Clusterinstellingen worden beheerd via de PVE-knooppuntconfiguratie."
     }
   },
   "options": {
     "abort": {
       "pbs_no_options": "Deze PBS-server heeft geen configureerbare opties.",
-      "cluster_no_options": "Clusterinstellingen worden beheerd vanuit de PVE-nodeconfiguratie.",
-      "entry_not_loaded": "Integratie is nog niet geladen, probeer het opnieuw."
+      "cluster_no_options": "Clusterinstellingen worden beheerd via de PVE-knooppuntconfiguratie.",
+      "entry_not_loaded": "Integratie nog niet geladen, probeer het opnieuw."
     },
     "step": {
       "init": {
-        "title": "Opties voor Proxmox Extended Sensors",
-        "description": "Configureer bewakings- en beheeropties voor deze integratie.",
+        "title": "Proxmox Extended Sensors — Opties",
+        "description": "Configureer de bewakings- en beheeropties voor deze integratie.",
         "data": {
-          "vms": "Virtuele machines selecteren (VM)",
-          "cts": "Containers selecteren (LXC)",
-          "storage": "Opslag selecteren",
-          "enable_lm_sensors": "Hardware sensoren inschakelen (lm-sensors)",
-          "enable_physical_disks": "Fysieke schijfsensoren inschakelen",
+          "vms": "Selecteer Virtuele Machines (VM)",
+          "cts": "Selecteer Containers (LXC)",
+          "storage": "Selecteer Opslag",
+          "enable_lm_sensors": "Hardwaresensoren en temperaturen inschakelen",
+          "enable_physical_disks": "Bewaking van fysieke schijven inschakelen",
           "enable_smart_monitoring": "SMART- en NVMe-gezondheidsbewaking inschakelen",
-          "enable_node_controls": "Node-acties inschakelen",
-          "enable_pbs_node_controls": "Energiebediening van PBS-node inschakelen",
+          "enable_node_controls": "Knooppunt-energiebediening inschakelen",
+          "enable_backup_progress": "Backup-voortgangssensor inschakelen",
+          "enable_storage_list": "Opslaglijstsensor inschakelen",
+          "enable_nodes_list": "Knooppuntlijstsensor inschakelen",
+          "enable_cluster": "Cluster-brede bewaking inschakelen",
+          "enable_pbs_node_controls": "PBS-knooppunt-energiebediening inschakelen",
           "wol_mac": "Wake-on-LAN MAC-adres",
           "verify_ssl": "SSL-certificaat verifiëren"
         }
@@ -112,7 +117,7 @@
         "name": "CPU-gebruik"
       },
       "uptime": {
-        "name": "Uptime"
+        "name": "Draaitijd"
       },
       "kernel_version": {
         "name": "Kernelversie"
@@ -121,7 +126,7 @@
         "name": "PVE-versie"
       },
       "load_average": {
-        "name": "Gemiddelde belasting"
+        "name": "Belastingsgemiddelde"
       },
       "network_rx": {
         "name": "Netwerk RX"
@@ -130,34 +135,34 @@
         "name": "Netwerk TX"
       },
       "last_task": {
-        "name": "Laatste taak"
+        "name": "Laatste Taak"
       },
       "no_tasks": {
-        "name": "Geen taken"
+        "name": "Geen Taken"
       },
       "cpu_info": {
         "name": "CPU-informatie"
       },
       "ksm_shared": {
-        "name": "KSM gedeeld geheugen"
+        "name": "KSM Gedeeld Geheugen"
       },
       "memory_usage": {
         "name": "Geheugengebruik"
       },
       "swap_usage": {
-        "name": "Swapgebruik"
+        "name": "Swap-gebruik"
       },
       "rootfs_usage": {
-        "name": "Root filesystem gebruik"
+        "name": "Root-bestandssysteemgebruik"
       },
       "node_info": {
-        "name": "Proxmox node"
+        "name": "Proxmox-knooppunt"
       },
       "storages": {
-        "name": "Proxmox opslag"
+        "name": "Proxmox Opslag"
       },
       "backup_progress": {
-        "name": "Backup voortgang"
+        "name": "Backup-voortgang"
       },
       "vm_status": {
         "name": "Status"
@@ -172,19 +177,19 @@
         "name": "Netwerk TX"
       },
       "vm_memory_used": {
-        "name": "Gebruikt geheugen"
+        "name": "RAM Gebruikt"
       },
       "vm_memory_total": {
-        "name": "Totaal geheugen"
+        "name": "RAM Totaal"
       },
       "vm_disk_used": {
-        "name": "Gebruikte schijf"
+        "name": "Schijf Gebruikt"
       },
       "vm_disk_total": {
-        "name": "Totale schijf"
+        "name": "Schijf Totaal"
       },
       "vm_uptime": {
-        "name": "Uptime"
+        "name": "Draaitijd"
       },
       "ct_status": {
         "name": "Status"
@@ -193,16 +198,16 @@
         "name": "CPU-gebruik"
       },
       "ct_memory_used": {
-        "name": "Gebruikt geheugen"
+        "name": "RAM Gebruikt"
       },
       "ct_memory_total": {
-        "name": "Totaal geheugen"
+        "name": "RAM Totaal"
       },
       "ct_disk_used": {
-        "name": "Gebruikte schijf"
+        "name": "Schijf Gebruikt"
       },
       "ct_disk_total": {
-        "name": "Totale schijf"
+        "name": "Schijf Totaal"
       },
       "ct_network_rx": {
         "name": "Netwerk RX"
@@ -211,10 +216,10 @@
         "name": "Netwerk TX"
       },
       "ct_uptime": {
-        "name": "Uptime"
+        "name": "Draaitijd"
       },
       "storage_usage": {
-        "name": "Gebruik (%)"
+        "name": "Gebruik"
       },
       "storage_used": {
         "name": "Gebruikt"
@@ -247,61 +252,61 @@
         "name": "RAM-gebruik"
       },
       "ram_total": {
-        "name": "Totaal RAM"
+        "name": "RAM Totaal"
       },
       "ram_used": {
-        "name": "Gebruikt RAM"
+        "name": "RAM Gebruikt"
       },
       "ram_free": {
-        "name": "Vrij RAM"
+        "name": "RAM Vrij"
       },
       "last_task_type": {
-        "name": "Type laatste taak"
+        "name": "Type Laatste Taak"
       },
       "last_task_status": {
-        "name": "Status laatste taak"
+        "name": "Status Laatste Taak"
       },
       "last_task_message": {
-        "name": "Bericht laatste taak"
+        "name": "Bericht Laatste Taak"
       },
       "last_task_duration": {
-        "name": "Duur laatste taak"
+        "name": "Duur Laatste Taak"
       },
       "last_action": {
-        "name": "Laatste actie"
+        "name": "Laatste Actie"
       },
       "datastore_usage": {
-        "name": "Gebruik (%)"
+        "name": "Gebruik"
       },
       "datastore_total": {
-        "name": "Totale grootte"
+        "name": "Totale Grootte"
       },
       "datastore_used": {
-        "name": "Gebruikte grootte"
+        "name": "Gebruikte Grootte"
       },
       "datastore_free": {
-        "name": "Vrije grootte"
+        "name": "Vrije Grootte"
       },
       "datastore_dedup": {
         "name": "Deduplicatie"
       },
       "datastore_backup_count": {
-        "name": "Aantal backups"
+        "name": "Backup Aantal"
       },
       "datastore_last_backup_time": {
-        "name": "Laatste backup"
+        "name": "Laatste Backup"
       },
       "datastore_last_backup_size": {
-        "name": "Grootte laatste backup"
+        "name": "Laatste Backup Grootte"
       },
       "datastore_last_backup_status": {
-        "name": "Status laatste backup"
+        "name": "Status Laatste Backup"
       },
       "datastore_backup_errors": {
-        "name": "Backupfouten"
+        "name": "Backup Fouten"
       },
       "datastore_backups_summary": {
-        "name": "Backupoverzicht"
+        "name": "Backup Samenvatting"
       },
       "datastore_gc_status": {
         "name": "GC-status"
@@ -313,7 +318,7 @@
             "name": "Snelheid"
           },
           "configured_speed": {
-            "name": "Geconfigureerde snelheid"
+            "name": "Geconfigureerde Snelheid"
           },
           "type": {
             "name": "Geheugentype"
@@ -324,6 +329,418 @@
           "locator": {
             "name": "Slot"
           }
+        }
+      },
+      "cluster_status": {
+        "name": "Status"
+      },
+      "cluster_nodes_online": {
+        "name": "Knooppunten Online"
+      },
+      "cluster_cpu_usage": {
+        "name": "CPU-gebruik"
+      },
+      "cluster_ram_usage": {
+        "name": "RAM-gebruik"
+      },
+      "cluster_vms_running": {
+        "name": "Draaiende VM's"
+      },
+      "cluster_cts_running": {
+        "name": "Draaiende CT's"
+      },
+      "cluster_storage_usage": {
+        "name": "Opslaggebruik"
+      },
+      "cluster_ha_status": {
+        "name": "HA-status"
+      },
+      "cluster_firewall": {
+        "name": "Firewall"
+      },
+      "cluster_backup_jobs": {
+        "name": "Backuptaken"
+      },
+      "cluster_backup_age": {
+        "name": "Backupleeftijd"
+      },
+      "cluster_backup_health": {
+        "name": "Backupgezondheid"
+      },
+      "cluster_failed_tasks": {
+        "name": "Mislukte Taken"
+      },
+      "node_uptime": {
+        "name": "Draaitijd"
+      },
+      "node_kernel_version": {
+        "name": "Kernelversie"
+      },
+      "node_pve_version": {
+        "name": "PVE-versie"
+      },
+      "node_load_average": {
+        "name": "Belastingsgemiddelde"
+      },
+      "node_network_rx": {
+        "name": "Netwerk RX"
+      },
+      "node_network_tx": {
+        "name": "Netwerk TX"
+      },
+      "node_last_task": {
+        "name": "Laatste Taak"
+      },
+      "node_cpu_info": {
+        "name": "CPU-informatie"
+      },
+      "node_ksm_shared": {
+        "name": "KSM Gedeeld Geheugen"
+      },
+      "node_memory_usage": {
+        "name": "Geheugengebruik"
+      },
+      "node_swap_usage": {
+        "name": "Swap-gebruik"
+      },
+      "node_rootfs_usage": {
+        "name": "Root-bestandssysteemgebruik"
+      },
+      "node_updates": {
+        "name": "Knooppuntupdates"
+      },
+      "node_iowait": {
+        "name": "I/O-wacht"
+      },
+      "node_load_1m": {
+        "name": "Belastingsgemiddelde (1m)"
+      },
+      "node_score": {
+        "name": "Knooppuntscore"
+      },
+      "node_mounted_disks": {
+        "name": "Gemonteerde Schijven"
+      },
+      "node_backup_progress": {
+        "name": "Backup-voortgang"
+      },
+      "node_metric": {
+        "name": "{name}"
+      },
+      "pbs_version": {
+        "name": "Versie"
+      },
+      "pbs_release": {
+        "name": "Release"
+      },
+      "pbs_auth_status": {
+        "name": "Authenticatiestatus"
+      },
+      "pbs_ram_total": {
+        "name": "RAM Totaal"
+      },
+      "pbs_ram_used": {
+        "name": "RAM Gebruikt"
+      },
+      "pbs_ram_free": {
+        "name": "RAM Vrij"
+      },
+      "pbs_last_task": {
+        "name": "Laatste Taak"
+      },
+      "pbs_last_task_type": {
+        "name": "Type Laatste Taak"
+      },
+      "pbs_last_task_status": {
+        "name": "Status Laatste Taak"
+      },
+      "pbs_last_task_message": {
+        "name": "Bericht Laatste Taak"
+      },
+      "pbs_last_task_duration": {
+        "name": "Duur Laatste Taak"
+      },
+      "pbs_datastore_usage": {
+        "name": "Gebruik"
+      },
+      "pbs_dedup": {
+        "name": "Deduplicatie"
+      },
+      "pbs_last_backup_time": {
+        "name": "Laatste Backup"
+      },
+      "pbs_last_backup_size": {
+        "name": "Laatste Backup Grootte"
+      },
+      "pbs_last_backup_status": {
+        "name": "Status Laatste Backup"
+      },
+      "pbs_backup_errors": {
+        "name": "Backup Fouten"
+      },
+      "pbs_backups_summary": {
+        "name": "Backup Samenvatting"
+      },
+      "pbs_gc_status": {
+        "name": "GC-status"
+      },
+      "pbs_verify_status": {
+        "name": "Verificatiestatus"
+      },
+      "pbs_prune_status": {
+        "name": "Prune-status"
+      },
+      "hw_cpu_temp": {
+        "name": "CPU-temperatuur"
+      },
+      "hw_nvme_composite": {
+        "name": "Composiet Temperatuur"
+      },
+      "hw_nvme_nand": {
+        "name": "NAND-temperatuur"
+      },
+      "hw_nvme_controller": {
+        "name": "Controller Temperatuur"
+      },
+      "chipset_temp": {
+        "name": "Chipset-temperatuur"
+      },
+      "disk_size": {
+        "name": "{model} Grootte"
+      },
+      "zfs_health": {
+        "name": "ZFS {pool} Gezondheid"
+      },
+      "dimm_capacity": {
+        "name": "{dimm} Capaciteit"
+      },
+      "hw_nvme_temperature": {
+        "name": "{name}"
+      },
+      "hw_nvme_temp1": {
+        "name": "NVMe-temperatuur"
+      },
+      "proxmox_node": {
+        "name": "Knooppuntstatus"
+      },
+      "proxmox_storages": {
+        "name": "Opslag"
+      },
+      "cpu_temperature": {
+        "name": "CPU-temperatuur"
+      },
+      "hardware_temperature": {
+        "name": "{name}"
+      },
+      "storage_free": {
+        "name": "Vrij"
+      },
+      "pbs_cpu_usage": {
+        "name": "CPU-gebruik"
+      },
+      "pbs_ram_usage": {
+        "name": "RAM-gebruik"
+      },
+      "pbs_datastore_total": {
+        "name": "Totaal"
+      },
+      "pbs_datastore_used": {
+        "name": "Gebruikt"
+      },
+      "pbs_datastore_free": {
+        "name": "Vrij"
+      }
+    },
+    "button": {
+      "ct_start": {
+        "name": "{name} Starten"
+      },
+      "ct_shutdown": {
+        "name": "{name} Uitschakelen"
+      },
+      "ct_stop": {
+        "name": "{name} Stoppen"
+      },
+      "ct_reboot": {
+        "name": "{name} Herstarten"
+      },
+      "vm_start": {
+        "name": "{name} Starten"
+      },
+      "vm_shutdown": {
+        "name": "{name} Uitschakelen"
+      },
+      "vm_stop": {
+        "name": "{name} Stoppen"
+      },
+      "vm_reboot": {
+        "name": "{name} Herstarten"
+      },
+      "vm_reset": {
+        "name": "{name} Resetten"
+      },
+      "vm_pause": {
+        "name": "{name} Pauzeren"
+      },
+      "vm_hibernate": {
+        "name": "{name} Hiberneren"
+      },
+      "vm_resume": {
+        "name": "{name} Hervatten"
+      },
+      "node_reboot": {
+        "name": "{name} Herstarten"
+      },
+      "node_shutdown": {
+        "name": "{name} Uitschakelen"
+      },
+      "node_wake": {
+        "name": "{name} Ontwaken"
+      },
+      "pbs_gc": {
+        "name": "Garbage Collectie"
+      },
+      "pbs_prune": {
+        "name": "Uitdunnen"
+      },
+      "pbs_verify": {
+        "name": "Verifiëren"
+      },
+      "pbs_sync": {
+        "name": "Synchroniseren"
+      },
+      "pbs_node_shutdown": {
+        "name": "Uitschakelen"
+      },
+      "pbs_node_reboot": {
+        "name": "Herstarten"
+      },
+      "pbs_node_wake": {
+        "name": "Ontwaken"
+      }
+    },
+    "binary_sensor": {
+      "node_overloaded": {
+        "name": "Overbelast"
+      },
+      "node_disk_overloaded": {
+        "name": "Schijf Overbelast"
+      },
+      "node_stressed": {
+        "name": "Gestrest"
+      }
+    }
+  },
+  "services": {
+    "create_vzdump_backup": {
+      "name": "Proxmox: Backup starten",
+      "description": "Maakt een back-up van de geselecteerde VM's en/of containers naar de opgegeven opslag.",
+      "fields": {
+        "node": {
+          "name": "Knooppunt",
+          "description": "Knooppuntnaam (bijv. server)"
+        },
+        "storage": {
+          "name": "Doelopslag",
+          "description": "Opslagnaam (bijv. local, PBS_Local)"
+        },
+        "guests": {
+          "name": "Gast (VM/CT ID)",
+          "description": "Lijst van numerieke VM/CT-ID's (bijv. 100,101 of YAML-lijst)"
+        },
+        "mode": {
+          "name": "Backup-modus",
+          "description": "snapshot, suspend of stop"
+        },
+        "compress": {
+          "name": "Compressiemethode",
+          "description": "Backup-compressiemethode"
+        },
+        "max_concurrent": {
+          "name": "Max. gelijktijdig",
+          "description": "Maximaal aantal gelijktijdige back-ups (1 = sequentieel)"
+        },
+        "delay_between": {
+          "name": "Backup-interval",
+          "description": "Seconden wachten tussen back-ups"
+        }
+      }
+    },
+    "backup_all": {
+      "name": "Proxmox: Massale backup",
+      "description": "Back-up van alle VM's en/of containers op het geselecteerde knooppunt.",
+      "fields": {
+        "node": {
+          "name": "Knooppunt",
+          "description": "Knooppuntnaam (bijv. pve)"
+        },
+        "storage": {
+          "name": "Doelopslag",
+          "description": "Opslagnaam (bijv. local, local-lvm, pbs)"
+        },
+        "mode": {
+          "name": "Backup-modus",
+          "description": "snapshot, suspend of stop"
+        },
+        "compress": {
+          "name": "Compressiemethode",
+          "description": "Backup-compressiemethode"
+        },
+        "max_concurrent": {
+          "name": "Max. gelijktijdig",
+          "description": "Maximaal aantal gelijktijdige back-ups (1 = sequentieel)"
+        },
+        "delay_between": {
+          "name": "Backup-interval",
+          "description": "Seconden tussen back-ups (0 = geen interval)"
+        },
+        "include_vms": {
+          "name": "VM's opnemen",
+          "description": "Indien ingeschakeld, worden alle VM's op het knooppunt opgenomen."
+        },
+        "include_cts": {
+          "name": "Containers opnemen",
+          "description": "Indien ingeschakeld, worden alle CT's op het knooppunt opgenomen."
+        }
+      }
+    },
+    "confirm_shutdown_node": {
+      "name": "Proxmox: Knooppunt uitschakelen",
+      "description": "Vraagt bevestiging en schakelt het geselecteerde knooppunt uit.",
+      "fields": {
+        "node": {
+          "name": "Knooppunt",
+          "description": "Knooppuntnaam (bijv. pve)"
+        },
+        "confirm": {
+          "name": "Bevestiging",
+          "description": "Moet true zijn om het uitschakelen uit te voeren."
+        }
+      }
+    },
+    "confirm_reboot_node": {
+      "name": "Proxmox: Knooppunt herstarten",
+      "description": "Vraagt bevestiging en start het geselecteerde knooppunt opnieuw op.",
+      "fields": {
+        "node": {
+          "name": "Knooppunt",
+          "description": "Knooppuntnaam (bijv. pve)"
+        },
+        "confirm": {
+          "name": "Bevestiging",
+          "description": "Moet true zijn om de herstart uit te voeren."
+        }
+      }
+    },
+    "wake_node": {
+      "name": "Proxmox: Knooppunt ontwaken",
+      "description": "Wekt een Proxmox-knooppunt via Wake-on-LAN.",
+      "fields": {
+        "node": {
+          "name": "Knooppunt"
+        },
+        "mac": {
+          "name": "MAC-adres"
         }
       }
     }
