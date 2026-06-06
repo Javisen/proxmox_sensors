@@ -3,55 +3,57 @@
     "step": {
       "user": {
         "title": "1. Connexion au serveur",
-        "description": "Saisissez l’adresse de votre serveur Proxmox (sans http:// ni https://). Le port est sélectionné automatiquement (8006 pour PVE / 8007 pour PBS).",
+        "description": "Entrez l'adresse de votre serveur Proxmox. Le port est géré automatiquement (8006 pour PVE / 8007 pour PBS).",
         "data": {
-          "host": "Adresse du serveur (IP ou domaine)",
+          "host": "Adresse du serveur (IP ou FQDN)",
           "platform_type": "Type de serveur"
         }
       },
       "auth_method": {
-        "title": "2. Méthode d’authentification",
-        "description": "Choisissez si vous souhaitez utiliser un token API sécurisé. Obligatoire pour PBS.",
+        "title": "2. Méthode d'authentification",
+        "description": "Sélectionnez la méthode d'authentification. Les jetons API sont obligatoires pour PBS et recommandés pour PVE.",
         "data": {
-          "use_token": "Utiliser un token API (recommandé)"
+          "use_token": "Utiliser un jeton API (recommandé)"
         }
       },
       "credentials_pve": {
-        "title": "3. Identifiants d’accès — Proxmox VE",
-        "description": "Saisissez les informations de connexion PVE.",
+        "title": "3. Identifiants d'accès — Proxmox VE",
+        "description": "Entrez les détails de connexion de votre PVE.",
         "data": {
-          "user": "Utilisateur (p. ex. root@pam)",
+          "user": "Utilisateur (ex. root@pam)",
           "password": "Mot de passe",
-          "token_id": "ID du token (sans user@pve !)",
-          "token_secret": "Secret du token",
-          "auto_detect_node": "Détecter automatiquement le nœud depuis l’IP de l’hôte",
-          "enable_lm_sensors": "Surveiller les températures (lm-sensors)",
+          "token_id": "ID du jeton (sans utilisateur@pve!)",
+          "token_secret": "Secret du jeton",
+          "auto_detect_node": "Détecter automatiquement le nœud depuis l'IP hôte",
+          "enable_lm_sensors": "Activer les capteurs matériels et températures",
+          "enable_cluster": "Activer la surveillance du cluster entier",
           "verify_ssl": "Vérifier le certificat SSL"
         }
       },
       "credentials_pbs": {
-        "title": "3. Identifiants d’accès — Proxmox Backup Server",
-        "description": "Saisissez les informations de connexion PBS.",
+        "title": "3. Identifiants d'accès — Proxmox Backup Server",
+        "description": "Entrez les détails de connexion de votre PBS.",
         "data": {
-          "user": "Utilisateur (p. ex. admin@pbs)",
-          "token_id": "ID du token (sans user@pve !)",
-          "token_secret": "Secret du token",
+          "user": "Utilisateur (ex. admin@pbs)",
+          "password": "Mot de passe",
+          "token_id": "ID du jeton",
+          "token_secret": "Secret du jeton",
           "verify_ssl": "Vérifier le certificat SSL"
         }
       },
       "credentials_cluster": {
-        "title": "3. Identifiants d’accès — cluster Proxmox",
-        "description": "Saisissez les identifiants pour vous connecter au cluster. Utilise la même API que PVE (port 8006).",
+        "title": "3. Identifiants d'accès — Cluster Proxmox",
+        "description": "Entrez les identifiants pour vous connecter au cluster. Utilise la même API que PVE (port 8006).",
         "data": {
-          "user": "Utilisateur (p. ex. root@pam)",
+          "user": "Utilisateur (ex. root@pam)",
           "password": "Mot de passe",
-          "token_id": "ID du token (sans user@pve !)",
-          "token_secret": "Secret du token",
+          "token_id": "ID du jeton (sans utilisateur@pve!)",
+          "token_secret": "Secret du jeton",
           "verify_ssl": "Vérifier le certificat SSL"
         }
       },
       "select_node": {
-        "title": "4. Sélectionner le nœud",
+        "title": "4. Sélectionner un nœud",
         "description": "Sélectionnez le nœud Proxmox à surveiller.",
         "data": {
           "node": "Nœud"
@@ -64,42 +66,45 @@
           "vms": "Machines virtuelles (VM)",
           "cts": "Conteneurs (LXC)",
           "storage": "Stockage",
-          "enable_physical_disks": "Surveiller les disques physiques",
-          "enable_node_controls": "Activer les actions sur le nœud (arrêt/redémarrage)"
+          "enable_physical_disks": "Activer la surveillance des disques physiques",
+          "enable_node_controls": "Activer les contrôles d'alimentation du nœud"
         }
       }
     },
     "error": {
-      "cannot_connect": "Impossible de se connecter au serveur. Vérifiez l’adresse.",
-      "invalid_auth": "Échec de l’authentification. Vérifiez les identifiants ou les permissions du token.",
-      "insufficient_permissions": "Les identifiants se sont connectés avec succès, mais n’ont pas les permissions suffisantes pour les endpoints requis de l’API Proxmox.",
-      "unknown": "Erreur inattendue. Consultez les journaux de Home Assistant."
+      "cannot_connect": "Erreur de connexion. Vérifiez l'adresse du serveur.",
+      "invalid_auth": "Échec d'authentification. Vérifiez les identifiants ou les permissions du jeton.",
+      "unknown": "Erreur inattendue. Vérifiez les logs de Home Assistant."
     },
     "abort": {
       "already_configured": "Ce nœud est déjà configuré.",
-      "no_data": "Aucune donnée de cluster reçue. Vérifiez votre configuration.",
+      "no_data": "Aucune donnée du cluster reçue. Vérifiez votre configuration.",
       "cluster_no_options": "Les paramètres du cluster sont gérés depuis la configuration du nœud PVE."
     }
   },
   "options": {
     "abort": {
-      "pbs_no_options": "Ce serveur PBS ne propose aucune option configurable.",
+      "pbs_no_options": "Ce serveur PBS n'a pas d'options configurables.",
       "cluster_no_options": "Les paramètres du cluster sont gérés depuis la configuration du nœud PVE.",
-      "entry_not_loaded": "L’intégration n’est pas encore chargée, veuillez réessayer."
+      "entry_not_loaded": "Intégration non encore chargée, veuillez réessayer."
     },
     "step": {
       "init": {
-        "title": "Options de Proxmox Extended Sensors",
-        "description": "Configurez les options de surveillance et de gestion de cette intégration.",
+        "title": "Proxmox Extended Sensors — Options",
+        "description": "Configurez les options de surveillance et de gestion pour cette intégration.",
         "data": {
           "vms": "Sélectionner les machines virtuelles (VM)",
           "cts": "Sélectionner les conteneurs (LXC)",
           "storage": "Sélectionner le stockage",
-          "enable_lm_sensors": "Activer les capteurs matériels (lm-sensors)",
-          "enable_physical_disks": "Activer les capteurs des disques physiques",
-          "enable_smart_monitoring": "Activer la surveillance de l’état SMART et NVMe",
-          "enable_node_controls": "Activer les actions sur le nœud",
-          "enable_pbs_node_controls": "Activer les contrôles d’alimentation du nœud PBS",
+          "enable_lm_sensors": "Activer les capteurs matériels et températures",
+          "enable_physical_disks": "Activer la surveillance des disques physiques",
+          "enable_smart_monitoring": "Activer la surveillance de santé SMART et NVMe",
+          "enable_node_controls": "Activer les contrôles d'alimentation du nœud",
+          "enable_backup_progress": "Activer le capteur de progression des sauvegardes",
+          "enable_storage_list": "Activer le capteur de liste des stockages",
+          "enable_nodes_list": "Activer le capteur de liste des nœuds",
+          "enable_cluster": "Activer la surveillance du cluster entier",
+          "enable_pbs_node_controls": "Activer les contrôles d'alimentation du nœud PBS",
           "wol_mac": "Adresse MAC Wake-on-LAN",
           "verify_ssl": "Vérifier le certificat SSL"
         }
@@ -148,16 +153,16 @@
         "name": "Utilisation swap"
       },
       "rootfs_usage": {
-        "name": "Utilisation du système de fichiers racine"
+        "name": "Utilisation système de fichiers racine"
       },
       "node_info": {
         "name": "Nœud Proxmox"
       },
       "storages": {
-        "name": "Stockage Proxmox"
+        "name": "Stockages Proxmox"
       },
       "backup_progress": {
-        "name": "Progression des sauvegardes"
+        "name": "Progression sauvegarde"
       },
       "vm_status": {
         "name": "État"
@@ -172,16 +177,16 @@
         "name": "Réseau TX"
       },
       "vm_memory_used": {
-        "name": "Mémoire utilisée"
+        "name": "RAM utilisée"
       },
       "vm_memory_total": {
-        "name": "Mémoire totale"
+        "name": "RAM totale"
       },
       "vm_disk_used": {
-        "name": "Espace disque utilisé"
+        "name": "Disque utilisé"
       },
       "vm_disk_total": {
-        "name": "Espace disque total"
+        "name": "Disque total"
       },
       "vm_uptime": {
         "name": "Temps de fonctionnement"
@@ -193,16 +198,16 @@
         "name": "Utilisation CPU"
       },
       "ct_memory_used": {
-        "name": "Mémoire utilisée"
+        "name": "RAM utilisée"
       },
       "ct_memory_total": {
-        "name": "Mémoire totale"
+        "name": "RAM totale"
       },
       "ct_disk_used": {
-        "name": "Espace disque utilisé"
+        "name": "Disque utilisé"
       },
       "ct_disk_total": {
-        "name": "Espace disque total"
+        "name": "Disque total"
       },
       "ct_network_rx": {
         "name": "Réseau RX"
@@ -214,7 +219,7 @@
         "name": "Temps de fonctionnement"
       },
       "storage_usage": {
-        "name": "Utilisation (%)"
+        "name": "Utilisation"
       },
       "storage_used": {
         "name": "Utilisé"
@@ -235,10 +240,10 @@
         "name": "Version"
       },
       "release": {
-        "name": "Release"
+        "name": "Version"
       },
       "auth_status": {
-        "name": "Statut d’authentification"
+        "name": "État d'authentification"
       },
       "node_cpu": {
         "name": "Utilisation CPU"
@@ -256,22 +261,22 @@
         "name": "RAM libre"
       },
       "last_task_type": {
-        "name": "Type de la dernière tâche"
+        "name": "Type de dernière tâche"
       },
       "last_task_status": {
-        "name": "Statut de la dernière tâche"
+        "name": "Statut dernière tâche"
       },
       "last_task_message": {
-        "name": "Message de la dernière tâche"
+        "name": "Message dernière tâche"
       },
       "last_task_duration": {
-        "name": "Durée de la dernière tâche"
+        "name": "Durée dernière tâche"
       },
       "last_action": {
         "name": "Dernière action"
       },
       "datastore_usage": {
-        "name": "Utilisation (%)"
+        "name": "Utilisation"
       },
       "datastore_total": {
         "name": "Taille totale"
@@ -292,10 +297,10 @@
         "name": "Dernière sauvegarde"
       },
       "datastore_last_backup_size": {
-        "name": "Taille de la dernière sauvegarde"
+        "name": "Taille dernière sauvegarde"
       },
       "datastore_last_backup_status": {
-        "name": "Statut de la dernière sauvegarde"
+        "name": "Statut dernière sauvegarde"
       },
       "datastore_backup_errors": {
         "name": "Erreurs de sauvegarde"
@@ -304,7 +309,7 @@
         "name": "Résumé des sauvegardes"
       },
       "datastore_gc_status": {
-        "name": "Statut GC"
+        "name": "État GC"
       },
       "proxmox_dimm": {
         "name": "Module RAM (DIMM)",
@@ -322,8 +327,420 @@
             "name": "Fabricant"
           },
           "locator": {
-            "name": "Emplacement (slot)"
+            "name": "Slot"
           }
+        }
+      },
+      "cluster_status": {
+        "name": "État"
+      },
+      "cluster_nodes_online": {
+        "name": "Nœuds en ligne"
+      },
+      "cluster_cpu_usage": {
+        "name": "Utilisation CPU"
+      },
+      "cluster_ram_usage": {
+        "name": "Utilisation RAM"
+      },
+      "cluster_vms_running": {
+        "name": "VM en cours d'exécution"
+      },
+      "cluster_cts_running": {
+        "name": "CT en cours d'exécution"
+      },
+      "cluster_storage_usage": {
+        "name": "Utilisation stockage"
+      },
+      "cluster_ha_status": {
+        "name": "État HA"
+      },
+      "cluster_firewall": {
+        "name": "Pare-feu"
+      },
+      "cluster_backup_jobs": {
+        "name": "Tâches de sauvegarde"
+      },
+      "cluster_backup_age": {
+        "name": "Âge sauvegarde"
+      },
+      "cluster_backup_health": {
+        "name": "Santé sauvegarde"
+      },
+      "cluster_failed_tasks": {
+        "name": "Tâches échouées"
+      },
+      "node_uptime": {
+        "name": "Temps de fonctionnement"
+      },
+      "node_kernel_version": {
+        "name": "Version du noyau"
+      },
+      "node_pve_version": {
+        "name": "Version PVE"
+      },
+      "node_load_average": {
+        "name": "Charge moyenne"
+      },
+      "node_network_rx": {
+        "name": "Réseau RX"
+      },
+      "node_network_tx": {
+        "name": "Réseau TX"
+      },
+      "node_last_task": {
+        "name": "Dernière tâche"
+      },
+      "node_cpu_info": {
+        "name": "Informations CPU"
+      },
+      "node_ksm_shared": {
+        "name": "Mémoire partagée KSM"
+      },
+      "node_memory_usage": {
+        "name": "Utilisation mémoire"
+      },
+      "node_swap_usage": {
+        "name": "Utilisation swap"
+      },
+      "node_rootfs_usage": {
+        "name": "Utilisation système de fichiers racine"
+      },
+      "node_updates": {
+        "name": "Mises à jour du nœud"
+      },
+      "node_iowait": {
+        "name": "Attente E/S"
+      },
+      "node_load_1m": {
+        "name": "Charge moyenne (1m)"
+      },
+      "node_score": {
+        "name": "Score du nœud"
+      },
+      "node_mounted_disks": {
+        "name": "Disques montés"
+      },
+      "node_backup_progress": {
+        "name": "Progression sauvegarde"
+      },
+      "node_metric": {
+        "name": "{name}"
+      },
+      "pbs_version": {
+        "name": "Version"
+      },
+      "pbs_release": {
+        "name": "Version"
+      },
+      "pbs_auth_status": {
+        "name": "État d'authentification"
+      },
+      "pbs_ram_total": {
+        "name": "RAM totale"
+      },
+      "pbs_ram_used": {
+        "name": "RAM utilisée"
+      },
+      "pbs_ram_free": {
+        "name": "RAM libre"
+      },
+      "pbs_last_task": {
+        "name": "Dernière tâche"
+      },
+      "pbs_last_task_type": {
+        "name": "Type de dernière tâche"
+      },
+      "pbs_last_task_status": {
+        "name": "Statut dernière tâche"
+      },
+      "pbs_last_task_message": {
+        "name": "Message dernière tâche"
+      },
+      "pbs_last_task_duration": {
+        "name": "Durée dernière tâche"
+      },
+      "pbs_datastore_usage": {
+        "name": "Utilisation"
+      },
+      "pbs_dedup": {
+        "name": "Déduplication"
+      },
+      "pbs_last_backup_time": {
+        "name": "Dernière sauvegarde"
+      },
+      "pbs_last_backup_size": {
+        "name": "Taille dernière sauvegarde"
+      },
+      "pbs_last_backup_status": {
+        "name": "Statut dernière sauvegarde"
+      },
+      "pbs_backup_errors": {
+        "name": "Erreurs de sauvegarde"
+      },
+      "pbs_backups_summary": {
+        "name": "Résumé des sauvegardes"
+      },
+      "pbs_gc_status": {
+        "name": "État GC"
+      },
+      "pbs_verify_status": {
+        "name": "État vérification"
+      },
+      "pbs_prune_status": {
+        "name": "État prune"
+      },
+      "hw_cpu_temp": {
+        "name": "Température CPU"
+      },
+      "hw_nvme_composite": {
+        "name": "Température composite"
+      },
+      "hw_nvme_nand": {
+        "name": "Température NAND"
+      },
+      "hw_nvme_controller": {
+        "name": "Température contrôleur"
+      },
+      "chipset_temp": {
+        "name": "Température chipset"
+      },
+      "disk_size": {
+        "name": "Taille {model}"
+      },
+      "zfs_health": {
+        "name": "Santé ZFS {pool}"
+      },
+      "dimm_capacity": {
+        "name": "Capacité {dimm}"
+      },
+      "hw_nvme_temperature": {
+        "name": "{name}"
+      },
+      "hw_nvme_temp1": {
+        "name": "Température NVMe"
+      },
+      "proxmox_node": {
+        "name": "État du nœud"
+      },
+      "proxmox_storages": {
+        "name": "Stockages"
+      },
+      "cpu_temperature": {
+        "name": "Température CPU"
+      },
+      "hardware_temperature": {
+        "name": "{name}"
+      },
+      "storage_free": {
+        "name": "Libre"
+      },
+      "pbs_cpu_usage": {
+        "name": "Utilisation CPU"
+      },
+      "pbs_ram_usage": {
+        "name": "Utilisation RAM"
+      },
+      "pbs_datastore_total": {
+        "name": "Total"
+      },
+      "pbs_datastore_used": {
+        "name": "Utilisé"
+      },
+      "pbs_datastore_free": {
+        "name": "Libre"
+      }
+    },
+    "button": {
+      "ct_start": {
+        "name": "Démarrer {name}"
+      },
+      "ct_shutdown": {
+        "name": "Éteindre {name}"
+      },
+      "ct_stop": {
+        "name": "Arrêter {name}"
+      },
+      "ct_reboot": {
+        "name": "Redémarrer {name}"
+      },
+      "vm_start": {
+        "name": "Démarrer {name}"
+      },
+      "vm_shutdown": {
+        "name": "Éteindre {name}"
+      },
+      "vm_stop": {
+        "name": "Arrêter {name}"
+      },
+      "vm_reboot": {
+        "name": "Redémarrer {name}"
+      },
+      "vm_reset": {
+        "name": "Réinitialiser {name}"
+      },
+      "vm_pause": {
+        "name": "Pause {name}"
+      },
+      "vm_hibernate": {
+        "name": "Hiberner {name}"
+      },
+      "vm_resume": {
+        "name": "Reprendre {name}"
+      },
+      "node_reboot": {
+        "name": "Redémarrer {name}"
+      },
+      "node_shutdown": {
+        "name": "Éteindre {name}"
+      },
+      "node_wake": {
+        "name": "Réveiller {name}"
+      },
+      "pbs_gc": {
+        "name": "Nettoyage garbage"
+      },
+      "pbs_prune": {
+        "name": "Élaguer"
+      },
+      "pbs_verify": {
+        "name": "Vérifier"
+      },
+      "pbs_sync": {
+        "name": "Synchroniser"
+      },
+      "pbs_node_shutdown": {
+        "name": "Éteindre"
+      },
+      "pbs_node_reboot": {
+        "name": "Redémarrer"
+      },
+      "pbs_node_wake": {
+        "name": "Réveiller"
+      }
+    },
+    "binary_sensor": {
+      "node_overloaded": {
+        "name": "Surchargé"
+      },
+      "node_disk_overloaded": {
+        "name": "Disque surchargé"
+      },
+      "node_stressed": {
+        "name": "Stressé"
+      }
+    }
+  },
+  "services": {
+    "create_vzdump_backup": {
+      "name": "Proxmox : Lancer la sauvegarde",
+      "description": "Sauvegarde des VM et/ou conteneurs sélectionnés vers le stockage spécifié.",
+      "fields": {
+        "node": {
+          "name": "Nœud",
+          "description": "Nom du nœud (ex. server)"
+        },
+        "storage": {
+          "name": "Stockage cible",
+          "description": "Nom du stockage (ex. local, PBS_Local)"
+        },
+        "guests": {
+          "name": "Invités (ID VM/CT)",
+          "description": "Liste des IDs numériques des VM/CT (ex. 100,101 ou liste YAML)"
+        },
+        "mode": {
+          "name": "Mode de sauvegarde",
+          "description": "snapshot, suspend ou stop"
+        },
+        "compress": {
+          "name": "Méthode de compression",
+          "description": "Méthode de compression de la sauvegarde"
+        },
+        "max_concurrent": {
+          "name": "Max. concurrents",
+          "description": "Nombre maximal de sauvegardes simultanées (1 = séquentiel)"
+        },
+        "delay_between": {
+          "name": "Intervalle entre sauvegardes",
+          "description": "Secondes d'attente entre les sauvegardes"
+        }
+      }
+    },
+    "backup_all": {
+      "name": "Proxmox : Sauvegarde massive",
+      "description": "Sauvegarde de toutes les VM et/ou conteneurs sur le nœud sélectionné.",
+      "fields": {
+        "node": {
+          "name": "Nœud",
+          "description": "Nom du nœud (ex. pve)"
+        },
+        "storage": {
+          "name": "Stockage cible",
+          "description": "Nom du stockage (ex. local, local-lvm, pbs)"
+        },
+        "mode": {
+          "name": "Mode de sauvegarde",
+          "description": "snapshot, suspend ou stop"
+        },
+        "compress": {
+          "name": "Méthode de compression",
+          "description": "Méthode de compression de la sauvegarde"
+        },
+        "max_concurrent": {
+          "name": "Max. concurrents",
+          "description": "Nombre maximal de sauvegardes simultanées (1 = séquentiel)"
+        },
+        "delay_between": {
+          "name": "Intervalle entre sauvegardes",
+          "description": "Secondes entre les sauvegardes (0 = aucun intervalle)"
+        },
+        "include_vms": {
+          "name": "Inclure les VM",
+          "description": "Si activé, inclut toutes les VM sur le nœud."
+        },
+        "include_cts": {
+          "name": "Inclure les conteneurs",
+          "description": "Si activé, inclut tous les CT sur le nœud."
+        }
+      }
+    },
+    "confirm_shutdown_node": {
+      "name": "Proxmox : Éteindre le nœud",
+      "description": "Demande confirmation et éteint le nœud sélectionné.",
+      "fields": {
+        "node": {
+          "name": "Nœud",
+          "description": "Nom du nœud (ex. pve)"
+        },
+        "confirm": {
+          "name": "Confirmation",
+          "description": "Doit être true pour exécuter l'extinction."
+        }
+      }
+    },
+    "confirm_reboot_node": {
+      "name": "Proxmox : Redémarrer le nœud",
+      "description": "Demande confirmation et redémarre le nœud sélectionné.",
+      "fields": {
+        "node": {
+          "name": "Nœud",
+          "description": "Nom du nœud (ex. pve)"
+        },
+        "confirm": {
+          "name": "Confirmation",
+          "description": "Doit être true pour exécuter le redémarrage."
+        }
+      }
+    },
+    "wake_node": {
+      "name": "Proxmox : Réveiller le nœud",
+      "description": "Réveille un nœud Proxmox via Wake-on-LAN.",
+      "fields": {
+        "node": {
+          "name": "Nœud"
+        },
+        "mac": {
+          "name": "Adresse MAC"
         }
       }
     }
