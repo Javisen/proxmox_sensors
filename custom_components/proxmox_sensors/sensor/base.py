@@ -14,7 +14,8 @@ class ProxmoxBaseSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._sensor_id = sensor_id
         self._node = node.lower() if node else "proxmox_server"
-        self._attr_name = name
+        if name is not None:
+            self._attr_name = name
         self._attr_native_unit_of_measurement = unit
         server_id = coordinator.config_entry.data.get("server_id", "default").lower()
 
@@ -59,7 +60,8 @@ class ProxmoxPbsBaseSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._server_id = server_id.lower()
         self._sensor_id = sensor_id
-        self._attr_name = name
+        if name is not None:
+            self._attr_name = name
         self._attr_native_unit_of_measurement = unit
         safe_id = (
             f"pbs_{self._server_id}_{sensor_id}".lower()

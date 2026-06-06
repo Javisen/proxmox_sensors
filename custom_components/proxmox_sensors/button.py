@@ -178,6 +178,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class PBSBaseButton(CoordinatorEntity, ButtonEntity):
     """Base class for PBS maintenance buttons."""
 
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, client, datastore, command_name, command_display):
         super().__init__(coordinator)
 
@@ -197,7 +199,7 @@ class PBSBaseButton(CoordinatorEntity, ButtonEntity):
         self._command_display = command_display
 
         self._attr_unique_id = f"{datastore.lower()}_{command_name}"
-        self._attr_name = command_display
+        self._attr_translation_key = f"pbs_{command_name}"
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, f"maintenance_{datastore}")},
@@ -272,6 +274,8 @@ class PBSSyncButton(PBSBaseButton):
 class PBSNodeBaseButton(CoordinatorEntity, ButtonEntity):
     """Base class for PBS node control buttons (shutdown/reboot)."""
 
+    _attr_has_entity_name = True
+
     def __init__(
         self, coordinator, client, server_id, command_name, command_display, icon
     ):
@@ -282,7 +286,7 @@ class PBSNodeBaseButton(CoordinatorEntity, ButtonEntity):
         self._command_display = command_display
 
         self._attr_unique_id = f"pbs_{server_id}_node_{command_name}"
-        self._attr_name = f"PBS Node – {command_display}"
+        self._attr_translation_key = f"pbs_node_{command_name}"
         self._attr_icon = icon
 
         self._attr_device_info = {
@@ -402,6 +406,8 @@ class PBSWakeButton(PBSNodeBaseButton):
 
 
 class ProxmoxBaseButton(CoordinatorEntity, ButtonEntity):
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         coordinator,
@@ -424,7 +430,8 @@ class ProxmoxBaseButton(CoordinatorEntity, ButtonEntity):
         self._guest_key = guest_key or make_guest_key(node, vmid)
 
         self._attr_unique_id = f"proxmox_{node}_{vmid}_{command}"
-        self._attr_name = f"{command.capitalize()} {label}"
+        self._attr_translation_key = f"{guest_type or 'guest'}_{command}"
+        self._attr_translation_placeholders = {"name": str(label)}
         self._attr_icon = icon
 
     async def async_press(self):
@@ -545,11 +552,13 @@ class ProxmoxNodeButton(CoordinatorEntity, ButtonEntity):
         self._command = command
         self._attr_icon = icon
 
+        self._attr_has_entity_name = True
         server_id = coordinator.config_entry.data.get("server_id", "default").lower()
         node_id = node.lower()
 
         self._attr_unique_id = f"pve_{server_id}_node_{node_id}_{command}"
-        self._attr_name = f"{label} – {command.capitalize()}"
+        self._attr_translation_key = f"node_{command}"
+        self._attr_translation_placeholders = {"name": str(node)}
 
     @property
     def device_info(self):

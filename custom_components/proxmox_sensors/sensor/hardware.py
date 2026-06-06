@@ -28,18 +28,23 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         )
 
         if self._is_cpu:
-            name = f"CPU Temperature"
             unique_id = f"proxmox_cpu_temp_{node}"
             unit = "°C"
             sensor_id = "cpu_temperature"
         else:
-            name = sensor_key
             clean_id = self._key.replace(" ", "_").replace("-", "_")
             unique_id = f"proxmox_hw_{node}_{clean_id}"
             unit = "°C"
             sensor_id = sensor_key
 
-        super().__init__(coordinator, sensor_id, name, unit, unique_id, node)
+        super().__init__(coordinator, sensor_id, None, unit, unique_id, node)
+        if self._is_cpu:
+            self._attr_translation_key = "cpu_temperature"
+        elif not self._is_chipset:
+            self._attr_translation_key = "hardware_temperature"
+            self._attr_translation_placeholders = {
+                "name": sensor_key.replace("_", " ").replace("-", " ").title()
+            }
 
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"
@@ -223,10 +228,10 @@ class ProxmoxHardwareNVMeSensor(ProxmoxBaseSensor):
 
         # Nombre provisional (fallback)
         display_name = device_prefix.replace("nvme-pci-", "NVMe ").replace("_", " ")
-        name = f"{display_name} ({node})"
         unique_id = f"proxmox_nvme_{device_prefix}_{node}"
 
-        super().__init__(coordinator, "nvme_temperature", name, "°C", unique_id, node)
+        super().__init__(coordinator, "nvme_temperature", None, "°C", unique_id, node)
+        self._attr_translation_key = "hw_nvme_temperature"
 
         smart = self._get_smart_info()
 
@@ -240,7 +245,9 @@ class ProxmoxHardwareNVMeSensor(ProxmoxBaseSensor):
                 display_name = model
 
             # dynamic name
-            self._attr_name = f"{display_name} ({node})"
+            self._attr_translation_placeholders = {"name": display_name}
+        else:
+            self._attr_translation_placeholders = {"name": display_name}
 
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"

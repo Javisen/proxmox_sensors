@@ -9,9 +9,10 @@ class ProxmoxStorageSensor(ProxmoxBaseSensor):
 
     def __init__(self, coordinator, storage_name, st, node=None):
         uid = f"proxmox_storage_{node}_{storage_name}_percent_v1"
-        super().__init__(coordinator, storage_name, "Usage", "%", uid, node)
+        super().__init__(coordinator, storage_name, None, "%", uid, node)
 
         self._storage_name = storage_name
+        self._attr_translation_key = "storage_usage"
         self._attr_state_class = "measurement"
 
         stype = (st.get("type") or "").lower()
@@ -65,7 +66,15 @@ class ProxmoxStorageAttributeSensor(ProxmoxBaseSensor):
         uid = f"proxmox_storage_{node}_{storage_name}_{key}_v1"
         unit = "GB" if key in ("used", "avail", "total") else None
 
-        super().__init__(coordinator, storage_name, label, unit, uid, node)
+        super().__init__(coordinator, storage_name, None, unit, uid, node)
+        if key == "used":
+            self._attr_translation_key = "storage_used"
+        elif key == "avail":
+            self._attr_translation_key = "storage_free"
+        elif key == "total":
+            self._attr_translation_key = "storage_total"
+        elif key == "type":
+            self._attr_translation_key = "storage_type"
 
         self._storage_name = storage_name
         self._key = key

@@ -10,16 +10,17 @@ from .base import ProxmoxBaseSensor
 class ProxmoxDimmSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, node, dimm_id):
         unique_id = f"proxmox_{node}_{dimm_id.lower()}"
-        name = f"{dimm_id} ({node})"
 
         super().__init__(
             coordinator,
             dimm_id,
-            name,
+            None,
             "GB",
             unique_id,
             node,
         )
+        self._attr_translation_key = "dimm_capacity"
+        self._attr_translation_placeholders = {"dimm": str(dimm_id)}
 
         self._dimm_id = dimm_id
 

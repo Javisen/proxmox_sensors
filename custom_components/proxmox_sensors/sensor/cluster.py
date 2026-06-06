@@ -42,6 +42,8 @@ def _safe(data: dict, *keys, default=None):
 class ProxmoxClusterBaseSensor(CoordinatorEntity, SensorEntity):
     """Base sensor for cluster-level data."""
 
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator)
         self._entry_id = entry_id
@@ -78,7 +80,7 @@ class ProxmoxClusterStatusSensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "Status"
+        self._attr_translation_key = "cluster_status"
         self._attr_unique_id = f"pve_{entry_id}_cluster_status"
         self._attr_icon = "mdi:server-network"
 
@@ -123,7 +125,7 @@ class ProxmoxClusterNodesSensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "Nodes Online"
+        self._attr_translation_key = "cluster_nodes_online"
         self._attr_unique_id = f"pve_{entry_id}_cluster_nodes_online"
         self._attr_icon = "mdi:server"
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -162,7 +164,7 @@ class ProxmoxClusterCPUSensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "CPU Usage"
+        self._attr_translation_key = "cluster_cpu_usage"
         self._attr_unique_id = f"pve_{entry_id}_cluster_cpu"
         self._attr_icon = "mdi:cpu-64-bit"
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -206,7 +208,7 @@ class ProxmoxClusterRAMSensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "RAM Usage"
+        self._attr_translation_key = "cluster_ram_usage"
         self._attr_unique_id = f"pve_{entry_id}_cluster_ram"
         self._attr_icon = "mdi:memory"
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -254,7 +256,7 @@ class ProxmoxClusterVMsSensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "VMs Running"
+        self._attr_translation_key = "cluster_vms_running"
         self._attr_unique_id = f"pve_{entry_id}_cluster_vms"
         self._attr_icon = "mdi:monitor-multiple"
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -297,7 +299,7 @@ class ProxmoxClusterCTsSensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "CTs Running"
+        self._attr_translation_key = "cluster_cts_running"
         self._attr_unique_id = f"pve_{entry_id}_cluster_cts"
         self._attr_icon = "mdi:box-shadow"
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -338,7 +340,7 @@ class ProxmoxClusterStorageSensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "Storage Usage"
+        self._attr_translation_key = "cluster_storage_usage"
         self._attr_unique_id = f"pve_{entry_id}_cluster_storage"
         self._attr_icon = "mdi:database"
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -389,7 +391,7 @@ class ProxmoxClusterHASensor(ProxmoxClusterBaseSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "HA Status"
+        self._attr_translation_key = "cluster_ha_status"
         self._attr_unique_id = f"pve_{entry_id}_cluster_ha"
         self._attr_icon = "mdi:shield-check"
 
@@ -427,12 +429,14 @@ class ProxmoxClusterHASensor(ProxmoxClusterBaseSensor):
 class ProxmoxClusterFirewallSensor(CoordinatorEntity, SensorEntity):
     """Cluster Firewall status sensor."""
 
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, cluster_name, entry_id):
         super().__init__(coordinator)
         self._cluster_name = cluster_name
         self._entry_id = entry_id
 
-        self._attr_name = "Firewall"
+        self._attr_translation_key = "cluster_firewall"
         self._attr_unique_id = f"proxmox_cluster_firewall_{cluster_name}"
         self._attr_icon = "mdi:shield-check"
         self._attr_device_info = {
@@ -530,7 +534,7 @@ class ProxmoxBackupJobsSensor(ProxmoxRestoredBackupSensor):
 
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
-        self._attr_name = "Backup Jobs"
+        self._attr_translation_key = "cluster_backup_jobs"
         self._attr_unique_id = f"pve_{entry_id}_cluster_backup_jobs"
         self._attr_icon = "mdi:backup-restore"
 
@@ -591,7 +595,7 @@ class ProxmoxBackupAgeSensor(ProxmoxRestoredBackupSensor):
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
 
-        self._attr_name = "Backup Age"
+        self._attr_translation_key = "cluster_backup_age"
         self._attr_unique_id = f"pve_{entry_id}_backup_age"
         self._attr_icon = "mdi:clock-outline"
         self._attr_native_unit_of_measurement = "h"
@@ -638,7 +642,7 @@ class ProxmoxBackupHealthSensor(ProxmoxRestoredBackupSensor):
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
 
-        self._attr_name = "Backup Health"
+        self._attr_translation_key = "cluster_backup_health"
         self._attr_unique_id = f"pve_{entry_id}_backup_health"
         self._attr_icon = "mdi:shield-check"
         self._attr_device_class = None
@@ -707,7 +711,7 @@ class ProxmoxFailedTasksSensor(ProxmoxClusterBaseSensor):
     def __init__(self, coordinator, entry_id: str, node: str):
         super().__init__(coordinator, entry_id, node)
 
-        self._attr_name = "Failed Tasks"
+        self._attr_translation_key = "cluster_failed_tasks"
         self._attr_unique_id = f"pve_{entry_id}_cluster_failed_tasks"
         self._attr_icon = "mdi:alert-circle"
         self._attr_state_class = "measurement"

@@ -19,10 +19,11 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
         disk_info = disks.get(disk_id, {})
         self._model = disk_info.get("model", label or "Unknown")
         self._serial = disk_info.get("serial", "")
-        name = f"{self._model} Size"
         unique_id = f"proxmox_disk_{node}_{disk_id}_v1"
 
-        super().__init__(coordinator, disk_id, name, "GB", unique_id, node)
+        super().__init__(coordinator, disk_id, None, "GB", unique_id, node)
+        self._attr_translation_key = "disk_size"
+        self._attr_translation_placeholders = {"model": str(self._model)}
 
         self._disk_id = disk_id
         self._attr_icon = "mdi:harddisk"

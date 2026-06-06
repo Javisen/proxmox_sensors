@@ -8,12 +8,12 @@ from ..logic.guest_keys import make_guest_key
 class ProxmoxVMSensor(ProxmoxBaseSensor):
 
     def __init__(self, coordinator, vm_id, node, label, guest_key=None):
-        name = "Status"
         uid = f"proxmox_vm_{node}_{vm_id}_status_v1"
         self._label = label
         self._vm_id = vm_id
         self._guest_key = guest_key or make_guest_key(node, vm_id)
-        super().__init__(coordinator, self._guest_key, name, None, uid, node)
+        super().__init__(coordinator, self._guest_key, None, None, uid, node)
+        self._attr_translation_key = "vm_status"
         self._attr_icon = "mdi:monitor"
 
     @property
@@ -54,10 +54,10 @@ class ProxmoxVMAttributeSensor(ProxmoxBaseSensor):
         self._attr_key = attr_name
         self._guest_key = guest_key or make_guest_key(node, vm_id)
 
-        display_name = attr_name.replace("_", " ").title()
         uid = f"proxmox_vm_{node}_{vm_id}_{attr_name.lower()}_v1"
 
-        super().__init__(coordinator, self._guest_key, display_name, unit, uid, node)
+        super().__init__(coordinator, self._guest_key, None, unit, uid, node)
+        self._attr_translation_key = f"vm_{attr_name}"
         self._attr_icon = icon
 
     @property

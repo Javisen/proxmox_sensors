@@ -31,46 +31,58 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
         unit = None
         icon = "mdi:information-outline"
         state_class = None
-        name = sensor_id.replace("_", " ").title()
+        name = sensor_id
 
         if sensor_id == "cpu":
-            name = "CPU Usage"
+            name = "node_cpu"
             unit = "%"
             icon = "mdi:cpu-64-bit"
             state_class = "measurement"
 
         elif sensor_id == "uptime":
-            name = "Uptime"
+            name = "node_uptime"
             icon = "mdi:clock-outline"
 
         elif sensor_id == "kversion":
-            name = "Kernel Version"
+            name = "node_kernel_version"
             icon = "mdi:linux"
 
         elif sensor_id == "pveversion":
-            name = "PVE Version"
+            name = "node_pve_version"
             icon = "mdi:numeric"
 
+        elif sensor_id == "current-kernel":
+            name = "node_kernel_version"
+            icon = "mdi:linux"
+
         elif sensor_id == "loadavg":
-            name = "Load Average"
+            name = "node_load_average"
             icon = "mdi:chart-line"
 
         elif sensor_id == "network_rx":
-            name = "Network RX"
+            name = "node_network_rx"
             unit = "kB/s"
             icon = "mdi:download-network"
             state_class = "measurement"
 
         elif sensor_id == "network_tx":
-            name = "Network TX"
+            name = "node_network_tx"
             unit = "kB/s"
             icon = "mdi:upload-network"
             state_class = "measurement"
 
-        name = f"{name} ({node})"
         unique_id = f"proxmox_node_{node}_{sensor_id}"
 
-        super().__init__(coordinator, sensor_id, name, unit, unique_id, node)
+        super().__init__(coordinator, sensor_id, None, unit, unique_id, node)
+        if name == sensor_id:
+            self._attr_translation_key = "node_metric"
+            self._attr_translation_placeholders = {
+                "name": sensor_id.replace("_", " ").title(),
+                "node_name": node,
+            }
+        else:
+            self._attr_translation_key = name
+            self._attr_translation_placeholders = {"node_name": node}
 
         if sensor_id in ("network_rx", "network_tx"):
             self._last_value = None
@@ -214,7 +226,8 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
 class ProxmoxClusterTasksSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, node):
         uid = f"proxmox_{node}_cluster_tasks"
-        super().__init__(coordinator, "last_task", "Last Task", None, uid, node)
+        super().__init__(coordinator, "last_task", None, None, uid, node)
+        self._attr_translation_key = "node_last_task"
 
     def _get_value(self):
         task = self.coordinator.data.get("node", {}).get("last_task")
@@ -232,8 +245,9 @@ class ProxmoxClusterTasksSensor(ProxmoxBaseSensor):
 class ProxmoxCPUInfoSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, node):
         super().__init__(
-            coordinator, "cpuinfo", "CPU Info", None, f"p_node_cpu_{node}", node
+            coordinator, "cpuinfo", None, None, f"p_node_cpu_{node}", node
         )
+        self._attr_translation_key = "node_cpu_info"
         self._attr_icon = "mdi:cpu-64-bit"
 
     def _get_value(self):
@@ -244,8 +258,9 @@ class ProxmoxCPUInfoSensor(ProxmoxBaseSensor):
 class ProxmoxKSMSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, node):
         super().__init__(
-            coordinator, "ksm", "KSM Shared", "GB", f"p_node_ksm_{node}", node
+            coordinator, "ksm", None, "GB", f"p_node_ksm_{node}", node
         )
+        self._attr_translation_key = "node_ksm_shared"
         self._attr_icon = "mdi:memory-arrow-down"
 
     def _get_value(self):
@@ -256,8 +271,9 @@ class ProxmoxKSMSensor(ProxmoxBaseSensor):
 class ProxmoxMemorySensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, node):
         super().__init__(
-            coordinator, "memory", "Memory Usage", "%", f"p_node_mem_{node}", node
+            coordinator, "memory", None, "%", f"p_node_mem_{node}", node
         )
+        self._attr_translation_key = "node_memory_usage"
         self._attr_icon = "mdi:memory"
 
     def _get_value(self):
@@ -268,8 +284,9 @@ class ProxmoxMemorySensor(ProxmoxBaseSensor):
 class ProxmoxSwapSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, node):
         super().__init__(
-            coordinator, "swap", "Swap Usage", "%", f"p_node_swap_{node}", node
+            coordinator, "swap", None, "%", f"p_node_swap_{node}", node
         )
+        self._attr_translation_key = "node_swap_usage"
         self._attr_icon = "mdi:swap-horizontal"
 
     def _get_value(self):
@@ -284,11 +301,12 @@ class ProxmoxRootFSSensor(ProxmoxBaseSensor):
         super().__init__(
             coordinator,
             "rootfs",
-            "Root FS Usage",
+            None,
             "%",
             f"p_node_rootfs_{node}",
             node,
         )
+        self._attr_translation_key = "node_rootfs_usage"
         self._attr_icon = "mdi:folder"
 
     def _get_value(self):
@@ -303,11 +321,12 @@ class ProxmoxNodeUpdatesSensor(ProxmoxBaseSensor):
         super().__init__(
             coordinator,
             "node_updates",
-            "Node Updates",
+            None,
             None,
             f"p_node_updates_{node}",
             node,
         )
+        self._attr_translation_key = "node_updates"
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     def _get_value(self):
@@ -360,7 +379,8 @@ class ProxmoxNodesSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry_id
         self._node = node
-        self._attr_name = f"Proxmox Node: {node}"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = "proxmox_node"
         self._attr_unique_id = f"{entry_id}_node_info"
         self._attr_icon = "mdi:server"
 
@@ -394,7 +414,8 @@ class ProxmoxStoragesSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry_id
         self._node = node
-        self._attr_name = f"Proxmox Storages ({node})"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = "proxmox_storages"
         self._attr_unique_id = f"{entry_id}_storages_{node}"
         self._attr_icon = "mdi:database"
 
@@ -450,11 +471,12 @@ class ProxmoxNodeIOWaitSensor(ProxmoxBaseSensor):
         super().__init__(
             coordinator,
             "wait",
-            "IO Wait",
+            None,
             "%",
             f"p_node_iowait_{node}",
             node,
         )
+        self._attr_translation_key = "node_iowait"
         self._attr_icon = "mdi:harddisk"
         self._attr_state_class = "measurement"
 
@@ -475,11 +497,12 @@ class ProxmoxNodeLoadAverageSensor(ProxmoxBaseSensor):
         super().__init__(
             coordinator,
             "loadavg_1m",
-            "Load Average (1m)",
+            None,
             None,
             f"p_node_load1_{node}",
             node,
         )
+        self._attr_translation_key = "node_load_1m"
         self._attr_icon = "mdi:chart-line"
 
     def _get_value(self):
@@ -502,11 +525,12 @@ class ProxmoxNodeScoreSensor(ProxmoxBaseSensor):
         super().__init__(
             coordinator,
             "node_score",
-            "Node Score",
+            None,
             None,
             f"p_node_score_{node}",
             node,
         )
+        self._attr_translation_key = "node_score"
         self._attr_icon = "mdi:speedometer"
 
     def _get_value(self):
@@ -529,11 +553,12 @@ class ProxmoxNodeMountedDisksSensor(ProxmoxBaseSensor):
         super().__init__(
             coordinator,
             "mounted_disks",
-            "Mounted Disks",
+            None,
             None,
             f"mounted_disks_{node}",
             node,
         )
+        self._attr_translation_key = "node_mounted_disks"
 
     def _get_disk_name(self, disk):
         name = disk.get("dev") or disk.get("devpath")
@@ -613,7 +638,7 @@ class ProxmoxNodeMountedDisksSensor(ProxmoxBaseSensor):
             "identifiers": {(DOMAIN, f"mounted_disks_{self._node}")},
             "name": f"6. Mounted Disks: {self._node}",
             "manufacturer": "Proxmox",
-            "model": "Mounted Disks",
+            "model": "node_mounted_disks",
         }
 
 
@@ -621,18 +646,18 @@ class PVEBackupProgressSensor(ProxmoxBaseSensor):
     """Sensor for backup progress in PVE using available tasks data."""
 
     def __init__(self, coordinator, node, entry_id):
-        name = "Backup Progress"
+        name = "node_backup_progress"
         uid = f"proxmox_backup_progress_{node}"
 
         super().__init__(
             coordinator,
             node,
-            name,
+            None,
             None,
             uid,
             node,
         )
-
+        self._attr_translation_key = "node_backup_progress"
         self._attr_icon = "mdi:backup-restore"
 
     def _get_backup_tasks(self):

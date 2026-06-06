@@ -11,12 +11,14 @@ _logger = logging.getLogger(__name__)
 
 class PBSLastActionSensor(CoordinatorEntity, SensorEntity):
 
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, datastore):
         super().__init__(coordinator)
 
         self._datastore = datastore
 
-        self._attr_name = "Last Action"
+        self._attr_translation_key = "last_action"
         self._attr_unique_id = f"{datastore.lower()}_last_action"
         self._attr_should_poll = False
 
