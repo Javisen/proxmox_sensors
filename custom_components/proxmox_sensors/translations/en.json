@@ -630,5 +630,119 @@
         "name": "Stressed"
       }
     }
+  },
+  "services": {
+    "create_vzdump_backup": {
+      "name": "Proxmox: Start backup",
+      "description": "Backup selected VMs and/or containers to the specified storage.",
+      "fields": {
+        "node": {
+          "name": "Node",
+          "description": "Node name (e.g., server)"
+        },
+        "storage": {
+          "name": "Target storage",
+          "description": "Storage name (e.g., local, PBS_Local)"
+        },
+        "guests": {
+          "name": "Guest (VM/CT ID)",
+          "description": "List of VM/CT numeric IDs (e.g., 100,101 or YAML list)"
+        },
+        "mode": {
+          "name": "Backup mode",
+          "description": "snapshot, suspend or stop"
+        },
+        "compress": {
+          "name": "Compression method",
+          "description": "Backup compression method"
+        },
+        "max_concurrent": {
+          "name": "Max concurrent",
+          "description": "Maximum number of simultaneous backups (1 = sequential)"
+        },
+        "delay_between": {
+          "name": "Backup interval",
+          "description": "Seconds to wait between backups"
+        }
+      }
+    },
+    "backup_all": {
+      "name": "Proxmox: Mass backup",
+      "description": "Backup all VMs and/or containers on the selected node.",
+      "fields": {
+        "node": {
+          "name": "Node",
+          "description": "Node name (e.g., pve)"
+        },
+        "storage": {
+          "name": "Target storage",
+          "description": "Storage name (e.g., local, local-lvm, pbs)"
+        },
+        "mode": {
+          "name": "Backup mode",
+          "description": "snapshot, suspend or stop"
+        },
+        "compress": {
+          "name": "Compression method",
+          "description": "Backup compression method"
+        },
+        "max_concurrent": {
+          "name": "Max concurrent",
+          "description": "Maximum number of simultaneous backups (1 = sequential)"
+        },
+        "delay_between": {
+          "name": "Backup interval",
+          "description": "Seconds between backups (0 = no interval)"
+        },
+        "include_vms": {
+          "name": "Include VMs",
+          "description": "If enabled, includes all VMs on the node."
+        },
+        "include_cts": {
+          "name": "Include containers",
+          "description": "If enabled, includes all CTs on the node."
+        }
+      }
+    },
+    "confirm_shutdown_node": {
+      "name": "Proxmox: Shutdown node",
+      "description": "Requests confirmation and shuts down the selected node.",
+      "fields": {
+        "node": {
+          "name": "Node",
+          "description": "Node name (e.g., pve)"
+        },
+        "confirm": {
+          "name": "Confirmation",
+          "description": "Must be true to execute shutdown."
+        }
+      }
+    },
+    "confirm_reboot_node": {
+      "name": "Proxmox: Reboot node",
+      "description": "Requests confirmation and reboots the selected node.",
+      "fields": {
+        "node": {
+          "name": "Node",
+          "description": "Node name (e.g., pve)"
+        },
+        "confirm": {
+          "name": "Confirmation",
+          "description": "Must be true to execute reboot."
+        }
+      }
+    },
+    "wake_node": {
+      "name": "Proxmox: Wake node",
+      "description": "Wakes a Proxmox node using Wake-on-LAN.",
+      "fields": {
+        "node": {
+          "name": "Node"
+        },
+        "mac": {
+          "name": "MAC address"
+        }
+      }
+    }
   }
 }
