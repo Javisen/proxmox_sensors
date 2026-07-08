@@ -44,7 +44,7 @@ PBS_EXTRA_ENDPOINTS = ["status/datastore", "admin/tasks"]
 
 class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self):
         self._config = {}
