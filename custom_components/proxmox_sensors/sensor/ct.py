@@ -54,6 +54,21 @@ class ProxmoxContainerSensor(ProxmoxBaseSensor):
         return str(ct_data.get("status", "unknown")).capitalize()
 
 
+    @property
+    def extra_state_attributes(self):
+        """Extra attributes for the CT status sensor."""
+        ct_data = self._get_ct_data()
+
+        if not ct_data:
+            return {}
+
+        attrs = {}
+
+        if node := ct_data.get("node"):
+            attrs["node"] = node
+
+        return attrs
+
 class ProxmoxContainerAttributeSensor(ProxmoxBaseSensor):
     """Attribute sensors for CTs (CPU, memory, disk, network, uptime)."""
 
@@ -153,7 +168,7 @@ class ProxmoxContainerAttributeSensor(ProxmoxBaseSensor):
             return {}
 
         attrs = {}
-
+        
         # CPU extra info
         if self._attr_key == "cpu_usage":
             cpu = ct_data.get("cpu")

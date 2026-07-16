@@ -368,9 +368,6 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     except Exception:
                         continue
 
-                # Fallback: first node
-                self._config[CONF_NODE] = nodes[0]["node"]
-                return await self.async_step_select_resources()
 
             # Manual mode
             node_options = {}

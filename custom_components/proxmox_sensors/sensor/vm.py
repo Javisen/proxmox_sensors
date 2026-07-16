@@ -43,7 +43,21 @@ class ProxmoxVMSensor(ProxmoxBaseSensor):
         vm_data = self._get_vm_data()
         return str(vm_data.get("status", "unknown")).capitalize()
 
+    @property
+    def extra_state_attributes(self):
+        """Extra attributes for the VM status sensor."""
+        vm_data = self._get_vm_data()
 
+        if not vm_data:
+            return {}
+
+        attrs = {}
+
+        if node := vm_data.get("node"):
+            attrs["node"] = node
+
+        return attrs
+    
 class ProxmoxVMAttributeSensor(ProxmoxBaseSensor):
 
     def __init__(
@@ -133,7 +147,7 @@ class ProxmoxVMAttributeSensor(ProxmoxBaseSensor):
             return {}
 
         attrs = {}
-
+             
         # CPU extra info
         if self._attr_key == "cpu_usage":
             cpu = vm_data.get("cpu")

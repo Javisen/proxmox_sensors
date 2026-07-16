@@ -126,6 +126,7 @@ class ProxmoxClient:
 
         try:
             return await hass.async_add_executor_job(proxmox.get, path)
+
         except Exception as err:
             if raise_errors:
                 status_code = _extract_status_code(err)
@@ -135,9 +136,24 @@ class ProxmoxClient:
                         "PVE HTTP %s on validation endpoint %s", status_code, path
                     )
                     return None
+
                 if isinstance(err, requests.exceptions.RequestException):
                     raise CannotConnect(f"PVE request failed for {path}") from err
+
                 raise
+
+            # Connection failures are expected when a node is powered off.
+            if isinstance(
+                err,
+                (
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.ConnectTimeout,
+                    requests.exceptions.Timeout,
+                ),
+            ):
+                LOGGER.debug("PVE node unreachable while requesting %s: %s", path, err)
+                return None
+
             LOGGER.error("PVE GET error on %s: %s", path, err)
             return None
 
@@ -363,7 +379,14 @@ class ProxmoxClient:
             return {}
 
     async def get_zfs_pools(self, hass, node):
-        return await self.get(hass, f"nodes/{node}/disks/zfs") or []
+        return (
+            await self.get(
+                hass,
+                f"nodes/{node}/disks/zfs",
+                ignore_error=_is_expected_no_zfs_pools_error,
+            )
+            or []
+        )
 
     async def start_vzdump(
         self,
