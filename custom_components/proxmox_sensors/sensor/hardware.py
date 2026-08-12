@@ -26,7 +26,6 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
                 "zenpower",
                 "package",
                 "cpu",
-                "core",
                 "tctl",
                 "tdie",
                 "tccd",
@@ -40,15 +39,18 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         else:
             clean_id = self._key.replace(" ", "_").replace("-", "_")
             unique_id = f"proxmox_hw_{node}_{clean_id}"
+
             if self._sensor_type == "voltage":
                 unit = "V"
             elif self._sensor_type == "fan":
                 unit = "RPM"
             else:
                 unit = "°C"
+
             sensor_id = sensor_key
 
         super().__init__(coordinator, sensor_id, None, unit, unique_id, node)
+
         if self._is_cpu:
             self._attr_translation_key = "cpu_temperature"
         elif not self._is_chipset:
@@ -63,7 +65,7 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         elif self._sensor_type == "fan":
             self._attr_icon = "mdi:fan"
         else:
-            self._attr_device_class = "temperature"
+            self._attr_device_class = SensorDeviceClass.TEMPERATURE
             self._attr_icon = "mdi:thermometer-lines"
 
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -222,8 +224,6 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
     # ================= HELPERS ==================
 
     def _detect_sensor_type(self, coordinator, sensor_key):
-        if self._is_chipset:
-            return "temperature"
 
         hw = coordinator.data.get("hardware", {})
         val = hw.get(sensor_key.lower(), hw.get(sensor_key))
@@ -261,13 +261,8 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
                             parsed = v
                             break
 
-                    elif re.match(r"^temp\d+_input$", kl):
-                        parsed = v
-                        break
-
-                if parsed is None and self._sensor_type == "temperature":
-                    for k, v in val.items():
-                        if "input" in k.lower():
+                    elif self._sensor_type == "temperature":
+                        if re.match(r"^temp\d+_input$", kl):
                             parsed = v
                             break
 
@@ -286,8 +281,10 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
                 if f >= 0:
                     return round(f, 3)
 
-            elif 1 < f < 145:
-                return round(f, 1)
+            elif self._sensor_type == "temperature":
+                if 1 < f < 145:
+                    return round(f, 1)
+
         except Exception:
             pass
 

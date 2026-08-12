@@ -298,12 +298,17 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         for endpoint in endpoints_min:
             try:
                 response = await client.get(self.hass, endpoint, raise_errors=True)
-                if response is None:
+
+                if response is None or (
+                    endpoint == "nodes" and isinstance(response, list) and not response
+                ):
                     _LOGGER.debug(
-                        "Minimum validation endpoint returned None: %s", endpoint
+                        "Minimum validation endpoint returned no visible nodes: %s",
+                        endpoint,
                     )
                     has_minimum = False
                     has_all = False
+
             except ProxmoxPermissionError as err:
                 _LOGGER.debug(
                     "Minimum validation endpoint failed with %s: %s",
@@ -319,11 +324,14 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         for endpoint in endpoints_extra:
             try:
                 response = await client.get(self.hass, endpoint, raise_errors=True)
+
                 if response is None:
                     _LOGGER.debug(
-                        "Extra validation endpoint returned None: %s", endpoint
+                        "Extra validation endpoint returned None: %s",
+                        endpoint,
                     )
                     has_all = False
+
             except ProxmoxPermissionError as err:
                 _LOGGER.debug(
                     "Extra validation endpoint failed with %s: %s",
@@ -350,13 +358,17 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         try:
             resources = await client.get_cluster_resources(self.hass)
+
             nodes = [
                 r for r in resources if isinstance(r, dict) and r.get("type") == "node"
             ]
 
+            if not nodes:
+                return self.async_abort(reason="no_nodes_visible")
+
             auto = self._config.get("auto_detect_node", True)
 
-            if auto and nodes:
+            if auto:
                 host_ip = self._config.get(CONF_HOST)
                 for n in nodes:
                     node_name = n.get("node")
@@ -367,7 +379,6 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             return await self.async_step_select_resources()
                     except Exception:
                         continue
-
 
             # Manual mode
             node_options = {}
@@ -481,15 +492,11 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="select_resources",
                 data_schema=vol.Schema(
                     {
-                        vol.Optional(
-                            "vms", default=list(vm_options.keys())
-                        ): cv.multi_select(vm_options),
-                        vol.Optional(
-                            "cts", default=list(ct_options.keys())
-                        ): cv.multi_select(ct_options),
-                        vol.Optional(
-                            "storage", default=list(st_options.keys())
-                        ): cv.multi_select(st_options),
+                        vol.Optional("vms", default=[]): cv.multi_select(vm_options),
+                        vol.Optional("cts", default=[]): cv.multi_select(ct_options),
+                        vol.Optional("storage", default=[]): cv.multi_select(
+                            st_options
+                        ),
                         vol.Optional("enable_physical_disks", default=True): bool,
                         vol.Optional("enable_node_controls", default=False): bool,
                     }

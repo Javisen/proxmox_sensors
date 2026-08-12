@@ -351,9 +351,6 @@ async def create_proxmox_coordinator(hass, entry, client):
                         (client.get_mounts, hass, node),
                     ]
 
-                    if enable_lm_sensors:
-                        tasks.append((client.get_lm_sensors_http, hass, node))
-
                     if enable_smart_monitoring:
                         tasks.append((client.get_smart_data_http, hass, node))
 
@@ -365,6 +362,9 @@ async def create_proxmox_coordinator(hass, entry, client):
                         return_exceptions=True,
                     )
 
+                    lm_sensors_data = None
+                    if enable_lm_sensors:
+                        lm_sensors_data = await client.get_lm_sensors_http(hass, node)
                     idx = 0
 
                     # -------- Node status --------
@@ -552,18 +552,6 @@ async def create_proxmox_coordinator(hass, entry, client):
                             for i, d in enumerate(result["node_disks"])
                         }
 
-                    # -------- LM Sensors --------
-
-                    result["hardware"] = {}
-                    if enable_lm_sensors:
-                        lm = results[idx]
-                        idx += 1
-                        if isinstance(lm, dict):
-                            for chip, values in lm.items():
-                                if isinstance(values, dict):
-                                    for k, v in values.items():
-                                        result["hardware"][f"{chip}_{k}".lower()] = v
-
                     # -------- SMART --------
 
                     result["smart"] = {}
@@ -602,6 +590,19 @@ async def create_proxmox_coordinator(hass, entry, client):
                                 "timestamp": None,
                                 "dimms": {},
                             }
+
+                    # -------- LM Sensors --------
+
+                    result["hardware"] = {}
+
+                    if enable_lm_sensors:
+                        lm = lm_sensors_data
+
+                        if isinstance(lm, dict):
+                            for chip, values in lm.items():
+                                if isinstance(values, dict):
+                                    for k, v in values.items():
+                                        result["hardware"][f"{chip}_{k}".lower()] = v
 
                     result["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     return result

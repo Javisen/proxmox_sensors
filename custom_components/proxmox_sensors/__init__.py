@@ -218,11 +218,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 cluster_name = cluster_info.get("name") if cluster_info else None
 
                 if not cluster_name:
-                    if enable_cluster:
-                        _LOGGER.warning(
-                            "enable_cluster=True but no cluster name in data for %s",
-                            data.get(CONF_NODE),
-                        )
                     return
 
                 await _async_manage_cluster_entry(

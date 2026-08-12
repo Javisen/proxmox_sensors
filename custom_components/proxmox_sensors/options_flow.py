@@ -211,17 +211,19 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
 
             selected_vms = [
                 v
-                for v in (conf.get("selected_vms") or list(vm_options.keys()))
+                for v in conf.get("selected_vms", list(vm_options.keys()))
                 if v in vm_options
             ]
+
             selected_cts = [
                 c
-                for c in (conf.get("selected_cts") or list(ct_options.keys()))
+                for c in conf.get("selected_cts", list(ct_options.keys()))
                 if c in ct_options
             ]
+
             selected_storage = [
                 s
-                for s in (conf.get("selected_storage") or list(st_options.keys()))
+                for s in conf.get("selected_storage", list(st_options.keys()))
                 if s in st_options
             ]
 
