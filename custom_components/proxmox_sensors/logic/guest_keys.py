@@ -12,9 +12,17 @@ def matches_selected_guest(selected_values, node, vmid, guest_key=None):
     """Return ``True`` when a selected value matches a guest.
 
     Supports legacy selections by raw VMID and newer selections by guest key.
+
+    Args:
+        selected_values: None (show all, legacy), [] (show none, explicit), or list (show only selected)
     """
-    if not selected_values:
+    # None means no selection configured (legacy/backward compatibility) → show all
+    if selected_values is None:
         return True
+
+    # [] means explicit empty selection → show none
+    if not selected_values:
+        return False
 
     normalized = {str(value) for value in selected_values}
     vmid_str = str(vmid)

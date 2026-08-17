@@ -103,10 +103,14 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
 
-    selected_vms = entry.options.get("selected_vms", entry.data.get("selected_vms", []))
-    selected_cts = entry.options.get("selected_cts", entry.data.get("selected_cts", []))
+    selected_vms = entry.options.get(
+        "selected_vms", entry.data.get("selected_vms", None)
+    )
+    selected_cts = entry.options.get(
+        "selected_cts", entry.data.get("selected_cts", None)
+    )
     selected_storage = entry.options.get(
-        "selected_storage", entry.data.get("selected_storage", [])
+        "selected_storage", entry.data.get("selected_storage", None)
     )
 
     enable_physical_disks = entry.options.get(

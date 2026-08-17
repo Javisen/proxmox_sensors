@@ -204,7 +204,7 @@ async def create_proxmox_coordinator(hass, entry, client):
 
                     selected = data.get("selected_storage")
 
-                    if not selected:
+                    if selected is None:
                         actual_stores = await client.get_pbs_datastores(hass)
                     else:
                         actual_stores = selected
@@ -506,7 +506,10 @@ async def create_proxmox_coordinator(hass, entry, client):
                         for st in storages or []
                         if isinstance(st, dict)
                         and "storage" in st
-                        and (not selected_storage or st["storage"] in selected_storage)
+                        and (
+                            selected_storage is None
+                            or st["storage"] in selected_storage
+                        )
                     }
 
                     # -------- ZFS --------

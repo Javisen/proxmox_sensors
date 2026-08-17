@@ -18,7 +18,7 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         self._sensor_type = self._detect_sensor_type(coordinator, sensor_key)
 
         # CPU grouping
-        self._is_cpu = any(
+        self._is_cpu = self._sensor_type == "temperature" and any(
             x in self._key
             for x in [
                 "coretemp",

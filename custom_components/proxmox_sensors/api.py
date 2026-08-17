@@ -379,14 +379,7 @@ class ProxmoxClient:
             return {}
 
     async def get_zfs_pools(self, hass, node):
-        return (
-            await self.get(
-                hass,
-                f"nodes/{node}/disks/zfs",
-                ignore_error=_is_expected_no_zfs_pools_error,
-            )
-            or []
-        )
+        return await self.get(hass, f"nodes/{node}/disks/zfs") or []
 
     async def start_vzdump(
         self,

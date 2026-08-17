@@ -24,8 +24,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
     else:
         client = data.get("client")
 
-    selected_vms = entry.options.get("selected_vms", entry.data.get("selected_vms", []))
-    selected_cts = entry.options.get("selected_cts", entry.data.get("selected_cts", []))
+    selected_vms = entry.options.get(
+        "selected_vms", entry.data.get("selected_vms", None)
+    )
+    selected_cts = entry.options.get(
+        "selected_cts", entry.data.get("selected_cts", None)
+    )
     enable_node_controls = entry.options.get(
         "enable_node_controls", entry.data.get("enable_node_controls", True)
     )
@@ -183,11 +187,7 @@ class PBSBaseButton(CoordinatorEntity, ButtonEntity):
     def __init__(self, coordinator, client, datastore, command_name, command_display):
         super().__init__(coordinator)
 
-        clean_datastore = (
-            datastore.lower()
-            .replace("-", "_")
-            .replace(" ", "_")
-        )
+        clean_datastore = datastore.lower().replace("-", "_").replace(" ", "_")
 
         self._client = client
         self._datastore = datastore
