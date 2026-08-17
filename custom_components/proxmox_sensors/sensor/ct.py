@@ -67,6 +67,14 @@ class ProxmoxContainerSensor(ProxmoxBaseSensor):
         if node := ct_data.get("node"):
             attrs["node"] = node
 
+        if "onboot" in ct_data:
+            onboot = bool(ct_data.get("onboot"))
+            expected_state = "Running" if onboot else "Stopped"
+            actual_state = str(ct_data.get("status", "unknown")).capitalize()
+            attrs["onboot"] = onboot
+            attrs["expected_state"] = expected_state
+            attrs["state_matches_onboot"] = actual_state == expected_state
+
         return attrs
 
 class ProxmoxContainerAttributeSensor(ProxmoxBaseSensor):

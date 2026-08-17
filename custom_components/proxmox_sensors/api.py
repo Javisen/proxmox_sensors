@@ -209,8 +209,16 @@ class ProxmoxClient:
     async def get_vms(self, hass, node: str):
         return await self.get(hass, f"nodes/{node}/qemu") or []
 
+    async def get_qemu_config(self, hass, node: str, vmid: str):
+        """Return QEMU VM configuration, including the onboot flag."""
+        return await self.get(hass, f"nodes/{node}/qemu/{vmid}/config") or {}
+
     async def get_containers(self, hass, node: str):
         return await self.get(hass, f"nodes/{node}/lxc") or []
+
+    async def get_lxc_config(self, hass, node: str, vmid: str):
+        """Return LXC configuration, including the onboot flag."""
+        return await self.get(hass, f"nodes/{node}/lxc/{vmid}/config") or {}
 
     async def get_container_status(self, hass, node: str, vmid: str):
         return await self.get(hass, f"nodes/{node}/lxc/{vmid}/status/current")
