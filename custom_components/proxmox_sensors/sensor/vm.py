@@ -56,6 +56,14 @@ class ProxmoxVMSensor(ProxmoxBaseSensor):
         if node := vm_data.get("node"):
             attrs["node"] = node
 
+        if "onboot" in vm_data:
+            onboot = bool(vm_data.get("onboot"))
+            expected_state = "Running" if onboot else "Stopped"
+            actual_state = str(vm_data.get("status", "unknown")).capitalize()
+            attrs["onboot"] = onboot
+            attrs["expected_state"] = expected_state
+            attrs["state_matches_onboot"] = actual_state == expected_state
+
         return attrs
     
 class ProxmoxVMAttributeSensor(ProxmoxBaseSensor):

@@ -460,6 +460,31 @@ async def create_proxmox_coordinator(hass, entry, client):
                         base.setdefault("status", "unknown")
                         vms_dict[guest_key] = base
 
+                    # Fetch VM configuration so HA can compare actual state with
+                    # Proxmox's own Start-at-boot setting.
+                    if vms_dict:
+                        vm_keys = list(vms_dict.keys())
+                        vm_configs = await asyncio.gather(
+                            *(
+                                limited_task(
+                                    client.get_qemu_config,
+                                    hass,
+                                    node,
+                                    str(vms_dict[key].get("vmid")),
+                                )
+                                for key in vm_keys
+                            ),
+                            return_exceptions=True,
+                        )
+                        for key, vm_config in zip(vm_keys, vm_configs):
+                            if isinstance(vm_config, dict):
+                                try:
+                                    vms_dict[key]["onboot"] = (
+                                        int(vm_config.get("onboot", 0)) == 1
+                                    )
+                                except (TypeError, ValueError):
+                                    vms_dict[key]["onboot"] = False
+
                     result["vms"] = vms_dict
 
                     # -------- Containers --------
@@ -493,6 +518,30 @@ async def create_proxmox_coordinator(hass, entry, client):
                             base.setdefault(field, 0)
                         base.setdefault("status", "unknown")
                         cts_dict[guest_key] = base
+
+                    # Fetch LXC configuration for the Start-at-boot flag.
+                    if cts_dict:
+                        ct_keys = list(cts_dict.keys())
+                        ct_configs = await asyncio.gather(
+                            *(
+                                limited_task(
+                                    client.get_lxc_config,
+                                    hass,
+                                    node,
+                                    str(cts_dict[key].get("vmid")),
+                                )
+                                for key in ct_keys
+                            ),
+                            return_exceptions=True,
+                        )
+                        for key, ct_config in zip(ct_keys, ct_configs):
+                            if isinstance(ct_config, dict):
+                                try:
+                                    cts_dict[key]["onboot"] = (
+                                        int(ct_config.get("onboot", 0)) == 1
+                                    )
+                                except (TypeError, ValueError):
+                                    cts_dict[key]["onboot"] = False
 
                     result["cts"] = cts_dict
 
