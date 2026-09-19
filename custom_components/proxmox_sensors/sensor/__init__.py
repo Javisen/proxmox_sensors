@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import logging
+import re
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.core import HomeAssistant, callback
@@ -649,6 +650,32 @@ def _reconcile_pbs_last_action_unique_ids(
         )
 
 
+_CPU_SENSOR_KEYS = [
+    "coretemp",
+    "core",
+    "package",
+    "cpu",
+    "k10temp",
+    "zenpower",
+    "tctl",
+    "tdie",
+    "tccd",
+]
+
+
+def _hardware_sensor_type(value):
+    """Detect the lm-sensors channel type from a raw sensor value."""
+    if isinstance(value, dict):
+        keys = [str(k).lower() for k in value]
+        if any(re.match(r"^fan\d+_input$", k) for k in keys):
+            return "fan"
+        if any(re.match(r"^in\d+_input$", k) for k in keys):
+            return "voltage"
+        if any(re.match(r"^temp\d+_input$", k) for k in keys):
+            return "temperature"
+    return "temperature"
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
@@ -783,23 +810,13 @@ async def async_setup_entry(
             chipset_created = False
 
             # First: Classify all sensors
-            for key in hardware_data:
+            for key, value in hardware_data.items():
                 sid = key.lower()
 
-                # CPU
-                if any(
-                    x in sid
-                    for x in [
-                        "coretemp",
-                        "core",
-                        "package",
-                        "cpu",
-                        "k10temp",
-                        "zenpower",
-                        "tctl",
-                        "tdie",
-                        "tccd",
-                    ]
+                # CPU: only real temperature channels may claim the CPU slot
+                if (
+                    _hardware_sensor_type(value) == "temperature"
+                    and any(x in sid for x in _CPU_SENSOR_KEYS)
                 ):
                     cpu_sensors.append(key)
 
@@ -854,26 +871,15 @@ async def async_setup_entry(
                     continue
 
                 # ---------------- CPU (only one) ----------------
-                if any(
-                    x in sid
-                    for x in [
-                        "coretemp",
-                        "core",
-                        "package",
-                        "cpu",
-                        "k10temp",
-                        "zenpower",
-                        "tctl",
-                        "tdie",
-                        "tccd",
-                    ]
-                ):
+                if any(x in sid for x in _CPU_SENSOR_KEYS):
                     if cpu_created:
                         continue
                     cpu_created = True
 
                 # ---------------- CHIPSET (only one clean) ----------------
-                if any(x in sid for x in ["pch"]):
+                if any(x in sid for x in ["pch"]) and _hardware_sensor_type(
+                    hardware_data.get(key)
+                ) == "temperature":
                     if chipset_created:
                         continue
 
