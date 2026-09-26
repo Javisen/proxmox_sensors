@@ -66,7 +66,7 @@ from .cluster import (
 )
 
 # Hardware Sensors (lm-sensors)
-from .hardware import ProxmoxHardwareSensor
+from .hardware import ProxmoxHardwareSensor, detect_sensor_type
 
 # Physical Disks
 from .disks import ProxmoxDiskSensor
@@ -733,6 +733,19 @@ def _reconcile_pbs_last_action_unique_ids(
         )
 
 
+_CPU_SENSOR_KEYS = [
+    "coretemp",
+    "core",
+    "package",
+    "cpu",
+    "k10temp",
+    "zenpower",
+    "tctl",
+    "tdie",
+    "tccd",
+]
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
@@ -864,23 +877,13 @@ async def async_setup_entry(
             chipset_created = False
 
             # First: Classify all sensors
-            for key in hardware_data:
+            for key, value in hardware_data.items():
                 sid = key.lower()
 
-                # CPU
-                if any(
-                    x in sid
-                    for x in [
-                        "coretemp",
-                        "core",
-                        "package",
-                        "cpu",
-                        "k10temp",
-                        "zenpower",
-                        "tctl",
-                        "tdie",
-                        "tccd",
-                    ]
+                # CPU: only real temperature channels may claim the CPU slot
+                if (
+                    detect_sensor_type(value) == "temperature"
+                    and any(x in sid for x in _CPU_SENSOR_KEYS)
                 ):
                     cpu_sensors.append(key)
 
@@ -935,19 +938,9 @@ async def async_setup_entry(
                     continue
 
                 # ---------------- CPU (only one) ----------------
-                if any(
-                    x in sid
-                    for x in [
-                        "coretemp",
-                        "core",
-                        "package",
-                        "cpu",
-                        "k10temp",
-                        "zenpower",
-                        "tctl",
-                        "tdie",
-                        "tccd",
-                    ]
+                if (
+                    detect_sensor_type(hardware_data[key]) == "temperature"
+                    and any(x in sid for x in _CPU_SENSOR_KEYS)
                 ):
                     if cpu_created:
                         continue

@@ -8,6 +8,19 @@ from .base import ProxmoxBaseSensor
 from ..const import DOMAIN
 
 
+def detect_sensor_type(value):
+    """Detect the lm-sensors channel type from a raw sensor value."""
+    if isinstance(value, dict):
+        keys = [str(k).lower() for k in value]
+        if any(re.match(r"^fan\d+_input$", k) for k in keys):
+            return "fan"
+        if any(re.match(r"^in\d+_input$", k) for k in keys):
+            return "voltage"
+        if any(re.match(r"^temp\d+_input$", k) for k in keys):
+            return "temperature"
+    return "temperature"
+
+
 class ProxmoxHardwareSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, sensor_key, node):
 
