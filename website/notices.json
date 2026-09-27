@@ -1,3 +1,11 @@
 {
-  "notices": []
+  "notices": [
+    {
+      "id": "website-test-notice",
+      "active": true,
+      "level": "warning",
+      "title": "Project Notice",
+      "message": "This is a temporary notice used to validate the Project Notices layout."
+    }
+  ]
 }
