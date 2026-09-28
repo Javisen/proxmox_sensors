@@ -30,6 +30,7 @@ from .logic.guest_identity import (
     guest_device_identifier,
     resolve_legacy_guest_identity,
 )
+from .logic.guest_identity_diagnostics import warn_ambiguous_guest
 from .logic.cluster_scope import guest_identity_context, scoped_migration_target
 from .logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
@@ -47,9 +48,17 @@ def _legacy_guest_identity_resolver(hass, entry):
     devices = dr.async_get(hass)
     rows = er.async_entries_for_config_entry(registry, entry.entry_id)
     device_rows = dr.async_entries_for_config_entry(devices, entry.entry_id)
-    return lambda kind, vmid, node: resolve_legacy_guest_identity(
-        kind, vmid, node, rows, device_rows
-    )
+    def resolve(kind, vmid, node):
+        identity = resolve_legacy_guest_identity(
+            kind, vmid, node, rows, device_rows
+        )
+        if identity.ambiguous:
+            warn_ambiguous_guest(
+                hass.data[DOMAIN][entry.entry_id], entry.entry_id, kind, vmid, node
+            )
+        return identity
+
+    return resolve
 
 
 def _guest_identity_values(identity_context, resolver, kind, vmid, node):

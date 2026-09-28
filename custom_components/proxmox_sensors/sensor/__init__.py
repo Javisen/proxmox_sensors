@@ -23,6 +23,7 @@ from ..logic.guest_keys import (
 from ..logic.guest_selection import get_cycle_guest_selections, allow_excluded_cluster_guest_cleanup
 from ..logic.cluster_scope import cluster_guest_identity_context, guest_identity_context, scoped_migration_target
 from ..logic.guest_identity import resolve_legacy_guest_identity
+from ..logic.guest_identity_diagnostics import warn_ambiguous_guest
 from ..logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
     mounted_disks_identifier,
@@ -113,31 +114,22 @@ _LOGGER = logging.getLogger(__name__)
 
 
 
-_AMBIGUOUS_GUESTS_WARNED: set[tuple[str, str, str]] = set()
-
-
-def _warn_ambiguous_guest(kind, vmid, node) -> None:
-    """Log once per guest when it is skipped because its legacy identity is ambiguous."""
-    key = (kind, str(vmid), str(node))
-    if key in _AMBIGUOUS_GUESTS_WARNED:
-        return
-    _AMBIGUOUS_GUESTS_WARNED.add(key)
-    _LOGGER.warning(
-        "Skipping %s %s on node %s: the entity/device registry holds more than one "
-        "identity for this guest (e.g. both node-scoped and cluster-scoped), so its "
-        "entities cannot be created safely",
-        kind.upper(), vmid, node,
-    )
-
-
 def _legacy_guest_identity_resolver(hass, entry):
     registry = er.async_get(hass)
     devices = dr.async_get(hass)
     rows = er.async_entries_for_config_entry(registry, entry.entry_id)
     device_rows = dr.async_entries_for_config_entry(devices, entry.entry_id)
-    return lambda kind, vmid, node: resolve_legacy_guest_identity(
-        kind, vmid, node, rows, device_rows
-    )
+    def resolve(kind, vmid, node):
+        identity = resolve_legacy_guest_identity(
+            kind, vmid, node, rows, device_rows
+        )
+        if identity.ambiguous:
+            warn_ambiguous_guest(
+                hass.data[DOMAIN][entry.entry_id], entry.entry_id, kind, vmid, node
+            )
+        return identity
+
+    return resolve
 
 
 def _build_guest_entities(
@@ -162,7 +154,6 @@ def _build_guest_entities(
             legacy_identity_resolver("vm", vm_id, vm_node) if legacy_identity_resolver else None
         )
         if legacy_identity and legacy_identity.ambiguous:
-            _warn_ambiguous_guest("vm", vm_id, vm_node)
             continue
         identity_node = legacy_identity.node if legacy_identity and legacy_identity.node else vm_node
         identity_cluster = legacy_identity.cluster_id if legacy_identity else None
@@ -206,7 +197,6 @@ def _build_guest_entities(
             legacy_identity_resolver("ct", ct_id, ct_node) if legacy_identity_resolver else None
         )
         if legacy_identity and legacy_identity.ambiguous:
-            _warn_ambiguous_guest("ct", ct_id, ct_node)
             continue
         identity_node = legacy_identity.node if legacy_identity and legacy_identity.node else ct_node
         identity_cluster = legacy_identity.cluster_id if legacy_identity else None
