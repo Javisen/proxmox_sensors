@@ -58,12 +58,17 @@ def _legacy_device_identity(identifiers, kind, vmid):
 
 
 def resolve_legacy_guest_identity(kind, vmid, node, entity_rows=(), devices=()):
-    identities = {
+    entity_identities = {
         identity for row in entity_rows
         if (identity := _legacy_entity_identity(getattr(row, "unique_id", None), kind, vmid)) is not None
     }
+    device_identities = set()
     for device in devices:
-        identities.update(_legacy_device_identity(getattr(device, "identifiers", ()), kind, vmid))
+        device_identities.update(_legacy_device_identity(getattr(device, "identifiers", ()), kind, vmid))
+    # Entities carry the identity Home Assistant is actually using. Devices can
+    # outlive their entities (e.g. node-scoped devices left behind by the 5.0
+    # cluster re-scope), so they only decide the identity when no entity does.
+    identities = entity_identities or device_identities
     if len(identities) != 1:
         return LegacyGuestIdentity(None, None, bool(identities))
     mode, value = identities.pop()

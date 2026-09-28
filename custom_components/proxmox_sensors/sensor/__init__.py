@@ -113,6 +113,23 @@ _LOGGER = logging.getLogger(__name__)
 
 
 
+_AMBIGUOUS_GUESTS_WARNED: set[tuple[str, str, str]] = set()
+
+
+def _warn_ambiguous_guest(kind, vmid, node) -> None:
+    """Log once per guest when it is skipped because its legacy identity is ambiguous."""
+    key = (kind, str(vmid), str(node))
+    if key in _AMBIGUOUS_GUESTS_WARNED:
+        return
+    _AMBIGUOUS_GUESTS_WARNED.add(key)
+    _LOGGER.warning(
+        "Skipping %s %s on node %s: the entity/device registry holds more than one "
+        "identity for this guest (e.g. both node-scoped and cluster-scoped), so its "
+        "entities cannot be created safely",
+        kind.upper(), vmid, node,
+    )
+
+
 def _legacy_guest_identity_resolver(hass, entry):
     registry = er.async_get(hass)
     devices = dr.async_get(hass)
@@ -145,6 +162,7 @@ def _build_guest_entities(
             legacy_identity_resolver("vm", vm_id, vm_node) if legacy_identity_resolver else None
         )
         if legacy_identity and legacy_identity.ambiguous:
+            _warn_ambiguous_guest("vm", vm_id, vm_node)
             continue
         identity_node = legacy_identity.node if legacy_identity and legacy_identity.node else vm_node
         identity_cluster = legacy_identity.cluster_id if legacy_identity else None
@@ -188,6 +206,7 @@ def _build_guest_entities(
             legacy_identity_resolver("ct", ct_id, ct_node) if legacy_identity_resolver else None
         )
         if legacy_identity and legacy_identity.ambiguous:
+            _warn_ambiguous_guest("ct", ct_id, ct_node)
             continue
         identity_node = legacy_identity.node if legacy_identity and legacy_identity.node else ct_node
         identity_cluster = legacy_identity.cluster_id if legacy_identity else None
