@@ -956,7 +956,10 @@ async def async_setup_entry(
                     cpu_created = True
 
                 # ---------------- CHIPSET (only one clean) ----------------
-                if any(x in sid for x in ["pch"]):
+                if (
+                    any(x in sid for x in ["pch"])
+                    and detect_sensor_type(hardware_data[key]) == "temperature"
+                ):
                     if chipset_created:
                         continue
 

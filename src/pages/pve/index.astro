@@ -1,0 +1,143 @@
+---
+import ProductShowcaseSection from "../../components/showcase/ProductShowcaseSection.astro";
+import AppLayout from "../../layouts/AppLayout.astro";
+import "../../styles/pve-showcase.css";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+const capabilities = ["Node", "Hardware", "Disks", "Storage", "Mounts", "CTs", "VMs"];
+---
+
+<AppLayout
+  title="PVE"
+  description="See what Proxmox Extended Sensors brings from Proxmox VE into Home Assistant."
+  hidePageHeader
+  contentClass="pve-showcase-content"
+>
+  <div class="pve-page">
+    <section class="pve-product-hero" aria-labelledby="pve-hero-title">
+      <div class="pve-product-hero__statement">
+        <p class="pve-product-hero__eyebrow">Proxmox Virtual Environment</p>
+        <h1 id="pve-hero-title">Bring your PVE into Home Assistant</h1>
+        <p class="pve-product-hero__lead">Monitor your Proxmox VE nodes, hardware, storage and guests directly from Home Assistant.</p>
+        <div class="pve-product-hero__actions">
+          <a class="pve-action pve-action--primary" href="#pve-story">Explore PVE</a>
+          <a class="pve-action pve-action--secondary" href={withBase("/docs/pve/")}>PVE Documentation</a>
+        </div>
+      </div>
+
+      <div class="pve-product-hero__identity" aria-label="PVE monitoring capabilities">
+        <div class="pve-product-hero__mark" aria-hidden="true">
+          <span>PVE</span>
+          <small>inside Home Assistant</small>
+        </div>
+        <ul class="pve-product-hero__capabilities">
+          {capabilities.map((capability, index) => (
+            <li style={`--tag-index: ${index}`}>{capability}</li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <div id="pve-story" class="pve-story">
+      <ProductShowcaseSection
+        id="node"
+        label="Node"
+        title="Your host, at a glance"
+        description="See the operational state of a Proxmox node without leaving Home Assistant."
+        capabilities={["Health", "CPU", "Memory", "Load", "Network", "Temperatures"]}
+        images={[{
+          src: "/images/documentation/pve/pve-3.png",
+          alt: "Node Health dashboard panel showing CPU, RAM, swap, load and KSM metrics.",
+          width: 509,
+          height: 249,
+        }]}
+      />
+
+      <ProductShowcaseSection
+        id="hardware-disks"
+        label="Hardware & Disks"
+        title="Beyond the basic API"
+        description="Bring physical host signals into the same view as your virtual infrastructure when the hardware exposes them."
+        capabilities={["Temperatures", "SMART", "NVMe", "DIMMs", "ZFS"]}
+        images={[{
+          src: "/images/documentation/pve/pve-6.png",
+          alt: "Temperatures dashboard panel showing CPU, chipset and NVMe readings.",
+          width: 504,
+          height: 260,
+        }]}
+        reverse
+      />
+
+      <ProductShowcaseSection
+        id="storage-mounts"
+        label="Storage & Mounts"
+        title="Capacity you can actually see"
+        description="Follow selected Proxmox storage resources and mounted disks through a clear Home Assistant view."
+        capabilities={["Proxmox Storage", "Capacity", "Usage", "Mounted Disks"]}
+        images={[{
+          src: "/images/documentation/pve/pve-7.png",
+          alt: "Storage dashboard panel showing capacity usage across four Proxmox storage resources.",
+          width: 510,
+          height: 264,
+        }]}
+      />
+
+      <ProductShowcaseSection
+        id="guests"
+        label="Virtual Machines & Containers"
+        title="Guests become first-class resources"
+        description="Track the status and resources of the VMs and containers that matter, with supported controls close at hand."
+        capabilities={["Status", "Resources", "Network", "Controls"]}
+        images={[
+          {
+            src: "/images/documentation/pve/pve-4.png",
+            alt: "Virtual machine dashboard view with controls and resource sensors.",
+            width: 509,
+            height: 683,
+          },
+          {
+            src: "/images/documentation/pve/pve-5.png",
+            alt: "Container dashboard view with controls and resource sensors.",
+            width: 511,
+            height: 739,
+          },
+        ]}
+        layout="duo"
+        note="In a configured cluster, monitored guests can move between nodes while keeping their Home Assistant identity."
+        reverse
+      />
+    </div>
+
+    <section class="pve-final-cta" aria-labelledby="pve-cta-title">
+      <div>
+        <p>Go deeper</p>
+        <h2 id="pve-cta-title">Want the technical details?</h2>
+      </div>
+      <nav aria-label="PVE technical resources">
+        <a href={withBase("/docs/pve/")}>PVE Documentation</a>
+        <a href={withBase("/docs/reference/")}>Entity Reference</a>
+        <a href={withBase("/docs/getting-started/")}>Getting Started</a>
+      </nav>
+    </section>
+  </div>
+
+  <script>
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealItems = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+
+    if (!reducedMotion && "IntersectionObserver" in window) {
+      document.documentElement.classList.add("pve-motion-ready");
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      }, { rootMargin: "0px 0px -12%", threshold: 0.12 });
+      revealItems.forEach((item) => observer.observe(item));
+    }
+  </script>
+</AppLayout>

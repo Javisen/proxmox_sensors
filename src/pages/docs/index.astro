@@ -1,0 +1,23 @@
+---
+import DocumentationCard from "../../components/documentation/DocumentationCard.astro";
+import { documentationCategories } from "../../data/documentation";
+import DocumentationLayout from "../../layouts/DocumentationLayout.astro";
+---
+
+<DocumentationLayout
+  title="Documentation"
+  description="Guides, concepts and technical reference for Proxmox Extended Sensors."
+>
+  <section class="documentation-hub" aria-labelledby="documentation-hub-title">
+    <div class="documentation-section-heading">
+      <div>
+        <p>Browse by area</p>
+        <h2 id="documentation-hub-title">Find the right starting point</h2>
+      </div>
+      <span>Six focused areas</span>
+    </div>
+    <div class="documentation-card-grid">
+      {documentationCategories.map((category) => <DocumentationCard category={category} />)}
+    </div>
+  </section>
+</DocumentationLayout>

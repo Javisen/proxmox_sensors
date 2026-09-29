@@ -1,0 +1,132 @@
+---
+import ContextNav from "../components/ContextNav.astro";
+import NavIcon from "../components/NavIcon.astro";
+import SidebarContent from "../components/SidebarContent.astro";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  hidePageHeader?: boolean;
+  contentClass?: string;
+  language?: "en" | "es";
+}
+
+const {
+  title,
+  description = `${title} — Proxmox Extended Sensors`,
+  hidePageHeader = false,
+  contentClass,
+  language = "en",
+} = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const hasContextNavigation = Astro.slots.has("context");
+const shellText = language === "es"
+  ? {
+      skip: "Saltar al contenido",
+      open: "Abrir navegación",
+      navigation: "Navegación principal",
+      close: "Cerrar navegación",
+    }
+  : {
+      skip: "Skip to content",
+      open: "Open navigation",
+      navigation: "Primary navigation",
+      close: "Close navigation",
+    };
+---
+
+<!doctype html>
+<html lang={language}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/png" href={`${baseUrl}assets/logo_int.png`} />
+    <title>{title} | Proxmox Extended Sensors</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">{shellText.skip}</a>
+
+    <div class="app-shell">
+      <aside class="desktop-sidebar">
+        <SidebarContent language={language} />
+      </aside>
+
+      <header class="mobile-header">
+        <button
+          class="icon-button"
+          type="button"
+          aria-label={shellText.open}
+          aria-haspopup="dialog"
+          data-open-navigation
+        >
+          <NavIcon name="menu" />
+        </button>
+        <a class="mobile-brand" href={baseUrl}>Proxmox Extended Sensors</a>
+      </header>
+
+      <dialog class="mobile-drawer" aria-label={shellText.navigation} data-navigation-dialog>
+        <div class="drawer-panel">
+          <div class="drawer-actions">
+            <button
+              class="icon-button"
+              type="button"
+              aria-label={shellText.close}
+              data-close-navigation
+            >
+              <NavIcon name="close" />
+            </button>
+          </div>
+          <SidebarContent language={language} />
+        </div>
+      </dialog>
+
+      <div class="app-content">
+        {!hidePageHeader && (
+          <header class="page-header">
+            <div class="page-heading">
+              <p class="page-eyebrow">Proxmox Extended Sensors</p>
+              <h1>{title}</h1>
+            </div>
+            {hasContextNavigation ? (
+              <ContextNav>
+                <slot name="context" />
+              </ContextNav>
+            ) : (
+              <ContextNav />
+            )}
+          </header>
+        )}
+
+        <main id="main-content" class:list={["main-content", contentClass]} tabindex="-1">
+          <slot />
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const dialog = document.querySelector<HTMLDialogElement>("[data-navigation-dialog]");
+      const openButton = document.querySelector<HTMLButtonElement>("[data-open-navigation]");
+      const closeButton = document.querySelector<HTMLButtonElement>("[data-close-navigation]");
+
+      const closeNavigation = () => {
+        if (!dialog?.open) return;
+        dialog.close();
+        openButton?.focus();
+      };
+
+      openButton?.addEventListener("click", () => dialog?.showModal());
+      closeButton?.addEventListener("click", closeNavigation);
+      dialog?.addEventListener("click", (event) => {
+        if (event.target === dialog) closeNavigation();
+      });
+      dialog?.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+        link.addEventListener("click", closeNavigation);
+      });
+    </script>
+  </body>
+</html>

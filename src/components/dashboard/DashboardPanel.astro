@@ -1,0 +1,26 @@
+---
+import NavIcon from "../NavIcon.astro";
+import type { NavigationIcon } from "../../data/navigation";
+
+interface Props {
+  title: string;
+  description: string;
+  icon: NavigationIcon;
+  class?: string;
+}
+
+const { title, description, icon, class: className } = Astro.props;
+---
+
+<section class:list={["dashboard-panel", className]}>
+  <header class="dashboard-panel__header">
+    <span class="dashboard-panel__icon"><NavIcon name={icon} size={20} /></span>
+    <div>
+      <h2>{title}</h2>
+      <p>{description}</p>
+    </div>
+  </header>
+  <div class="dashboard-panel__content">
+    <slot />
+  </div>
+</section>

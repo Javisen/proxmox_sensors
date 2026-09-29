@@ -261,6 +261,17 @@ const MINI_PANEL_CSS = `dl > div { position: relative; }
   dl > div a[title="PVE more-info"] { position: absolute; inset: 0; z-index: 1; border-radius: 7px; cursor: pointer; }
   dl > div a[title="PVE more-info"]:hover { background: rgba(255,255,255,0.035); }
   dl > div a[title="PVE more-info"]:focus-visible { outline: 2px solid #b7c2cc; outline-offset: 2px; }`;
+const PVE_TOP_CARD_CSS = `@media (min-width: 900px) { section { height: 360px; min-height: 360px; } }`;
+const PVE_CENTERED_TOP_CARD_CSS = `@media (min-width: 900px) {
+  section { display: flex; flex-direction: column; }
+  section > dl { flex: 1; align-content: center; }
+}`;
+const PVE_GUEST_LIST_CSS = `@media (min-width: 900px) {
+  section { height: 500px; min-height: 500px; display: flex; flex-direction: column; overflow: hidden; }
+  section > header { flex: none; }
+  section > nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    padding-right: 4px; scrollbar-gutter: stable; overscroll-behavior: contain; }
+}`;
 
 function buildNodeHealthBlock(group) {
   const items = blockRefs(group, 'node_health'), selected = [], css = [];
@@ -277,7 +288,9 @@ function buildNodeHealthBlock(group) {
     return [`<div><dt>${name}</dt><dd><figure><strong>${metric === 'ksm' ? withUnit(ref) : metric === 'load' ? value(ref) : percent(ref)}</strong></figure>${miniPanelLink(ref)}</dd></div>`];
   });
   return panels.length ? pveMarkdown('Node Health', `<dl>${panels.join('')}</dl>`, selected, 'mdi:pulse',
-    MINI_PANEL_CSS + 'dl { grid-template-columns: repeat(5, minmax(0, 1fr)); } @media (max-width: 600px) { dl { grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); } }' + css.join('')) : null;
+    MINI_PANEL_CSS + PVE_TOP_CARD_CSS + PVE_CENTERED_TOP_CARD_CSS
+    + 'dl { grid-template-columns: repeat(5, minmax(0, 1fr)); } @media (max-width: 600px) { dl { grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); } }'
+    + css.join('')) : null;
 }
 function buildTemperatureBlock(group) {
   const items = blockRefs(group, 'temperatures');
@@ -292,7 +305,8 @@ function buildTemperatureBlock(group) {
     const [name, deviceIcon] = presentation || [
       readableTitle({title: ref.name === ref.entity_id ? null : ref.name}, 'Temperature'), 'mdi:thermometer'];
     return `<div><dt>${text(name)}</dt><dd>${icon(deviceIcon)}<strong>${withUnit(ref)}</strong>${miniPanelLink(ref)}</dd></div>`;
-  }).join('')}</dl>`, items.map(item => item.ref), 'mdi:thermometer', MINI_PANEL_CSS) : null;
+  }).join('')}</dl>`, items.map(item => item.ref), 'mdi:thermometer',
+    MINI_PANEL_CSS + PVE_TOP_CARD_CSS + PVE_CENTERED_TOP_CARD_CSS) : null;
 }
 function buildStorageSummaryBlock(group, basePath) {
   const resources = (group.blocks.storage || []).filter(resource => resource.references.length), refs = [], css = [];
@@ -320,7 +334,8 @@ function buildGuestSummaryBlock(group, kind, basePath) {
     const running = `{% if s | lower == 'running' %}${metrics}{% else %}<font color="{{ color }}">{{ 'Stopped' if s | lower == 'stopped' else s | e }}</font>{% endif %}`;
     return `${semanticState(status)}<a title="Guest" href="${basePath}/${resourceSubviewPath(resource)}">${statusDot}<span>${text(resource.guest_id)}</span><span>${text(guestName(resource))}</span><span>${running}</span>${chevron}</a>`;
   });
-  return rowsCard(`${kind === 'ct' ? 'CTs' : 'VMs'} (${resources.length})`, rows, refs, kind === 'ct' ? 'mdi:cube-outline' : 'mdi:monitor');
+  return rowsCard(`${kind === 'ct' ? 'CTs' : 'VMs'} (${resources.length})`, rows, refs,
+    kind === 'ct' ? 'mdi:cube-outline' : 'mdi:monitor', PVE_GUEST_LIST_CSS);
 }
 function buildReplicationBlock(group, basePath) {
   const rows = [], refs = [];
@@ -346,23 +361,17 @@ function buildNodeInfoBlock(group) {
     ['node_info', 'node_network_tx', 'Network TX', 'mdi:upload-network'],
     ['node_health', 'iowait', 'I/O Wait', 'mdi:timer-sand'],
     ['node_info', 'ksm_status', 'KSM', 'mdi:memory'],
-    ['node_info', 'storage_count', 'Storages', 'mdi:database'],
     ['tasks', 'node_last_task', 'Last Task', 'mdi:format-list-bulleted'],
   ];
   for (const [block, metric, title, glyph] of fields) {
     const ref = blockRefs(group, block).find(item => item.ref.metric === metric)?.ref;
     if (ref) {
       refs.push(ref);
-      rows.push(moreInfoRow(ref, `${icon(glyph)}<span>${title}</span><span>${['storage_count', 'node_last_task'].includes(metric) ? value(ref) : withUnit(ref)}</span>`));
-    } else if (metric === 'storage_count') {
-      const storages = new Set((group.blocks.storage || []).filter(resource =>
-        ['storage', 'storages'].includes(resource.kind) && resource.resource_id && resource.references.length)
-        .map(resource => resource.resource_id));
-      if (storages.size) rows.push(`<article>${icon(glyph)}<span>${title}</span><span>${storages.size}</span></article>`);
+      rows.push(moreInfoRow(ref, `${icon(glyph)}<span>${title}</span><span>${metric === 'node_last_task' ? value(ref) : withUnit(ref)}</span>`));
     }
   }
   return rowsCard('Node Info', rows, refs, 'mdi:information-outline', MORE_INFO_ROW_CSS
-    + 'nav > :is(a, article) > ha-icon { color: #ef7d00; }');
+    + 'nav > :is(a, article) > ha-icon { color: #ef7d00; }' + PVE_TOP_CARD_CSS);
 }
 const MORE_INFO_ROW_CSS = 'nav > a[title="PVE more-info"] { cursor: pointer; } nav > a[title="PVE more-info"] > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }';
 const moreInfoRow = miniPanelLink;
@@ -390,25 +399,30 @@ function buildPveNodeView(group, opts, basePath) {
     }
   ];
 
-  for (const card of [
+  const topCards = [
     buildNodeHealthBlock(group),
     buildTemperatureBlock(group),
     buildNodeInfoBlock(group),
+  ];
+  const lowerSections = [
+    [
+      buildStorageSummaryBlock(group, basePath),
+      opts.show_diagnostics ? buildDiagnosticsBlock(group) : null,
+      buildReplicationBlock(group, basePath),
+    ],
+    [
+      buildGuestSummaryBlock(group, 'ct', basePath),
+    ],
+    [
+      buildGuestSummaryBlock(group, 'vm', basePath),
+    ],
+  ];
 
-    buildStorageSummaryBlock(group, basePath),
-    buildGuestSummaryBlock(group, 'ct', basePath),
-    buildGuestSummaryBlock(group, 'vm', basePath),
-
-    opts.show_diagnostics ? buildDiagnosticsBlock(group) : null,
-    buildReplicationBlock(group, basePath)
-  ]) {
-
-    if (card) {
-      sections.push({
-        type: 'grid',
-        cards: [card]
-      });
-    }
+  for (const card of topCards) {
+    if (card) sections.push({type: 'grid', cards: [card]});
+  }
+  for (const cards of lowerSections.map(items => items.filter(Boolean))) {
+    if (cards.length) sections.push({type: 'grid', cards});
   }
 
   return darkView({

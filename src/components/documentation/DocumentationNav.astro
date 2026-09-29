@@ -1,0 +1,32 @@
+---
+import ContextNav from "../ContextNav.astro";
+import { documentationCategories } from "../../data/documentation";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const currentPath = Astro.url.pathname;
+const relativePath = currentPath.startsWith(baseUrl)
+  ? `/${currentPath.slice(baseUrl.length)}`
+  : currentPath;
+const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+---
+
+<ContextNav label="Documentation sections">
+  <ul class="documentation-nav__list">
+    {documentationCategories.map((category) => {
+      const active = relativePath.startsWith(category.href);
+      return (
+        <li>
+          <a
+            class:list={["documentation-nav__link", { "is-active": active }]}
+            href={withBase(category.href)}
+            aria-current={active ? "page" : undefined}
+          >
+            {category.title}
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</ContextNav>

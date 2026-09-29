@@ -1,0 +1,22 @@
+{
+  "notices": [
+    {
+      "id": "information",
+      "active": true,
+      "level": "info",
+      "title": "Project information",
+      "message": "An informational project notice.",
+      "startsAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "resolved",
+      "active": true,
+      "level": "success",
+      "title": "Issue resolved",
+      "message": "A successful project outcome.",
+      "startsAt": null,
+      "expiresAt": null
+    }
+  ]
+}

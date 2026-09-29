@@ -1,0 +1,213 @@
+---
+import NavIcon from "../../../components/NavIcon.astro";
+import { getDocumentationCategory } from "../../../data/documentation";
+import DocumentationLayout from "../../../layouts/DocumentationLayout.astro";
+
+const category = getDocumentationCategory("getting-started");
+const sections = [
+  { id: "platform-orientation", ...category.topics[0] },
+  { id: "guest-selection", ...category.topics[1] },
+  { id: "focused-monitoring", ...category.topics[2] },
+  { id: "automation-ideas", ...category.topics[3] },
+  { id: "everyday-use", ...category.topics[4] },
+];
+const introduction = [
+  "Proxmox Extended Sensors can expose a large amount of information from your Proxmox environment, but a useful Home Assistant setup does not need to monitor everything.",
+  "This guide introduces a practical way to decide what to connect, what to monitor and how to turn that information into something useful for everyday operation.",
+];
+---
+
+<DocumentationLayout title={category.title} description={introduction} section="Documentation">
+  <div class="getting-started-guide">
+    <nav id="getting-started-index" class="getting-started-index" aria-labelledby="getting-started-index-title">
+      <div class="documentation-section-heading">
+        <div>
+          <p>On this page</p>
+          <h2 id="getting-started-index-title">Explore Getting Started</h2>
+        </div>
+        <span>5 sections</span>
+      </div>
+
+      <ol class="documentation-topic-grid getting-started-index__list">
+        {sections.map((section, index) => (
+          <li>
+            <a class="documentation-topic-card getting-started-index__link" href={`#${section.id}`}>
+              <span class="documentation-topic-card__index" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>
+                <strong>{section.title}</strong>
+                <span>{section.description}</span>
+              </span>
+              <span class="documentation-topic-card__icon" aria-hidden="true">
+                <NavIcon name={category.icon} size={17} />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="getting-started-articles">
+      <section id="platform-orientation" class="getting-started-section" aria-labelledby="platform-orientation-title">
+        <h2 id="platform-orientation-title">Platform orientation</h2>
+        <p>Proxmox Extended Sensors is designed to bring the parts of your Proxmox environment that matter to Home Assistant without trying to replace the Proxmox interface itself.</p>
+        <p>The integration is organized around three main areas: <strong>PVE</strong>, <strong>PBS</strong> and <strong>Cluster</strong>. You can use only the parts that match your environment and expand them later as your monitoring needs grow.</p>
+
+        <h3>PVE — Proxmox Virtual Environment</h3>
+        <p>PVE is the main starting point for monitoring a Proxmox VE host.</p>
+        <p>It provides information about the node and its resources, virtual machines and containers, storage, network activity and supported hardware monitoring.</p>
+        <p>For a standalone Proxmox server, <strong>PVE may be all you need to get started</strong>.</p>
+
+        <h3>PBS — Proxmox Backup Server</h3>
+        <p>PBS adds monitoring and management information from Proxmox Backup Server.</p>
+        <p>It provides visibility into datastores, backups and maintenance operations such as <strong>Garbage Collection, Verify and Prune</strong>, together with other supported PBS information and actions.</p>
+        <p>PBS can complement your PVE monitoring while remaining focused on the backup side of your environment.</p>
+
+        <h3>Cluster — Cluster-wide monitoring</h3>
+        <p>Cluster provides a broader view when your Proxmox environment contains multiple nodes working together.</p>
+        <p>Instead of looking at each node independently, it exposes information that makes more sense at cluster level, including overall resources, nodes, guests, storage, quorum, HA and other cluster-wide health and operational information.</p>
+        <p>PVE remains useful for detailed node monitoring while Cluster provides the higher-level view.</p>
+
+        <h3>Start with what you need</h3>
+        <p>You do not need to enable every available part of the integration.</p>
+        <p>A small standalone PVE installation, a PVE environment with a dedicated PBS, and a multi-node cluster all have different monitoring needs. Start with the components that provide useful information for your environment and expand the integration when you have a reason to do so.</p>
+        <p>The same principle applies inside each component: <strong>more entities do not automatically mean better monitoring</strong>.</p>
+        <p>That becomes especially important when choosing which virtual machines and containers to monitor.</p>
+
+        <a class="getting-started-section__back" href="#getting-started-index">↑ Back to top</a>
+      </section>
+
+      <section id="guest-selection" class="getting-started-section" aria-labelledby="guest-selection-title">
+        <h2 id="guest-selection-title">Guest selection</h2>
+        <p>A Proxmox environment can contain many virtual machines and containers, but that does not mean every guest needs to become part of Home Assistant.</p>
+        <p>Proxmox Extended Sensors lets you focus your monitoring on the guests that actually matter to you.</p>
+
+        <h3>Monitor with a purpose</h3>
+        <p>Before selecting a VM or container, consider what you expect Home Assistant to do with its information.</p>
+        <p>A guest may be worth monitoring because you want to:</p>
+        <ul>
+          <li>see whether an important service is running;</li>
+          <li>watch its resource usage;</li>
+          <li>display its state on a dashboard;</li>
+          <li>receive a notification when something changes;</li>
+          <li>use its state or metrics in an automation.</li>
+        </ul>
+        <p>If none of those are useful for a particular guest, there may be little benefit in adding its entities to Home Assistant.</p>
+
+        <h3>Start small</h3>
+        <p>You do not need to decide everything during the initial setup.</p>
+        <p>Start with the virtual machines and containers that provide important services or whose state you genuinely want to see in Home Assistant. You can expand the selection later as new monitoring needs appear.</p>
+        <p>This keeps the entity registry easier to understand and makes dashboards, automations and troubleshooting simpler.</p>
+
+        <h3>Selection is not the same as importance</h3>
+        <p>Not selecting a guest for Home Assistant does not make it less important in Proxmox.</p>
+        <p>It simply means that Home Assistant does not currently need its information.</p>
+        <p>Proxmox remains the management platform. Home Assistant should receive the subset of information that has a useful monitoring or automation purpose.</p>
+        <p>Once the right guests are selected, the next question is <strong>which information from them — and from the rest of the platform — is actually useful</strong>.</p>
+
+        <a class="getting-started-section__back" href="#getting-started-index">↑ Back to top</a>
+      </section>
+
+      <section id="focused-monitoring" class="getting-started-section" aria-labelledby="focused-monitoring-title">
+        <h2 id="focused-monitoring-title">Focused monitoring</h2>
+        <p>Proxmox Extended Sensors exposes different types of information across PVE, PBS and Cluster.</p>
+        <p>The goal is not to put every available entity on a dashboard. The goal is to make important information easy to notice.</p>
+
+        <h3>Information should answer a question</h3>
+        <p>A useful sensor normally helps answer something you care about.</p>
+        <p>For example:</p>
+        <ul>
+          <li>Is the node healthy and online?</li>
+          <li>Is an important VM or container running?</li>
+          <li>Are CPU or memory resources becoming constrained?</li>
+          <li>Is storage approaching a limit?</li>
+          <li>Are backups being created as expected?</li>
+          <li>Is the cluster healthy?</li>
+          <li>Has a maintenance task failed?</li>
+        </ul>
+        <p>These questions are more useful starting points than simply enabling or displaying everything available.</p>
+
+        <h3>Different information has different value</h3>
+        <p>Some information is useful continuously. Other information only matters when it crosses a threshold or enters an abnormal state.</p>
+        <p>A resource metric might belong on a dashboard, while a failure condition may be better suited to a notification or automation.</p>
+        <p>Likewise, detailed hardware or operational information can be extremely useful for troubleshooting without needing permanent visual prominence.</p>
+
+        <h3>Keep Home Assistant readable</h3>
+        <p>A focused setup makes it easier to identify abnormal conditions.</p>
+        <p>If every available metric receives the same visual importance, the information that actually requires attention can become harder to see.</p>
+        <p>Use dashboards for information you want to inspect, notifications for conditions that require attention, and automations when Home Assistant can respond or assist.</p>
+        <p>That is where monitoring starts becoming more than a collection of sensors.</p>
+
+        <a class="getting-started-section__back" href="#getting-started-index">↑ Back to top</a>
+      </section>
+
+      <section id="automation-ideas" class="getting-started-section" aria-labelledby="automation-ideas-title">
+        <h2 id="automation-ideas-title">Automation ideas</h2>
+        <p>Monitoring becomes especially useful when Home Assistant can react to the information provided by Proxmox Extended Sensors.</p>
+        <p>Automations do not need to be complex. A useful automation can simply notify you about an important condition or help coordinate a routine operation.</p>
+
+        <h3>Notifications and health</h3>
+        <p>Integration entities can be used as triggers or conditions for Home Assistant automations.</p>
+        <p>Depending on the information you monitor, examples may include:</p>
+        <ul>
+          <li>notifying when an important VM or container is no longer running;</li>
+          <li>warning when storage usage reaches a level that requires attention;</li>
+          <li>reporting an unhealthy cluster condition;</li>
+          <li>alerting when backup or maintenance information indicates a problem.</li>
+        </ul>
+        <p>This allows Home Assistant to surface important changes without requiring you to continuously watch a dashboard.</p>
+
+        <h3>PBS operations</h3>
+        <p>PBS support goes beyond passive monitoring.</p>
+        <p>Supported PBS actions can be used from Home Assistant to integrate maintenance operations such as <strong>Garbage Collection, Verify and Prune</strong> into your own workflows.</p>
+        <p>This makes it possible to combine Proxmox Backup Server operations with Home Assistant schedules, conditions and notifications rather than treating backup monitoring as an isolated system.</p>
+        <p>For example, an automation can coordinate a scheduled maintenance action and use the resulting integration data to help surface its status.</p>
+
+        <h3>Build automations around a reason</h3>
+        <p>Avoid creating automations simply because an entity exists.</p>
+        <p>Start with a real requirement:</p>
+        <p><strong>“I want to know when this happens.”</strong></p>
+        <p>or:</p>
+        <p><strong>“When these conditions are met, I want Home Assistant to perform this supported action.”</strong></p>
+        <p>Then choose the integration entities and actions required to implement it.</p>
+        <p>The detailed Reference documentation can be used when you need to identify the exact entities or supported actions available for a particular workflow.</p>
+
+        <a class="getting-started-section__back" href="#getting-started-index">↑ Back to top</a>
+      </section>
+
+      <section id="everyday-use" class="getting-started-section" aria-labelledby="everyday-use-title">
+        <h2 id="everyday-use-title">Everyday use</h2>
+        <p>Once the integration is configured, it should make your Proxmox environment easier to understand — not give you another interface that needs constant attention.</p>
+        <p>A good everyday setup combines a small number of useful views with notifications and automations for conditions that deserve attention.</p>
+
+        <h3>Use the dashboard as an overview</h3>
+        <p>The Proxmox Extended Sensors dashboard can provide a quick visual overview of the environment.</p>
+        <p>Use it to bring together the information you regularly want to inspect while leaving detailed administration to the native Proxmox interfaces.</p>
+        <p>The dashboard does not need to contain every available entity to be useful.</p>
+
+        <h3>Let Home Assistant watch for you</h3>
+        <p>Information that only matters when something goes wrong does not necessarily need permanent space on a dashboard.</p>
+        <p>Home Assistant can monitor those conditions in the background and notify you when intervention may be required.</p>
+        <p>This keeps everyday monitoring quieter while still making important changes visible.</p>
+
+        <h3>Expand when a real need appears</h3>
+        <p>Your monitoring setup does not need to be finished on the first day.</p>
+        <p>Start with the nodes, guests, backup information and health indicators that matter now. Add entities, dashboard views or automations when you discover a useful reason for them.</p>
+        <p>This approach keeps the integration manageable even as your Proxmox environment grows.</p>
+
+        <h3>One environment, different levels of detail</h3>
+        <p>Use each tool for what it does best:</p>
+        <ul>
+          <li><strong>Proxmox VE</strong> for managing nodes, virtual machines and containers.</li>
+          <li><strong>Proxmox Backup Server</strong> for detailed backup administration.</li>
+          <li><strong>Proxmox Extended Sensors</strong> for bringing useful Proxmox information and supported actions into Home Assistant.</li>
+          <li><strong>Home Assistant</strong> for dashboards, notifications and automation around that information.</li>
+        </ul>
+        <p>The result should be a monitoring setup that stays useful in the background and gets your attention when something actually matters.</p>
+
+        <a class="getting-started-section__back" href="#getting-started-index">↑ Back to top</a>
+      </section>
+    </div>
+  </div>
+</DocumentationLayout>

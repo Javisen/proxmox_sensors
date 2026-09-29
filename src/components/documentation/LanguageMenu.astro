@@ -1,0 +1,36 @@
+---
+import NavIcon from "../NavIcon.astro";
+import { documentationLanguages } from "../../data/documentation";
+
+const repositoryDocsUrl = "https://github.com/Javisen/proxmox_sensors/tree/main/docs";
+---
+
+<div class="language-control">
+  <span class="language-control__label">Need another language?</span>
+  <details class="language-menu">
+    <summary>
+      <span>English</span>
+      <span class="language-menu__chevron" aria-hidden="true">⌄</span>
+    </summary>
+    <div class="language-menu__panel">
+      <p>Official repository translations</p>
+      <span class="language-menu__current" aria-current="true">
+        <span>English</span>
+        <small>Current website</small>
+      </span>
+      {documentationLanguages.map((language) => (
+        <a
+          href={`${repositoryDocsUrl}/${language.code}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          hreflang={language.code}
+          lang={language.code}
+        >
+          <span>{language.label}</span>
+          <NavIcon name="external" size={14} />
+          <span class="visually-hidden"> (opens in a new tab)</span>
+        </a>
+      ))}
+    </div>
+  </details>
+</div>

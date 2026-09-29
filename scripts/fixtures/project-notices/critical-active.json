@@ -1,0 +1,13 @@
+{
+  "notices": [
+    {
+      "id": "critical-maintenance",
+      "active": true,
+      "level": "critical",
+      "title": "Critical maintenance notice",
+      "message": "A critical notice remains visible while it is active.",
+      "startsAt": null,
+      "expiresAt": null
+    }
+  ]
+}

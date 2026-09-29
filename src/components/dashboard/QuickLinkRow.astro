@@ -1,0 +1,33 @@
+---
+import NavIcon from "../NavIcon.astro";
+import type { QuickLink } from "../../data/homeDashboard";
+
+type Props = QuickLink;
+
+const { label, description, href, icon, external = false } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const resolvedHref = external
+  ? href
+  : href === "/"
+    ? baseUrl
+    : `${baseUrl}${href.replace(/^\//, "")}`;
+---
+
+<a
+  class="quick-link-row"
+  href={resolvedHref}
+  target={external ? "_blank" : undefined}
+  rel={external ? "noopener noreferrer" : undefined}
+>
+  <span class="quick-link-row__icon"><NavIcon name={icon} size={20} /></span>
+  <span class="quick-link-row__copy">
+    <strong>{label}</strong>
+    <small>{description}</small>
+  </span>
+  <span class="quick-link-row__arrow" aria-hidden="true">
+    {external ? <NavIcon name="external" size={16} /> : "›"}
+  </span>
+  {external && <span class="visually-hidden"> (opens in a new tab)</span>}
+</a>

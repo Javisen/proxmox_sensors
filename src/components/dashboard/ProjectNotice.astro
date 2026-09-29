@@ -1,0 +1,44 @@
+---
+import NavIcon from "../NavIcon.astro";
+import type { ProjectNoticeData } from "../../data/projectSnapshot";
+
+interface Props {
+  notice: ProjectNoticeData;
+  headingId: string;
+}
+
+const { notice, headingId } = Astro.props;
+---
+
+<article
+  class:list={["project-notice", `project-notice--${notice.level}`]}
+  aria-labelledby={headingId}
+>
+  <span class="project-notice__icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      {notice.level === "info" && <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7h.01" /></>}
+      {notice.level === "warning" && <><path d="M10.3 4.2 2.8 17.1A2 2 0 0 0 4.5 20h15a2 2 0 0 0 1.7-2.9L13.7 4.2a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></>}
+      {notice.level === "critical" && <><path d="m8.4 3-5.4 5.4v7.2L8.4 21h7.2l5.4-5.4V8.4L15.6 3Z" /><path d="M12 8v5M12 17h.01" /></>}
+      {notice.level === "success" && <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.7 2.7L16.5 9" /></>}
+    </svg>
+  </span>
+
+  <div class="project-notice__copy">
+    <p class="project-notice__level">{notice.level}</p>
+    <h3 id={headingId}>{notice.title}</h3>
+    <p class="project-notice__message">{notice.message}</p>
+  </div>
+
+  {notice.link && notice.linkLabel && (
+    <a
+      class="project-notice__link"
+      href={notice.link}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <span>{notice.linkLabel}</span>
+      <NavIcon name="external" size={15} />
+      <span class="visually-hidden"> (opens in a new tab)</span>
+    </a>
+  )}
+</article>

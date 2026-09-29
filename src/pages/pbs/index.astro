@@ -1,0 +1,84 @@
+---
+import ProductShowcaseSection from "../../components/showcase/ProductShowcaseSection.astro";
+import AppLayout from "../../layouts/AppLayout.astro";
+import "../../styles/pve-showcase.css";
+import "../../styles/pbs-cluster-showcase.css";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+const capabilities = ["Server", "Datastores", "Backups", "GC", "Prune", "Verify", "Sync"];
+---
+
+<AppLayout title="PBS" description="See what Proxmox Extended Sensors brings from Proxmox Backup Server into Home Assistant." hidePageHeader contentClass="pve-showcase-content">
+  <div class="pve-page pbs-page">
+    <section class="pve-product-hero" aria-labelledby="pbs-hero-title">
+      <div class="pve-product-hero__statement">
+        <p class="pve-product-hero__eyebrow">Proxmox Backup Server</p>
+        <h1 id="pbs-hero-title">Bring your backups into Home Assistant</h1>
+        <p class="pve-product-hero__lead">Monitor your Proxmox Backup Server, datastores, backup health and maintenance from Home Assistant.</p>
+        <div class="pve-product-hero__actions">
+          <a class="pve-action pve-action--primary" href="#pbs-story">Explore PBS</a>
+          <a class="pve-action pve-action--secondary" href={withBase("/docs/pbs/")}>PBS Documentation</a>
+        </div>
+      </div>
+      <div class="pve-product-hero__identity" aria-label="PBS monitoring capabilities">
+        <div class="pve-product-hero__mark" aria-hidden="true"><span>PBS</span><small>backup operations</small></div>
+        <ul class="pve-product-hero__capabilities">{capabilities.map((capability) => <li>{capability}</li>)}</ul>
+      </div>
+    </section>
+
+    <div id="pbs-story" class="pve-story pbs-story">
+      <ProductShowcaseSection
+        id="server-datastores" label="Server & Datastores" title="Backup capacity, in context"
+        description="See datastore usage, free space and deduplication alongside the rest of your Home Assistant infrastructure."
+        capabilities={["Server Health", "CPU", "Memory", "Capacity", "Deduplication"]}
+        images={[{ src: "/images/documentation/pbs/pbs-3.png", alt: "PBS Datastore panel showing usage, total capacity, used and free space, and deduplication ratio.", width: 506, height: 344 }]}
+      />
+      <ProductShowcaseSection
+        id="backup-health" label="Backup Health" title="Know when the last backup landed"
+        description="Surface backup count, errors, timing and verification state without opening another management console."
+        capabilities={["Backups", "Errors", "Last Backup", "Last Size", "Verification"]}
+        images={[
+          { src: "/images/documentation/pbs/pbs-4.png", alt: "PBS Backup Info panel showing backup count, errors, latest backup time, size and verified status.", width: 510, height: 340 },
+          { src: "/images/documentation/pbs/pbs-7.png", alt: "PBS Last Task panel showing the most recent prune task and its successful status.", width: 514, height: 318 },
+        ]}
+        layout="duo" reverse
+      />
+      <ProductShowcaseSection
+        id="maintenance-actions" label="Maintenance & Actions" title="Keep backup operations close"
+        description="Trigger supported garbage collection, prune, verify and sync actions directly from Home Assistant."
+        capabilities={["Garbage Collect", "Prune", "Verify", "Sync"]}
+        images={[
+          { src: "/images/documentation/pbs/pbs-5.png", alt: "PBS Maintenance panel showing garbage collection, prune and verify status.", width: 509, height: 332 },
+          { src: "/images/documentation/pbs/pbs-6.png", alt: "PBS Actions panel showing garbage collect, prune, verify and sync controls.", width: 508, height: 349 },
+        ]}
+        layout="duo"
+      />
+    </div>
+
+    <section class="pve-final-cta" aria-labelledby="pbs-cta-title">
+      <div><p>Go deeper</p><h2 id="pbs-cta-title">Want the technical details?</h2></div>
+      <nav aria-label="PBS technical resources">
+        <a href={withBase("/docs/pbs/")}>PBS Documentation</a>
+        <a href={withBase("/docs/reference/")}>Entity Reference</a>
+        <a href={withBase("/docs/getting-started/")}>Getting Started</a>
+      </nav>
+    </section>
+  </div>
+
+  <script>
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealItems = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+    if (!reducedMotion && "IntersectionObserver" in window) {
+      document.documentElement.classList.add("pve-motion-ready");
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      }, { rootMargin: "0px 0px -12%", threshold: 0.12 });
+      revealItems.forEach((item) => observer.observe(item));
+    }
+  </script>
+</AppLayout>

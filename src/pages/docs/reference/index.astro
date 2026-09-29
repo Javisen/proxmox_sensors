@@ -1,0 +1,262 @@
+---
+import NavIcon from "../../../components/NavIcon.astro";
+import ReferenceGuidance from "../../../components/documentation/ReferenceGuidance.astro";
+import ReferenceGroups from "../../../components/documentation/ReferenceGroups.astro";
+import { getDocumentationCategory } from "../../../data/documentation";
+import {
+  ctActionCount,
+  ctEntryCount,
+  ctGroups,
+  backupReplicationEntryCount,
+  backupReplicationGroups,
+  clusterSensorEntryCount,
+  clusterSensorGroups,
+  hardwareMemoryEntryCount,
+  hardwareMemoryGroups,
+  implementedReferenceEntryCount,
+  identityAvailabilityEntryCount,
+  identityAvailabilityGroups,
+  pbsMaintenanceEntryCount,
+  pbsMaintenanceGroups,
+  pbsServerDatastoreEntryCount,
+  pbsServerDatastoreGroups,
+  pveNodeEntryCount,
+  pveNodeGroups,
+  storageDisksZfsEntryCount,
+  storageDisksZfsGroups,
+  troubleshootingEntryCount,
+  troubleshootingGroups,
+  vmActionCount,
+  vmCtEntryCount,
+  vmEntryCount,
+  vmGroups,
+} from "../../../data/reference";
+import DocumentationLayout from "../../../layouts/DocumentationLayout.astro";
+import "../../../styles/reference.css";
+
+const category = getDocumentationCategory("reference");
+const categoryIds = [
+  "pve-node",
+  "hardware-memory",
+  "vm-ct",
+  "storage-disks-zfs",
+  "pbs-server-datastores",
+  "pbs-maintenance-actions",
+  "cluster-sensors",
+  "backup-replication",
+  "entities-devices-availability",
+  "troubleshooting",
+];
+if (category.topics.length !== categoryIds.length) throw new Error("Reference category map is incomplete");
+const categories = category.topics.map((topic, index) => ({ ...topic, id: categoryIds[index] }));
+---
+
+<DocumentationLayout title="Reference" description={category.introduction} section="Documentation">
+  <div class="reference-guide">
+    <div class="reference-search" role="search">
+      <label for="reference-search-input">Search Reference</label>
+      <input id="reference-search-input" type="search" placeholder="Search entities…" autocomplete="off" aria-describedby="reference-search-help" />
+      <p id="reference-search-help">Filter the available entity dictionary by name, type, state, attributes or capability.</p>
+      <p id="reference-search-status" class="reference-search__status" role="status" aria-live="polite">
+        {implementedReferenceEntryCount} results
+      </p>
+      <p id="reference-empty" class="reference-empty" hidden>No entities match your search. Try a different name or capability.</p>
+    </div>
+
+    <nav id="reference-index" class="reference-index" aria-labelledby="reference-index-title">
+      <div class="documentation-section-heading">
+        <div>
+          <p>On this page</p>
+          <h2 id="reference-index-title">Browse Reference</h2>
+        </div>
+        <span>10 categories</span>
+      </div>
+      <ol class="reference-index__list">
+        {categories.map((item, index) => (
+          <li data-reference-index-item={item.id}>
+            <a class="reference-index__link" href={`#${item.id}`}>
+              <span class="reference-index__number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+              <span>{item.title}</span>
+              <NavIcon name={category.icon} size={15} />
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="reference-sections">
+      <section id="pve-node" class="reference-section" aria-labelledby="pve-node-title">
+        <div class="reference-section__heading">
+          <h2 id="pve-node-title">PVE Node Sensors</h2>
+          <span>{pveNodeEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Entities attached to a Proxmox VE node. Conditional entries appear only when the relevant option or data is available.</p>
+        <ReferenceGroups groups={pveNodeGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="hardware-memory" class="reference-section" aria-labelledby="hardware-memory-title">
+        <div class="reference-section__heading">
+          <h2 id="hardware-memory-title">Hardware & Memory</h2>
+          <span>{hardwareMemoryEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Hardware monitoring must be enabled and compatible sidecar or lm-sensors data must be available. Exact dynamic names and quantities vary with the monitored system.</p>
+        <ReferenceGroups groups={hardwareMemoryGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="vm-ct" class="reference-section" aria-labelledby="vm-ct-title">
+        <div class="reference-section__heading">
+          <h2 id="vm-ct-title">VM & CT</h2>
+          <span>{vmCtEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Sensors are created for virtual machines and containers selected for detailed monitoring. Controls appear when their corresponding guest-control features are enabled.</p>
+        <aside class="reference-identity-note">
+          <strong>Migration identity</strong>
+          <p>In a configured cluster, monitored VM and CT entities can retain their Home Assistant identity when the guest migrates between nodes.</p>
+        </aside>
+        <div class="reference-resource">
+          <div class="reference-resource__heading">
+            <h3>Virtual Machines</h3>
+            <span>{vmEntryCount} sensors · {vmActionCount} actions</span>
+          </div>
+          <ReferenceGroups groups={vmGroups} headingLevel="h4" />
+        </div>
+        <div class="reference-resource">
+          <div class="reference-resource__heading">
+            <h3>Containers</h3>
+            <span>{ctEntryCount} sensors · {ctActionCount} actions</span>
+          </div>
+          <ReferenceGroups groups={ctGroups} headingLevel="h4" />
+        </div>
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="storage-disks-zfs" class="reference-section" aria-labelledby="storage-disks-zfs-title">
+        <div class="reference-section__heading">
+          <h2 id="storage-disks-zfs-title">Storage, Disks & ZFS</h2>
+          <span>{storageDisksZfsEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Storage entities follow selected PVE resources, while physical disks, mounted disks and ZFS pools depend on the corresponding detected data.</p>
+        <ReferenceGroups groups={storageDisksZfsGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="pbs-server-datastores" class="reference-section" aria-labelledby="pbs-server-datastores-title">
+        <div class="reference-section__heading">
+          <h2 id="pbs-server-datastores-title">PBS Server & Datastores</h2>
+          <span>{pbsServerDatastoreEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Server-level status and task entities are accompanied by a dynamic entity family for each discovered PBS datastore.</p>
+        <ReferenceGroups groups={pbsServerDatastoreGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="pbs-maintenance-actions" class="reference-section" aria-labelledby="pbs-maintenance-actions-title">
+        <div class="reference-section__heading">
+          <h2 id="pbs-maintenance-actions-title">PBS Maintenance & Actions</h2>
+          <span>{pbsMaintenanceEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Maintenance status and datastore actions reflect discovered datastores and, where required, their matched jobs.</p>
+        <aside class="reference-identity-note">
+          <strong>Literal state</strong>
+          <p>The current implementation can expose <code>Iniciado</code> as a GC Status state. Reference preserves that implementation value without translating it.</p>
+        </aside>
+        <ReferenceGroups groups={pbsMaintenanceGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="cluster-sensors" class="reference-section" aria-labelledby="cluster-sensors-title">
+        <div class="reference-section__heading">
+          <h2 id="cluster-sensors-title">Cluster Sensors</h2>
+          <span>{clusterSensorEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Cluster-wide entities combine quorum, node availability, resources, guests, storage, firewall and HA data.</p>
+        <ReferenceGroups groups={clusterSensorGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="backup-replication" class="reference-section" aria-labelledby="backup-replication-title">
+        <div class="reference-section__heading">
+          <h2 id="backup-replication-title">Backup & Replication</h2>
+          <span>{backupReplicationEntryCount} entries</span>
+        </div>
+        <p class="reference-section__intro">Cluster backup health and replication entities appear only when their corresponding jobs and runtime data apply.</p>
+        <ReferenceGroups groups={backupReplicationGroups} />
+        <aside class="reference-identity-note">
+          <strong>Guest status attributes</strong>
+          <p>When replication applies, VM and CT Status can also expose <code>replication_status</code>, <code>replication_jobs</code>, <code>replication_failed_jobs</code> and <code>replication</code>.</p>
+        </aside>
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="entities-devices-availability" class="reference-section" aria-labelledby="entities-devices-availability-title">
+        <div class="reference-section__heading">
+          <h2 id="entities-devices-availability-title">Entities, Devices & Availability</h2>
+          <span>{identityAvailabilityEntryCount} topics</span>
+        </div>
+        <p class="reference-section__intro">Identity rules explain why entities remain stable across migrations and why conditional families may not appear in every environment.</p>
+        <ReferenceGuidance groups={identityAvailabilityGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+
+      <section id="troubleshooting" class="reference-section" aria-labelledby="troubleshooting-title">
+        <div class="reference-section__heading">
+          <h2 id="troubleshooting-title">Troubleshooting</h2>
+          <span>{troubleshootingEntryCount} topics</span>
+        </div>
+        <p class="reference-section__intro">Use these checks to locate missing entities and understand environment-dependent Reference content.</p>
+        <ReferenceGuidance groups={troubleshootingGroups} />
+        <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
+      </section>
+    </div>
+  </div>
+</DocumentationLayout>
+
+<script>
+  const search = document.querySelector<HTMLInputElement>("#reference-search-input");
+  const entries = [...document.querySelectorAll<HTMLElement>("[data-reference-entry]")];
+  const groups = [...document.querySelectorAll<HTMLElement>("[data-reference-group]")];
+  const sections = [...document.querySelectorAll<HTMLElement>(".reference-section")];
+  const indexItems = [...document.querySelectorAll<HTMLElement>("[data-reference-index-item]")];
+  const empty = document.querySelector<HTMLElement>("#reference-empty");
+  const status = document.querySelector<HTMLElement>("#reference-search-status");
+
+  if (search && empty && status) {
+    const update = () => {
+      const query = search.value.trim().toLocaleLowerCase();
+      let visible = 0;
+
+      for (const entry of entries) {
+        const searchableText = entry.textContent?.toLocaleLowerCase() ?? "";
+        const isShortTerm = /^[a-z0-9]{1,2}$/.test(query);
+        const matches = !query || (isShortTerm
+          ? searchableText.split(/[^a-z0-9]+/).includes(query)
+          : searchableText.includes(query));
+        entry.hidden = !matches;
+        if (matches) visible += 1;
+      }
+
+      for (const group of groups) {
+        group.hidden = !group.querySelector("[data-reference-entry]:not([hidden])");
+      }
+
+      for (const section of sections) {
+        section.hidden = !section.querySelector("[data-reference-entry]:not([hidden])");
+      }
+
+      for (const item of indexItems) {
+        const sectionId = item.dataset.referenceIndexItem;
+        const section = sectionId ? document.getElementById(sectionId) : null;
+        item.hidden = section?.hidden ?? false;
+      }
+
+      empty.hidden = visible !== 0;
+      status.textContent = query
+        ? `${visible} ${visible === 1 ? "result" : "results"}`
+        : `${visible} results`;
+    };
+
+    search.addEventListener("input", update);
+  }
+</script>

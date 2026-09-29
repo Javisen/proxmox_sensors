@@ -1,0 +1,30 @@
+---
+import DocumentationHeader from "../components/documentation/DocumentationHeader.astro";
+import DocumentationNav from "../components/documentation/DocumentationNav.astro";
+import AppLayout from "./AppLayout.astro";
+import "../styles/documentation.css";
+
+interface Props {
+  title: string;
+  description: string | string[];
+  section?: string;
+}
+
+const { title, description, section } = Astro.props;
+const metadataDescription = Array.isArray(description) ? description.join(" ") : description;
+---
+
+<AppLayout
+  title={title}
+  description={`${metadataDescription} — Proxmox Extended Sensors`}
+  hidePageHeader
+  contentClass="documentation-content"
+>
+  <div class="documentation-shell">
+    <DocumentationHeader title={title} description={description} section={section} />
+    <DocumentationNav />
+    <div class="documentation-body">
+      <slot />
+    </div>
+  </div>
+</AppLayout>

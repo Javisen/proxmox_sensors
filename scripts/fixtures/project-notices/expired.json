@@ -1,0 +1,13 @@
+{
+  "notices": [
+    {
+      "id": "expired-notice",
+      "active": true,
+      "level": "warning",
+      "title": "Expired notice",
+      "message": "This notice is no longer visible after its expiry date.",
+      "startsAt": null,
+      "expiresAt": "2026-09-01T00:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "notices": [
+    {
+      "id": "invalid-link",
+      "active": true,
+      "level": "warning",
+      "title": "Unsafe link",
+      "message": "The notice remains valid but its unsafe link is removed.",
+      "link": "http://example.com/not-secure",
+      "linkLabel": "Open link"
+    }
+  ]
+}

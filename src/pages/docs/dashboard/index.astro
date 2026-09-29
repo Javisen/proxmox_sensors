@@ -1,0 +1,77 @@
+---
+import NavIcon from "../../../components/NavIcon.astro";
+import Overview from "../../../components/documentation/dashboard/overview.md";
+import Installation from "../../../components/documentation/dashboard/installation.md";
+import AutomaticDashboard from "../../../components/documentation/dashboard/automatic-dashboard.md";
+import TakeControl from "../../../components/documentation/dashboard/take-control.md";
+import CustomizingAutomaticDashboard from "../../../components/documentation/dashboard/customizing-automatic-dashboard.md";
+import Troubleshooting from "../../../components/documentation/dashboard/troubleshooting.md";
+import { getDocumentationCategory } from "../../../data/documentation";
+import { navigationItems } from "../../../data/navigation";
+import DocumentationLayout from "../../../layouts/DocumentationLayout.astro";
+
+const category = getDocumentationCategory("dashboard");
+const sections = [
+  { id: "overview", ...category.topics[0], content: Overview },
+  { id: "installation", ...category.topics[1], content: Installation },
+  { id: "automatic-dashboard", ...category.topics[2], content: AutomaticDashboard },
+  { id: "take-control", ...category.topics[3], content: TakeControl },
+  { id: "customizing-automatic-dashboard", ...category.topics[4], content: CustomizingAutomaticDashboard },
+  { id: "troubleshooting", ...category.topics[5], content: Troubleshooting },
+];
+const repositoryUrl = navigationItems.find((item) => item.label === "GitHub")?.href;
+if (!repositoryUrl) throw new Error("Canonical integration repository link is missing");
+const issuesUrl = `${repositoryUrl}/issues`;
+---
+
+<DocumentationLayout title="Dashboard Documentation" description={category.introduction} section="Documentation">
+  <div class="dashboard-guide">
+    <nav id="dashboard-index" class="getting-started-index" aria-labelledby="dashboard-index-title">
+      <div class="documentation-section-heading">
+        <div>
+          <p>On this page</p>
+          <h2 id="dashboard-index-title">Explore Dashboard</h2>
+        </div>
+        <span>6 sections</span>
+      </div>
+
+      <ol class="documentation-topic-grid getting-started-index__list">
+        {sections.map((section, index) => (
+          <li>
+            <a class="documentation-topic-card getting-started-index__link" href={`#${section.id}`}>
+              <span class="documentation-topic-card__index" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>
+                <strong>{section.title}</strong>
+                <span>{section.description}</span>
+              </span>
+              <span class="documentation-topic-card__icon" aria-hidden="true">
+                <NavIcon name={category.icon} size={17} />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="getting-started-articles">
+      {sections.map((section) => {
+        const Content = section.content;
+        return (
+          <section id={section.id} class="getting-started-section" aria-labelledby={`${section.id}-title`}>
+            <h2 id={`${section.id}-title`}>{section.title}</h2>
+            <Content />
+            {section.id === "troubleshooting" && (
+              <p>
+                If the problem persists after these checks, use the project's{" "}
+                <a href={issuesUrl}>GitHub issue tracker</a>.
+              </p>
+            )}
+            <a class="getting-started-section__back" href="#dashboard-index">↑ Back to top</a>
+          </section>
+        );
+      })}
+    </div>
+  </div>
+</DocumentationLayout>

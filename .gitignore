@@ -55,6 +55,11 @@ cover/
 *.mo
 *.pot
 
+# Website build artifacts
+node_modules/
+dist/
+.astro/
+
 # Django stuff:
 *.log
 local_settings.py

@@ -1,0 +1,13 @@
+{
+  "notices": [
+    {
+      "id": "future-notice",
+      "active": true,
+      "level": "info",
+      "title": "Future notice",
+      "message": "This notice is not visible before its start date.",
+      "startsAt": "2026-10-01T00:00:00Z",
+      "expiresAt": null
+    }
+  ]
+}

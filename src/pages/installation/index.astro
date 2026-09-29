@@ -1,0 +1,165 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import "../../styles/installation.css";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+---
+
+<AppLayout
+  title="Installation"
+  description="Install Proxmox Extended Sensors from HACS and connect PVE, PBS or Cluster services to Home Assistant."
+  hidePageHeader
+  contentClass="installation-content"
+>
+  <div class="installation-page">
+    <section class="installation-hero" aria-labelledby="installation-title">
+      <div class="installation-hero__copy">
+        <p>Installation</p>
+        <h1 id="installation-title">Up and running in minutes.</h1>
+        <div class="installation-hero__lead">
+          <span aria-hidden="true">01—04</span>
+          <p>Install Proxmox Extended Sensors from HACS, add the integration and connect the Proxmox services you want to monitor.</p>
+        </div>
+      </div>
+
+      <div class="installation-hero__route" aria-label="Four-step installation route">
+        <div class="installation-hero__official">
+          <span>Official distribution</span>
+          <strong>HACS</strong>
+        </div>
+        <ol>
+          <li><span>01</span>Install</li>
+          <li><span>02</span>Restart</li>
+          <li><span>03</span>Add</li>
+          <li><span>04</span>Connect</li>
+        </ol>
+      </div>
+    </section>
+
+    <div class="installation-main">
+      <header class="installation-intro" data-installation-reveal>
+        <p>Four short steps</p>
+        <h2>From HACS to connected infrastructure.</h2>
+      </header>
+
+      <ol class="installation-steps">
+        <li class="installation-step" data-installation-reveal>
+          <div class="installation-step__copy">
+            <span class="installation-step__number">01</span>
+            <div>
+              <p class="installation-step__eyebrow">Official HACS release</p>
+              <h2>Install from HACS</h2>
+              <p>Search for Proxmox Extended Sensors in HACS and install it.</p>
+            </div>
+          </div>
+          <figure class="installation-signal installation-screenshot">
+            <img
+              src={withBase("/images/install/hacs-1.png")}
+              alt="Proxmox Extended Sensors listed in the Home Assistant Community Store."
+              width="881"
+              height="322"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </li>
+
+        <li class="installation-step installation-step--compact" data-installation-reveal>
+          <span class="installation-step__number">02</span>
+          <div>
+            <p class="installation-step__eyebrow">Apply the installation</p>
+            <h2>Restart Home Assistant</h2>
+          </div>
+          <span class="installation-step__pulse" aria-hidden="true"></span>
+        </li>
+
+        <li class="installation-step installation-step--reverse" data-installation-reveal>
+          <div class="installation-step__copy">
+            <span class="installation-step__number">03</span>
+            <div>
+              <p class="installation-step__eyebrow">Home Assistant</p>
+              <h2>Add the integration</h2>
+              <p>Open Settings → Devices &amp; services → Add integration and select Proxmox Extended Sensors.</p>
+            </div>
+          </div>
+          <figure class="installation-breadcrumb installation-screenshot">
+            <img
+              src={withBase("/images/install/install-1.png")}
+              alt="Proxmox Extended Sensors in the Home Assistant integration selection screen."
+              width="570"
+              height="609"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </li>
+
+        <li class="installation-step installation-step--connect" data-installation-reveal>
+          <div class="installation-step__copy">
+            <span class="installation-step__number">04</span>
+            <div>
+              <p class="installation-step__eyebrow">Choose your scope</p>
+              <h2>Choose what to connect</h2>
+            </div>
+          </div>
+          <div class="installation-choices">
+            <a href={withBase("/docs/pve/#configuration")}>
+              <span>PVE</span><p>Nodes, hardware, storage and guests.</p><small>Setup details →</small>
+            </a>
+            <a href={withBase("/docs/pbs/#configuration")}>
+              <span>PBS</span><p>Backups, datastores and maintenance.</p><small>Setup details →</small>
+            </a>
+            <a href={withBase("/docs/cluster/#overview")}>
+              <span>Cluster</span><p>Cluster health, backups and replication.</p><small>Setup details →</small>
+            </a>
+          </div>
+        </li>
+      </ol>
+
+      <section class="installation-dashboard" data-installation-reveal aria-labelledby="dashboard-option-title">
+        <div>
+          <p>Optional dashboard</p>
+          <h2 id="dashboard-option-title">Want the dashboard too?</h2>
+          <p>The automatic Proxmox Extended Sensors dashboard is installed separately and adapts to the resources you monitor.</p>
+          <a href={withBase("/docs/dashboard/#installation")}>Dashboard Documentation →</a>
+        </div>
+        <figure>
+          <img
+            src={withBase("/images/documentation/dashboard/dashboard-3.png")}
+            alt="Home Assistant Add dashboard screen showing Proxmox Extended Sensors under Community dashboards."
+            width="674"
+            height="715"
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+      </section>
+    </div>
+
+    <section class="installation-cta" aria-labelledby="installation-cta-title">
+      <div><p>Next step</p><h2 id="installation-cta-title">Need help with configuration?</h2></div>
+      <nav aria-label="Installation help">
+        <a href={withBase("/docs/getting-started/")}>Getting Started</a>
+        <a href={withBase("/docs/")}>Documentation</a>
+        <a href={withBase("/docs/dashboard/")}>Dashboard</a>
+      </nav>
+    </section>
+  </div>
+
+  <script>
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealItems = [...document.querySelectorAll<HTMLElement>("[data-installation-reveal]")];
+    if (!reducedMotion && "IntersectionObserver" in window) {
+      document.documentElement.classList.add("installation-motion-ready");
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      }, { rootMargin: "0px 0px -10%", threshold: 0.1 });
+      revealItems.forEach((item) => observer.observe(item));
+    }
+  </script>
+</AppLayout>

@@ -1,0 +1,95 @@
+---
+import ProductShowcaseSection from "../../components/showcase/ProductShowcaseSection.astro";
+import AppLayout from "../../layouts/AppLayout.astro";
+import "../../styles/pve-showcase.css";
+import "../../styles/pbs-cluster-showcase.css";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+const capabilities = ["Nodes", "Quorum", "VMs", "CTs", "Storage", "Backups", "Replication"];
+---
+
+<AppLayout title="Cluster" description="See what Proxmox Extended Sensors brings from a configured Proxmox cluster into Home Assistant." hidePageHeader contentClass="pve-showcase-content">
+  <div class="pve-page cluster-page">
+    <section class="pve-product-hero" aria-labelledby="cluster-hero-title">
+      <div class="pve-product-hero__statement">
+        <p class="pve-product-hero__eyebrow">Proxmox Cluster</p>
+        <h1 id="cluster-hero-title">See your cluster as one system</h1>
+        <p class="pve-product-hero__lead">Bring nodes, guests, storage, backups and cluster health together in one Home Assistant view.</p>
+        <div class="pve-product-hero__actions">
+          <a class="pve-action pve-action--primary" href="#cluster-story">Explore Cluster</a>
+          <a class="pve-action pve-action--secondary" href={withBase("/docs/cluster/")}>Cluster Documentation</a>
+        </div>
+      </div>
+      <div class="pve-product-hero__identity" aria-label="Cluster monitoring capabilities">
+        <div class="pve-product-hero__mark" aria-hidden="true"><span>CLUSTER</span><small>infrastructure, in view</small></div>
+        <ul class="pve-product-hero__capabilities">{capabilities.map((capability) => <li>{capability}</li>)}</ul>
+      </div>
+    </section>
+
+    <div id="cluster-story" class="pve-story cluster-story">
+      <ProductShowcaseSection
+        id="one-view" label="One Cluster, One View" title="Your infrastructure, together"
+        description="Read nodes, guests and aggregate health as one coherent view instead of interpreting each host in isolation."
+        capabilities={["Nodes", "CPU", "RAM", "VMs", "CTs", "Storage"]}
+        images={[
+          { src: "/images/documentation/cluster/cluster-2.png", alt: "Cluster Resources panel showing counts for nodes, containers and virtual machines.", width: 508, height: 251 },
+          { src: "/images/documentation/cluster/cluster-3.png", alt: "Cluster Health panel showing aggregate CPU, RAM and failed task readings.", width: 509, height: 252 },
+        ]}
+        layout="duo"
+      />
+      <ProductShowcaseSection
+        id="health-quorum" label="Health & Quorum" title="Operational state, surfaced clearly"
+        description="Expose the cluster status where you already monitor your home, so availability signals remain visible at a glance."
+        capabilities={["Quorum", "Nodes", "Availability", "Health"]}
+        images={[{ src: "/images/documentation/cluster/cluster-1.png", alt: "Proxmox Cluster overview strip showing cluster identity and quorum status.", width: 959, height: 108 }]}
+        reverse
+      />
+      <ProductShowcaseSection
+        id="backup-replication" label="Backup & Replication" title="Keep recovery signals in the picture"
+        description="Follow backup health across the cluster, with replication information appearing when replicated guests or jobs exist."
+        capabilities={["Backup Jobs", "Backup Age", "Backup Health", "Replication"]}
+        images={[
+          { src: "/images/documentation/cluster/cluster-5.png", alt: "Cluster Backup Health panel showing jobs, backup age and warning health status.", width: 507, height: 261 },
+          { src: "/images/documentation/cluster/cluster-7.png", alt: "Cluster Replication panel showing a replicated container with an OK state.", width: 506, height: 255 },
+        ]}
+        layout="duo"
+      />
+      <section id="guest-mobility" class="cluster-mobility" data-reveal aria-labelledby="guest-mobility-title">
+        <div class="cluster-mobility__copy">
+          <p class="product-showcase__label">Guest Mobility</p>
+          <h2 id="guest-mobility-title">Move the guest. Keep the identity.</h2>
+          <p>When a monitored VM or CT moves between nodes in a configured cluster, its Home Assistant identity stays with it.</p>
+        </div>
+        <div class="cluster-mobility__diagram" role="img" aria-label="A monitored guest moves from PVE 1 to PVE 2 while its Home Assistant identity remains stable.">
+          <span class="cluster-mobility__node">PVE 1</span><span class="cluster-mobility__path" aria-hidden="true"></span><span class="cluster-mobility__guest">VM / CT</span><span class="cluster-mobility__node">PVE 2</span><span class="cluster-mobility__identity">Home Assistant identity: stable</span>
+        </div>
+      </section>
+    </div>
+
+    <section class="pve-final-cta" aria-labelledby="cluster-cta-title">
+      <div><p>Go deeper</p><h2 id="cluster-cta-title">Want the technical details?</h2></div>
+      <nav aria-label="Cluster technical resources">
+        <a href={withBase("/docs/cluster/")}>Cluster Documentation</a>
+        <a href={withBase("/docs/reference/")}>Entity Reference</a>
+        <a href={withBase("/docs/getting-started/")}>Getting Started</a>
+      </nav>
+    </section>
+  </div>
+
+  <script>
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealItems = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+    if (!reducedMotion && "IntersectionObserver" in window) {
+      document.documentElement.classList.add("pve-motion-ready");
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      }, { rootMargin: "0px 0px -12%", threshold: 0.12 });
+      revealItems.forEach((item) => observer.observe(item));
+    }
+  </script>
+</AppLayout>

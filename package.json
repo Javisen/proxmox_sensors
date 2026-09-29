@@ -1,0 +1,20 @@
+{
+  "name": "proxmox-sensors-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "data:refresh": "node scripts/generate-project-snapshot.mjs",
+    "data:test": "node --test --test-isolation=none scripts/project-data.test.mjs scripts/project-notices.test.mjs",
+    "predev": "npm run data:refresh",
+    "dev": "astro dev",
+    "dev:notices": "node scripts/dev-notices-preview.mjs",
+    "prebuild": "npm run data:refresh",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "devDependencies": {
+    "astro": "^7.3.5",
+    "typescript": "^7.0.2"
+  }
+}

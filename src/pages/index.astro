@@ -1,0 +1,92 @@
+---
+import DashboardHeader from "../components/dashboard/DashboardHeader.astro";
+import DashboardPanel from "../components/dashboard/DashboardPanel.astro";
+import MetricTile from "../components/dashboard/MetricTile.astro";
+import ProjectNotice from "../components/dashboard/ProjectNotice.astro";
+import QuickLinkRow from "../components/dashboard/QuickLinkRow.astro";
+import { homeDashboard } from "../data/homeDashboard";
+import { projectSnapshot } from "../data/projectSnapshot";
+import previewNoticesFixture from "../../scripts/fixtures/project-notices/warning-active.json";
+import { normalizeNoticesDocument } from "../../scripts/project-notices.mjs";
+import AppLayout from "../layouts/AppLayout.astro";
+import "../styles/dashboard.css";
+
+const useNoticePreview = import.meta.env.PROJECT_NOTICES_PREVIEW === "warning-active";
+const previewNotices = useNoticePreview
+  ? normalizeNoticesDocument(previewNoticesFixture, { now: new Date(projectSnapshot.generatedAt) })
+  : null;
+const noticeIds = new Set(previewNotices?.visibleNoticeIds ?? projectSnapshot.visibleNoticeIds);
+const visibleNotices = (previewNotices?.notices ?? projectSnapshot.notices)
+  .filter((notice) => noticeIds.has(notice.id));
+const noticeSourceState = useNoticePreview
+  ? "preview"
+  : projectSnapshot.sources.projectNotices.status;
+---
+
+<AppLayout
+  title="Home"
+  description="Project overview for the Proxmox Extended Sensors Home Assistant integration."
+  hidePageHeader
+  contentClass="dashboard-content"
+  language="en"
+>
+  <div class="home-dashboard">
+    <DashboardHeader />
+
+    {visibleNotices.length > 0 && (
+      <section class="project-notices" aria-labelledby="project-notices-title">
+        <header class="project-notices__header">
+          <div>
+            <h2 id="project-notices-title">Project Notices</h2>
+          </div>
+          {noticeSourceState === "preview" && (
+            <span class="project-notices__source project-notices__source--preview">Development fixture</span>
+          )}
+          {noticeSourceState === "stale" && (
+            <span class="project-notices__source">Cached source</span>
+          )}
+        </header>
+        <div class="project-notices__list">
+          {visibleNotices.map((notice, index) => (
+            <ProjectNotice notice={notice} headingId={`project-notice-${index}`} />
+          ))}
+        </div>
+      </section>
+    )}
+
+    <div class="dashboard-grid">
+      <DashboardPanel
+        class="dashboard-grid__overview"
+        title="Integration Overview"
+        description="Public integration data"
+        icon="dashboard"
+      >
+        <dl class="metric-grid metric-grid--overview">
+          {homeDashboard.integrationMetrics.map((metric) => <MetricTile {...metric} />)}
+        </dl>
+      </DashboardPanel>
+
+      <DashboardPanel
+        class="dashboard-grid__stats"
+        title="Project Stats"
+        description="Public project data"
+        icon="github"
+      >
+        <dl class="metric-grid metric-grid--stats">
+          {homeDashboard.projectMetrics.map((metric) => <MetricTile {...metric} />)}
+        </dl>
+      </DashboardPanel>
+
+      <DashboardPanel
+        class="dashboard-grid__access"
+        title="Quick Access"
+        description="Direct project navigation"
+        icon="home"
+      >
+        <nav class="quick-links" aria-label="Quick access">
+          {homeDashboard.quickLinks.map((link) => <QuickLinkRow {...link} />)}
+        </nav>
+      </DashboardPanel>
+    </div>
+  </div>
+</AppLayout>

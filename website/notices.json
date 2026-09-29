@@ -1,11 +1,11 @@
 {
   "notices": [
     {
-      "id": "website-test-notice",
+      "id": "release-5-1-1-coming-soon",
       "active": true,
       "level": "warning",
-      "title": "Project Notice",
-      "message": "This is a temporary notice used to validate the Project Notices layout."
+      "title": "Version 5.1.1 is coming soon",
+      "message": "A corrective 5.1.1 release is coming soon with targeted fixes and stability improvements."
     }
   ]
 }

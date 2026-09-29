@@ -1,0 +1,88 @@
+---
+import NavIcon from "../../../components/NavIcon.astro";
+import Overview from "../../../components/documentation/pbs/overview.md";
+import Configuration from "../../../components/documentation/pbs/configuration.md";
+import Authentication from "../../../components/documentation/pbs/authentication.md";
+import HostedRemote from "../../../components/documentation/pbs/hosted-remote.md";
+import Datastores from "../../../components/documentation/pbs/datastores.md";
+import Backups from "../../../components/documentation/pbs/backups.md";
+import Maintenance from "../../../components/documentation/pbs/maintenance.md";
+import Tasks from "../../../components/documentation/pbs/tasks.md";
+import Troubleshooting from "../../../components/documentation/pbs/troubleshooting.md";
+import { getDocumentationCategory } from "../../../data/documentation";
+import { navigationItems } from "../../../data/navigation";
+import DocumentationLayout from "../../../layouts/DocumentationLayout.astro";
+
+const category = getDocumentationCategory("pbs");
+const sections = [
+  { id: "overview", ...category.topics[0], content: Overview },
+  { id: "configuration", ...category.topics[1], content: Configuration },
+  { id: "authentication", ...category.topics[2], content: Authentication },
+  {
+    id: "hosted-remote",
+    title: "Hosted / Remote PBS",
+    description: "Connect securely to a remote PBS, including the tested Tuxis service.",
+    content: HostedRemote,
+  },
+  { id: "datastores", ...category.topics[3], content: Datastores },
+  { id: "backups", ...category.topics[4], content: Backups },
+  { id: "maintenance", ...category.topics[5], content: Maintenance },
+  { id: "tasks", ...category.topics[6], content: Tasks },
+  { id: "troubleshooting", ...category.topics[7], content: Troubleshooting },
+];
+const repositoryUrl = navigationItems.find((item) => item.label === "GitHub")?.href;
+if (!repositoryUrl) throw new Error("Canonical integration repository link is missing");
+const issuesUrl = `${repositoryUrl}/issues`;
+---
+
+<DocumentationLayout title="PBS Documentation" description={category.introduction} section="Documentation">
+  <div class="pbs-guide">
+    <nav id="pbs-index" class="getting-started-index" aria-labelledby="pbs-index-title">
+      <div class="documentation-section-heading">
+        <div>
+          <p>On this page</p>
+          <h2 id="pbs-index-title">Explore PBS</h2>
+        </div>
+        <span>{sections.length} sections</span>
+      </div>
+
+      <ol class="documentation-topic-grid getting-started-index__list">
+        {sections.map((section, index) => (
+          <li>
+            <a class="documentation-topic-card getting-started-index__link" href={`#${section.id}`}>
+              <span class="documentation-topic-card__index" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>
+                <strong>{section.title}</strong>
+                <span>{section.description}</span>
+              </span>
+              <span class="documentation-topic-card__icon" aria-hidden="true">
+                <NavIcon name={category.icon} size={17} />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="getting-started-articles">
+      {sections.map((section) => {
+        const Content = section.content;
+        return (
+          <section id={section.id} class="getting-started-section" aria-labelledby={`${section.id}-title`}>
+            <h2 id={`${section.id}-title`}>{section.title}</h2>
+            <Content />
+            {section.id === "troubleshooting" && (
+              <p>
+                If the problem persists after these checks, use the project's{" "}
+                <a href={issuesUrl}>GitHub issue tracker</a>.
+              </p>
+            )}
+            <a class="getting-started-section__back" href="#pbs-index">↑ Back to top</a>
+          </section>
+        );
+      })}
+    </div>
+  </div>
+</DocumentationLayout>

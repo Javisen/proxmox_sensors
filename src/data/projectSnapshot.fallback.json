@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "freshness": "fresh",
+  "generatedAt": "2026-09-27T10:55:25.309Z",
+  "version": "5.1.0",
+  "releasedAt": "2026-09-26T23:24:50.000Z",
+  "releaseChannel": "Stable",
+  "hacsListed": true,
+  "stars": 67,
+  "forks": 11,
+  "openIssues": 1,
+  "repositoryStatus": "Active",
+  "repositoryDisabled": false,
+  "notices": [],
+  "visibleNoticeIds": [],
+  "noticeWarnings": [],
+  "sources": {
+    "githubRelease": {
+      "status": "fresh",
+      "url": "https://api.github.com/repos/Javisen/proxmox_sensors/releases?per_page=30",
+      "checkedAt": "2026-09-27T10:55:25.309Z",
+      "lastSuccessfulAt": "2026-09-27T10:55:25.309Z",
+      "error": null
+    },
+    "githubRepository": {
+      "status": "fresh",
+      "url": "https://api.github.com/repos/Javisen/proxmox_sensors",
+      "checkedAt": "2026-09-27T10:55:25.309Z",
+      "lastSuccessfulAt": "2026-09-27T10:55:25.309Z",
+      "error": null
+    },
+    "githubIssues": {
+      "status": "fresh",
+      "url": "https://api.github.com/search/issues?q=repo%3AJavisen%2Fproxmox_sensors%20is%3Aissue%20is%3Aopen&per_page=1",
+      "checkedAt": "2026-09-27T10:55:25.309Z",
+      "lastSuccessfulAt": "2026-09-27T10:55:25.309Z",
+      "error": null
+    },
+    "hacs": {
+      "status": "fresh",
+      "url": "https://raw.githubusercontent.com/hacs/default/master/integration",
+      "checkedAt": "2026-09-27T10:55:25.309Z",
+      "lastSuccessfulAt": "2026-09-27T10:55:25.309Z",
+      "error": null
+    },
+    "projectNotices": {
+      "status": "unavailable",
+      "url": "https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/website/notices.json",
+      "checkedAt": "2026-09-27T10:55:25.309Z",
+      "lastSuccessfulAt": null,
+      "error": "No canonical notices snapshot is available yet"
+    }
+  }
+}

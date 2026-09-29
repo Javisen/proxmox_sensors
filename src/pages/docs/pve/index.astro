@@ -1,0 +1,81 @@
+---
+import NavIcon from "../../../components/NavIcon.astro";
+import Overview from "../../../components/documentation/pve/overview.md";
+import Configuration from "../../../components/documentation/pve/configuration.md";
+import Authentication from "../../../components/documentation/pve/authentication.md";
+import NodeMonitoring from "../../../components/documentation/pve/node-monitoring.md";
+import VmCtMonitoring from "../../../components/documentation/pve/vm-ct-monitoring.md";
+import Hardware from "../../../components/documentation/pve/hardware.md";
+import Storage from "../../../components/documentation/pve/storage.md";
+import Troubleshooting from "../../../components/documentation/pve/troubleshooting.md";
+import { getDocumentationCategory } from "../../../data/documentation";
+import { navigationItems } from "../../../data/navigation";
+import DocumentationLayout from "../../../layouts/DocumentationLayout.astro";
+
+const category = getDocumentationCategory("pve");
+const sections = [
+  { id: "overview", ...category.topics[0], content: Overview },
+  { id: "configuration", ...category.topics[1], content: Configuration },
+  { id: "authentication", ...category.topics[2], content: Authentication },
+  { id: "node-monitoring", ...category.topics[3], content: NodeMonitoring },
+  { id: "vm-ct-monitoring", ...category.topics[4], content: VmCtMonitoring },
+  { id: "hardware", ...category.topics[5], content: Hardware },
+  { id: "storage", ...category.topics[6], content: Storage },
+  { id: "troubleshooting", ...category.topics[7], content: Troubleshooting },
+];
+const repositoryUrl = navigationItems.find((item) => item.label === "GitHub")?.href;
+if (!repositoryUrl) throw new Error("Canonical integration repository link is missing");
+const issuesUrl = `${repositoryUrl}/issues`;
+---
+
+<DocumentationLayout title="PVE Documentation" description={category.introduction} section="Documentation">
+  <div class="pve-guide">
+    <nav id="pve-index" class="getting-started-index" aria-labelledby="pve-index-title">
+      <div class="documentation-section-heading">
+        <div>
+          <p>On this page</p>
+          <h2 id="pve-index-title">Explore PVE</h2>
+        </div>
+        <span>8 sections</span>
+      </div>
+
+      <ol class="documentation-topic-grid getting-started-index__list">
+        {sections.map((section, index) => (
+          <li>
+            <a class="documentation-topic-card getting-started-index__link" href={`#${section.id}`}>
+              <span class="documentation-topic-card__index" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>
+                <strong>{section.title}</strong>
+                <span>{section.description}</span>
+              </span>
+              <span class="documentation-topic-card__icon" aria-hidden="true">
+                <NavIcon name={category.icon} size={17} />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="getting-started-articles">
+      {sections.map((section) => {
+        const Content = section.content;
+        return (
+          <section id={section.id} class="getting-started-section" aria-labelledby={`${section.id}-title`}>
+            <h2 id={`${section.id}-title`}>{section.title}</h2>
+            <Content />
+            {section.id === "troubleshooting" && (
+              <p>
+                If the problem persists after these checks, use the project's{" "}
+                <a href={issuesUrl}>GitHub issue tracker</a> to report it.
+              </p>
+            )}
+            <a class="getting-started-section__back" href="#pve-index">↑ Back to top</a>
+          </section>
+        );
+      })}
+    </div>
+  </div>
+</DocumentationLayout>

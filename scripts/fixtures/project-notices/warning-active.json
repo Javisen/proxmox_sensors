@@ -1,0 +1,15 @@
+{
+  "notices": [
+    {
+      "id": "preview-known-issue",
+      "active": true,
+      "level": "warning",
+      "title": "Known issue",
+      "message": "This development fixture demonstrates a public project notice without publishing it as production data.",
+      "link": "https://github.com/Javisen/proxmox_sensors/issues",
+      "linkLabel": "View issues",
+      "startsAt": null,
+      "expiresAt": null
+    }
+  ]
+}

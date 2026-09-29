@@ -1,0 +1,41 @@
+---
+import type { ReferenceEntity } from "../../data/reference";
+
+interface Props {
+  entry: ReferenceEntity;
+}
+
+const { entry } = Astro.props;
+const typeClass = entry.type === "Binary sensor" ? "binary" : entry.type === "Button" ? "button" : "sensor";
+---
+
+<article class="reference-entry" data-reference-entry>
+  <div class="reference-entry__heading">
+    <h4>{entry.name}</h4>
+    <div class="reference-entry__badges" aria-label="Entity metadata">
+      <span class={"reference-entry__badge reference-entry__badge--" + typeClass}>{entry.type}</span>
+      {entry.unit && <span class="reference-entry__badge">{entry.unit}</span>}
+      {entry.state && <span class="reference-entry__badge">{entry.state}</span>}
+      {entry.condition && <span class="reference-entry__badge reference-entry__badge--conditional">Conditional</span>}
+      {entry.dynamic && <span class="reference-entry__badge reference-entry__badge--dynamic">Dynamic</span>}
+    </div>
+  </div>
+  <p class="reference-entry__description">{entry.description}</p>
+  {entry.attributes && (
+    <div class="reference-entry__attributes">
+      <span>Attributes:</span>
+      <ul>
+        {entry.attributes.map((attribute) => <li>{attribute}</li>)}
+      </ul>
+    </div>
+  )}
+  {entry.moreAttributes && (
+    <details class="reference-entry__more">
+      <summary>Show all attributes</summary>
+      <ul>
+        {entry.moreAttributes.map((attribute) => <li>{attribute}</li>)}
+      </ul>
+    </details>
+  )}
+  {entry.condition && <p class="reference-entry__condition">{entry.condition}</p>}
+</article>

@@ -1,0 +1,15 @@
+---
+import type { DashboardTone } from "../../data/homeDashboard";
+
+interface Props {
+  label: string;
+  tone?: DashboardTone;
+}
+
+const { label, tone = "neutral" } = Astro.props;
+---
+
+<span class:list={["status-badge", `status-badge--${tone}`]}>
+  <span class="status-badge__dot" aria-hidden="true"></span>
+  {label}
+</span>

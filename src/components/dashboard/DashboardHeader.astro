@@ -1,0 +1,58 @@
+---
+import StatusBadge from "./StatusBadge.astro";
+import { homeDashboard } from "../../data/homeDashboard";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<section class="dashboard-header" aria-labelledby="dashboard-title">
+  <div class="dashboard-header__identity">
+    <div class="dashboard-header__brand">
+      <img src={`${baseUrl}assets/logo_small.png`} alt="" width="204" height="172" />
+      <div>
+        <p class="dashboard-header__kicker">{homeDashboard.dataLabel}</p>
+        <h1 id="dashboard-title">{homeDashboard.title}</h1>
+        <p class="dashboard-header__subtitle">{homeDashboard.subtitle}</p>
+      </div>
+    </div>
+    <p class="dashboard-header__date">
+      <span aria-hidden="true">●</span>
+      <time data-current-date>Local date</time>
+    </p>
+  </div>
+
+  <dl class="dashboard-header__facts">
+    {homeDashboard.headerFacts.map((fact) => (
+      <div class="header-fact">
+        <dt>{fact.label}</dt>
+        <dd>{fact.value}</dd>
+      </div>
+    ))}
+    <div class="header-fact header-fact--status">
+      <dt>{homeDashboard.status.label}</dt>
+      <dd>
+        <StatusBadge
+          label={homeDashboard.status.value}
+          tone={homeDashboard.status.tone}
+        />
+      </dd>
+    </div>
+  </dl>
+</section>
+
+<script>
+  const currentDate = document.querySelector<HTMLTimeElement>("[data-current-date]");
+
+  if (currentDate) {
+    const now = new Date();
+    currentDate.dateTime = now.toISOString().slice(0, 10);
+    currentDate.textContent = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(now);
+  }
+</script>

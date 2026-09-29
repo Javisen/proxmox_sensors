@@ -1,0 +1,11 @@
+{
+  "notices": [
+    {
+      "id": "invalid-level",
+      "active": true,
+      "level": "danger",
+      "title": "Invalid level",
+      "message": "This document must fail validation."
+    }
+  ]
+}

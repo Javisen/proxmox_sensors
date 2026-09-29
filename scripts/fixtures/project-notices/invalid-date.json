@@ -1,0 +1,12 @@
+{
+  "notices": [
+    {
+      "id": "invalid-date",
+      "active": true,
+      "level": "info",
+      "title": "Invalid date",
+      "message": "This document must fail validation.",
+      "startsAt": "not-a-date"
+    }
+  ]
+}

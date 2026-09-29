@@ -1,0 +1,72 @@
+---
+interface ShowcaseImage {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+interface Props {
+  id: string;
+  label: string;
+  title: string;
+  description: string;
+  capabilities: string[];
+  images: ShowcaseImage[];
+  reverse?: boolean;
+  layout?: "single" | "duo";
+  note?: string;
+}
+
+const {
+  id,
+  label,
+  title,
+  description,
+  capabilities,
+  images,
+  reverse = false,
+  layout = "single",
+  note,
+} = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (src: string) => `${baseUrl}${src.replace(/^\//, "")}`;
+---
+
+<section
+  id={id}
+  class:list={[
+    "product-showcase",
+    reverse && "product-showcase--reverse",
+    layout === "duo" && "product-showcase--duo",
+  ]}
+  data-reveal
+>
+  <div class="product-showcase__copy">
+    <p class="product-showcase__label">{label}</p>
+    <h2>{title}</h2>
+    <p class="product-showcase__description">{description}</p>
+    <ul class="product-showcase__capabilities" aria-label={`${label} capabilities`}>
+      {capabilities.map((capability) => <li>{capability}</li>)}
+    </ul>
+    {note && <p class="product-showcase__note">{note}</p>}
+  </div>
+
+  <figure class:list={["product-showcase__visual", `product-showcase__visual--${layout}`]}>
+    <span class="product-showcase__glow" aria-hidden="true"></span>
+    {images.map((image) => (
+      <div class="product-showcase__frame">
+        <img
+          src={withBase(image.src)}
+          alt={image.alt}
+          width={image.width}
+          height={image.height}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    ))}
+  </figure>
+</section>

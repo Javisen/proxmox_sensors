@@ -1,0 +1,219 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import "../../styles/dashboard-showcase.css";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+
+const dashboardSlides = [
+  { name: "PVE", src: "/images/dashboard/dashboard-pve.png", width: 1682, height: 1064, alt: "Complete Proxmox Extended Sensors dashboard for a Proxmox VE environment." },
+  { name: "PBS", src: "/images/dashboard/dashboard-pbs.png", width: 1658, height: 1072, alt: "Complete Proxmox Extended Sensors dashboard for a Proxmox Backup Server environment." },
+  { name: "Cluster", src: "/images/dashboard/dashboard-cluster.png", width: 1656, height: 1075, alt: "Complete Proxmox Extended Sensors dashboard for a Proxmox cluster environment." },
+];
+---
+
+<AppLayout title="Dashboard" description="Explore the automatic Proxmox Extended Sensors dashboard for PVE, PBS and Cluster environments." hidePageHeader contentClass="dashboard-showcase-content">
+  <div class="dashboard-showcase-page">
+    <section class="dashboard-showcase-hero" aria-labelledby="dashboard-showcase-title">
+      <div class="dashboard-showcase-hero__copy">
+        <p class="dashboard-showcase__eyebrow">Dashboard</p>
+        <h1 id="dashboard-showcase-title">Not just a dashboard. <span>Your dashboard.</span></h1>
+        <p class="dashboard-showcase-hero__dynamic" aria-hidden="true" data-dashboard-phrase>Your PVE dashboard.</p>
+        <p class="visually-hidden">An automatic dashboard for PVE, PBS and Cluster environments.</p>
+      </div>
+
+      <div class="dashboard-showcase-hero__visual">
+        <div class="dashboard-carousel" data-dashboard-carousel>
+          {dashboardSlides.map((slide, index) => (
+            <button id={`dashboard-slide-${index}`} class:list={["dashboard-carousel__slide", { "is-active": index === 0 }]} type="button" data-dashboard-slide={index} aria-label={`Open the complete ${slide.name} dashboard image`} aria-hidden={index === 0 ? "false" : "true"} tabindex={index === 0 ? "0" : "-1"} inert={index === 0 ? undefined : true}>
+              <img src={withBase(slide.src)} alt={slide.alt} width={slide.width} height={slide.height} loading={index === 0 ? "eager" : "lazy"} decoding="async" />
+              <span>View full dashboard</span>
+            </button>
+          ))}
+        </div>
+        <div class="dashboard-carousel__tabs" role="tablist" aria-label="Dashboard views">
+          {dashboardSlides.map((slide, index) => (
+            <button id={`dashboard-tab-${index}`} class:list={{ "is-active": index === 0 }} type="button" role="tab" aria-controls={`dashboard-slide-${index}`} aria-selected={index === 0 ? "true" : "false"} tabindex={index === 0 ? "0" : "-1"} data-dashboard-tab={index}>{slide.name}</button>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <div class="dashboard-showcase-story">
+      <section class="dashboard-feature" data-dashboard-reveal aria-labelledby="dashboard-guests-title">
+        <div class="dashboard-feature__copy">
+          <p class="dashboard-showcase__eyebrow">01 — Guests</p>
+          <h2 id="dashboard-guests-title">See it. Control it.</h2>
+          <p>Open a container or virtual machine to reach its main sensors and controls—including start, stop, shutdown and reboot—without leaving the dashboard.</p>
+        </div>
+        <div class="dashboard-guests" aria-label="Container and virtual machine dashboard views">
+          <figure>
+            <img src={withBase("/images/dashboard/dashboard-ct.png")} alt="Container details and controls in the Proxmox Extended Sensors dashboard." width="510" height="736" loading="lazy" decoding="async" />
+            <figcaption>Container</figcaption>
+          </figure>
+          <figure>
+            <img src={withBase("/images/dashboard/dashboard-vm.png")} alt="Virtual machine details and controls in the Proxmox Extended Sensors dashboard." width="512" height="690" loading="lazy" decoding="async" />
+            <figcaption>Virtual machine</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="dashboard-feature dashboard-feature--reverse" data-dashboard-reveal aria-labelledby="dashboard-native-title">
+        <div class="dashboard-feature__copy">
+          <p class="dashboard-showcase__eyebrow">02 — Home Assistant</p>
+          <h2 id="dashboard-native-title">Native Home Assistant experience.</h2>
+          <p>Every value remains a native Home Assistant entity. Open it from the dashboard to inspect its usual details and history, while storage information stays clear at a glance.</p>
+        </div>
+        <div class="dashboard-native" aria-label="Home Assistant history and storage views">
+          <figure class="dashboard-native__history">
+            <img src={withBase("/images/dashboard/dashboard-history.png")} alt="Home Assistant entity history opened from the Proxmox Extended Sensors dashboard." width="1004" height="555" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="dashboard-native__storage">
+            <img src={withBase("/images/dashboard/dashboard-storage.png")} alt="Storage information presented in the Proxmox Extended Sensors dashboard." width="510" height="321" loading="lazy" decoding="async" />
+          </figure>
+        </div>
+      </section>
+    </div>
+
+    <section class="dashboard-showcase-cta" aria-labelledby="dashboard-cta-title">
+      <div><p>Setup and customization</p><h2 id="dashboard-cta-title">Ready to add your dashboard?</h2></div>
+      <a href={withBase("/docs/dashboard/")}>Dashboard Documentation →</a>
+    </section>
+  </div>
+
+  <dialog class="dashboard-lightbox" data-dashboard-lightbox aria-labelledby="dashboard-lightbox-caption">
+    <button type="button" class="dashboard-lightbox__close" data-dashboard-lightbox-close aria-label="Close image">×</button>
+    <figure>
+      <img data-dashboard-lightbox-image src={withBase(dashboardSlides[0].src)} alt={dashboardSlides[0].alt} width={dashboardSlides[0].width} height={dashboardSlides[0].height} />
+      <figcaption id="dashboard-lightbox-caption" data-dashboard-lightbox-caption>{dashboardSlides[0].name} dashboard</figcaption>
+    </figure>
+  </dialog>
+
+  <script define:vars={{ dashboardSlides, baseUrl }}>
+    const phraseSequence = [
+      { text: "Your PVE dashboard.", slide: 0 },
+      { text: "Your PBS dashboard.", slide: 1 },
+      { text: "Your Cluster dashboard.", slide: 2 },
+      { text: "Your dashboard.", slide: 2 },
+    ];
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const phrase = document.querySelector("[data-dashboard-phrase]");
+    const slides = [...document.querySelectorAll("[data-dashboard-slide]")];
+    const tabs = [...document.querySelectorAll("[data-dashboard-tab]")];
+    let sequenceIndex = 0;
+    let rotation;
+    let phraseTransition;
+
+    const renderState = (slideIndex, text) => {
+      if (phrase) phrase.textContent = text;
+      slides.forEach((slide, index) => {
+        const active = index === slideIndex;
+        slide.classList.toggle("is-active", active);
+        slide.setAttribute("aria-hidden", String(!active));
+        slide.setAttribute("tabindex", active ? "0" : "-1");
+        slide.toggleAttribute("inert", !active);
+      });
+      tabs.forEach((tab, index) => {
+        const active = index === slideIndex;
+        tab.classList.toggle("is-active", active);
+        tab.setAttribute("aria-selected", String(active));
+        tab.setAttribute("tabindex", active ? "0" : "-1");
+      });
+    };
+
+    const selectState = (state, animate = true) => {
+      const applyState = () => {
+        renderState(state.slide, state.text);
+      };
+
+      window.clearTimeout(phraseTransition);
+      if (animate && !reducedMotion && phrase) {
+        phrase.classList.add("is-changing");
+        phraseTransition = window.setTimeout(() => {
+          applyState();
+          phrase.classList.remove("is-changing");
+        }, 180);
+      } else {
+        applyState();
+      }
+    };
+
+    const startRotation = () => {
+      window.clearInterval(rotation);
+      if (reducedMotion) return;
+      rotation = window.setInterval(() => {
+        sequenceIndex = (sequenceIndex + 1) % phraseSequence.length;
+        selectState(phraseSequence[sequenceIndex]);
+      }, 3600);
+    };
+
+    const selectDashboard = (index, focusTab = false) => {
+      sequenceIndex = index;
+      selectState(phraseSequence[index], !reducedMotion);
+      if (focusTab) tabs[index]?.focus();
+      startRotation();
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => selectDashboard(index));
+      tab.addEventListener("keydown", (event) => {
+        let nextIndex;
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (index + 1) % tabs.length;
+        if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "Home") nextIndex = 0;
+        if (event.key === "End") nextIndex = tabs.length - 1;
+        if (nextIndex === undefined) return;
+        event.preventDefault();
+        selectDashboard(nextIndex, true);
+      });
+    });
+    startRotation();
+
+    const lightbox = document.querySelector("[data-dashboard-lightbox]");
+    const lightboxImage = document.querySelector("[data-dashboard-lightbox-image]");
+    const lightboxCaption = document.querySelector("[data-dashboard-lightbox-caption]");
+    const closeLightbox = document.querySelector("[data-dashboard-lightbox-close]");
+    let lightboxTrigger;
+
+    slides.forEach((slide, index) => slide.addEventListener("click", () => {
+      const selected = dashboardSlides[index];
+      lightboxTrigger = slide;
+      window.clearInterval(rotation);
+      lightboxImage.src = `${baseUrl}${selected.src.replace(/^\//, "")}`;
+      lightboxImage.alt = selected.alt;
+      lightboxImage.width = selected.width;
+      lightboxImage.height = selected.height;
+      lightboxCaption.textContent = `${selected.name} dashboard`;
+      lightbox.showModal();
+    }));
+
+    closeLightbox?.addEventListener("click", () => lightbox?.close());
+    lightbox?.addEventListener("click", (event) => { if (event.target === lightbox) lightbox.close(); });
+    lightbox?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      lightbox.close();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !lightbox?.open) return;
+      event.preventDefault();
+      lightbox.close();
+    });
+    lightbox?.addEventListener("close", () => {
+      lightboxTrigger?.focus();
+      startRotation();
+    });
+
+    const revealItems = [...document.querySelectorAll("[data-dashboard-reveal]")];
+    if (!reducedMotion && "IntersectionObserver" in window) {
+      document.documentElement.classList.add("dashboard-motion-ready");
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      }, { rootMargin: "0px 0px -10%", threshold: 0.1 });
+      revealItems.forEach((item) => observer.observe(item));
+    }
+  </script>
+</AppLayout>

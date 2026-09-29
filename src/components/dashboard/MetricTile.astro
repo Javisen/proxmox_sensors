@@ -1,0 +1,17 @@
+---
+import StatusBadge from "./StatusBadge.astro";
+import type { DashboardMetric } from "../../data/homeDashboard";
+
+type Props = DashboardMetric;
+
+const { label, value, detail, tone = "neutral", compact = false } = Astro.props;
+const showBadge = tone !== "neutral";
+---
+
+<div class:list={["metric-tile", `metric-tile--${tone}`]}>
+  <dt>{label}</dt>
+  <dd class:list={["metric-tile__value", compact && "metric-tile__value--compact"]}>{value}</dd>
+  <dd class="metric-tile__detail">
+    {showBadge ? <StatusBadge label={detail} tone={tone} /> : detail}
+  </dd>
+</div>

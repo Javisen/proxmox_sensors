@@ -1,0 +1,42 @@
+---
+import NavIcon from "../NavIcon.astro";
+import type { DocumentationCategory } from "../../data/documentation";
+
+interface Props {
+  category: DocumentationCategory;
+}
+
+const { category } = Astro.props;
+---
+
+<section class="documentation-category" aria-labelledby="category-map-title">
+  <div class="documentation-section-heading">
+    <div>
+      <p>Category map</p>
+      <h2 id="category-map-title">Explore {category.title}</h2>
+    </div>
+    <span>{category.topics.length} planned areas</span>
+  </div>
+
+  <div class="documentation-topic-grid">
+    {category.topics.map((topic, index) => (
+      <article class="documentation-topic-card">
+        <span class="documentation-topic-card__index" aria-hidden="true">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <div>
+          <h3>{topic.title}</h3>
+          <p>{topic.description}</p>
+        </div>
+        <span class="documentation-topic-card__icon" aria-hidden="true">
+          <NavIcon name={category.icon} size={17} />
+        </span>
+      </article>
+    ))}
+  </div>
+
+  <aside class="documentation-prototype-note">
+    <strong>Prototype structure</strong>
+    <p>These areas establish the navigation hierarchy. Verified technical content will be added in a later iteration.</p>
+  </aside>
+</section>

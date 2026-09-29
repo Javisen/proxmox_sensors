@@ -1,0 +1,18 @@
+{
+  "notices": [
+    {
+      "id": "duplicate",
+      "active": true,
+      "level": "info",
+      "title": "First notice",
+      "message": "First occurrence."
+    },
+    {
+      "id": "duplicate",
+      "active": true,
+      "level": "warning",
+      "title": "Second notice",
+      "message": "Second occurrence."
+    }
+  ]
+}

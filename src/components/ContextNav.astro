@@ -1,0 +1,16 @@
+---
+interface Props {
+  label?: string;
+}
+
+const { label = "Section navigation" } = Astro.props;
+const hasItems = Astro.slots.has("default");
+---
+
+{hasItems ? (
+  <nav class="context-navigation" aria-label={label}>
+    <slot />
+  </nav>
+) : (
+  <div class="context-navigation context-navigation--empty" aria-hidden="true"></div>
+)}

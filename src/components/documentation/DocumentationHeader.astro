@@ -1,0 +1,24 @@
+---
+import LanguageMenu from "./LanguageMenu.astro";
+
+interface Props {
+  title: string;
+  description: string | string[];
+  section?: string;
+}
+
+const { title, description, section = "Documentation" } = Astro.props;
+const descriptionParagraphs = Array.isArray(description) ? description : [description];
+---
+
+<header class="documentation-header">
+  <div class="documentation-header__copy">
+    <p>{section}</p>
+    <h1>{title}</h1>
+    <div class="documentation-header__rule" aria-hidden="true"></div>
+    {descriptionParagraphs.map((paragraph) => (
+      <p class="documentation-header__description">{paragraph}</p>
+    ))}
+  </div>
+  <LanguageMenu />
+</header>
