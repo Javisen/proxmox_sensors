@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_RAW="https://raw.githubusercontent.com/Javisen/test_javisen/main/scripts"
+REPO_RAW="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts"
 SIDECAR_PATH="/usr/local/bin/pve-sensors-api.py"
 CONFIG_DIR="/etc/proxmox-sensors"
 CONFIG_PATH="${CONFIG_DIR}/sidecar.conf"
