@@ -3,7 +3,7 @@
     {
       "id": "release-5-2-0-development",
       "active": true,
-      "level": "development",
+      "level": "info",
       "title": "Development of V5.2.0 begins",
       "message": "The V5.2.0 development roadmap is currently being prepared."
     }
