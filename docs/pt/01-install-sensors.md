@@ -24,19 +24,33 @@ sensors
 ```
 Não force `coretemp` em sistemas que usam outro driver.
 
-## 4. Instalar sidecar
+---
+
+## 4. Instalar o Sidecar
+
+Execute o seguinte comando em cada host PVE/PBS onde pretende instalar o Hardware Sidecar:
+
 ```bash
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
-chmod +x /usr/local/bin/pve-sensors-api.py
-```
-Crie o serviço systemd para executar `/usr/bin/python3 /usr/local/bin/pve-sensors-api.py` com reinício automático e depois:
-```bash
-systemctl daemon-reload
-systemctl enable --now pve-sensors.service
+bash <(curl -fsSL https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/install-sidecar.sh)
 ```
 
-## 5. Verificar sidecar
-Execute `systemctl status pve-sensors.service` e abra `http://IP_DO_SEU_PROXMOX:9000/sensors`. Uma resposta JSON confirma o funcionamento.
+Durante a instalação, será solicitado que introduza o endereço ou os endereços IP das suas instâncias do Home Assistant. Pode introduzir vários endereços IP separados por vírgulas.
+
+Apenas os endereços IP especificados terão permissão para aceder ao Hardware Sidecar.
+
+> **Nota:** Se o Sidecar já estiver instalado, execute novamente o mesmo comando para atualizar a instalação existente e configurar os endereços IP autorizados do Home Assistant.
+
+## 5. Verificar o Sidecar
+
+Verifique o estado do serviço Sidecar:
+
+```bash
+systemctl status pve-sensors.service
+```
+
+O serviço deverá aparecer como `active (running)`.
+
+---
 
 ## 6. Em caso de falha
 V5 preserva, quando possível, os últimos valores de hardware válidos. **Sidecar Status** mostra Memory, Mounts, Sensors e SMART como `ok`, `degraded`, `error` ou `unknown`.

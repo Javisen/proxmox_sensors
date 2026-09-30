@@ -55,64 +55,29 @@ Do not force `coretemp` on systems that use a different hardware sensor driver.
 
 ---
 
-## 4. Install the Proxmox Sensors sidecar
+## 4. Install the Sidecar
 
-The standard Proxmox API does not expose all of the hardware information used by the integration, so V5 uses the project sidecar service.
-
-Download the script:
+Run the following command on each PVE/PBS host where you want to install the Hardware Sidecar:
 
 ```bash
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
-chmod +x /usr/local/bin/pve-sensors-api.py
+bash <(curl -fsSL https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/install-sidecar.sh)
 ```
 
-Create the systemd service:
+During installation, you will be prompted to enter the IP address(es) of your Home Assistant instance(s). Multiple IP addresses can be entered separated by commas.
 
-```bash
-cat <<EOF > /etc/systemd/system/pve-sensors.service
-[Unit]
-Description=PVE Sensors API (User Mode)
-After=network.target
+Only the specified IP addresses will be allowed to access the Hardware Sidecar.
 
-[Service]
-ExecStart=/usr/bin/python3 /usr/local/bin/pve-sensors-api.py
-Restart=always
-RestartSec=10s
+> **Note:** If the Sidecar is already installed, run the same command again to update the existing installation and configure the authorized Home Assistant IP addresses.
 
-NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=full
+## 5. Check the Sidecar
 
-[Install]
-WantedBy=default.target
-EOF
-```
-
-Enable and start it:
-
-```bash
-systemctl daemon-reload
-systemctl enable --now pve-sensors.service
-```
-
----
-
-## 5. Verify the sidecar
-
-Check the service:
+Check the status of the Sidecar service:
 
 ```bash
 systemctl status pve-sensors.service
 ```
 
-Then open:
-
-```text
-http://YOUR_PROXMOX_IP:9000/sensors
-```
-
-If the endpoint returns JSON data, the sidecar is responding.
-
+The service should be shown as `active (running)`.
 ---
 
 ## 6. What V5 does when the sidecar fails

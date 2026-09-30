@@ -24,19 +24,33 @@ sensors
 ```
 Forceer `coretemp` niet op systemen met een andere driver.
 
-## 4. Sidecar installeren
+---
+
+## 4. De Sidecar installeren
+
+Voer de volgende opdracht uit op elke PVE/PBS-host waarop je de Hardware Sidecar wilt installeren:
+
 ```bash
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
-chmod +x /usr/local/bin/pve-sensors-api.py
-```
-Maak `/etc/systemd/system/pve-sensors.service` met `ExecStart=/usr/bin/python3 /usr/local/bin/pve-sensors-api.py`, `Restart=always`, `RestartSec=10s`, `NoNewPrivileges=yes`, `PrivateTmp=yes` en `ProtectSystem=full`, en activeer daarna:
-```bash
-systemctl daemon-reload
-systemctl enable --now pve-sensors.service
+bash <(curl -fsSL https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/install-sidecar.sh)
 ```
 
-## 5. Controleren
-`systemctl status pve-sensors.service` en daarna `http://JOUW_PROXMOX_IP:9000/sensors`. JSON bevestigt dat de sidecar reageert.
+Tijdens de installatie wordt je gevraagd om het IP-adres of de IP-adressen van je Home Assistant-instantie(s) in te voeren. Meerdere IP-adressen kunnen worden ingevoerd, gescheiden door komma's.
+
+Alleen de opgegeven IP-adressen krijgen toegang tot de Hardware Sidecar.
+
+> **Opmerking:** Als de Sidecar al is geïnstalleerd, voer dan dezelfde opdracht opnieuw uit om de bestaande installatie bij te werken en de toegestane Home Assistant-IP-adressen te configureren.
+
+## 5. De Sidecar controleren
+
+Controleer de status van de Sidecar-service:
+
+```bash
+systemctl status pve-sensors.service
+```
+
+De service zou als `active (running)` moeten worden weergegeven.
+
+---
 
 ## 6. Bij storing
 V5 bewaart waar mogelijk de laatste geldige hardwarewaarden. **Sidecar Status** toont Memory, Mounts, Sensors en SMART als `ok`, `degraded`, `error` of `unknown`.

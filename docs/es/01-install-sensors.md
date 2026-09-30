@@ -55,64 +55,29 @@ No fuerces `coretemp` en sistemas que utilicen otro controlador de sensores de h
 
 ---
 
-## 4. Instalar el sidecar Proxmox Sensors
+## 4. Instalar el Sidecar
 
-La API estándar de Proxmox no expone toda la información de hardware utilizada por la integración, por lo que V5 utiliza el servicio sidecar del proyecto.
-
-Descarga el script:
+Ejecuta el siguiente comando en cada host PVE/PBS donde quieras instalar el Hardware Sidecar:
 
 ```bash
-wget https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/pve-sensors-api.py -O /usr/local/bin/pve-sensors-api.py
-chmod +x /usr/local/bin/pve-sensors-api.py
+bash <(curl -fsSL https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/scripts/install-sidecar.sh)
 ```
 
-Crea el servicio systemd:
+Durante la instalación, se te pedirá que introduzcas la dirección o direcciones IP de tus instancias de Home Assistant. Puedes introducir varias direcciones IP separadas por comas.
 
-```bash
-cat <<EOF > /etc/systemd/system/pve-sensors.service
-[Unit]
-Description=PVE Sensors API (User Mode)
-After=network.target
+Solo las direcciones IP especificadas podrán acceder al Hardware Sidecar.
 
-[Service]
-ExecStart=/usr/bin/python3 /usr/local/bin/pve-sensors-api.py
-Restart=always
-RestartSec=10s
+> **Nota:** Si el Sidecar ya está instalado, ejecuta de nuevo el mismo comando para actualizar la instalación existente y configurar las direcciones IP autorizadas de Home Assistant.
 
-NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=full
+## 5. Comprobar el Sidecar
 
-[Install]
-WantedBy=default.target
-EOF
-```
-
-Actívalo e inícialo:
-
-```bash
-systemctl daemon-reload
-systemctl enable --now pve-sensors.service
-```
-
----
-
-## 5. Verificar el sidecar
-
-Comprueba el servicio:
+Comprueba el estado del servicio Sidecar:
 
 ```bash
 systemctl status pve-sensors.service
 ```
 
-Después abre:
-
-```text
-http://IP_DE_TU_PROXMOX:9000/sensors
-```
-
-Si el endpoint devuelve datos JSON, el sidecar está respondiendo correctamente.
-
+El servicio debería aparecer como `active (running)`.
 ---
 
 ## 6. Qué hace V5 si falla el sidecar
