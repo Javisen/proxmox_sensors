@@ -1,0 +1,74 @@
+name: "💡 Feature Request"
+description: "Suggest a new feature or improvement for Proxmox Extended Sensors"
+title: "[Feature Request] "
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Help shape Proxmox Extended Sensors
+
+        Thanks for taking the time to share your idea!
+
+        Community suggestions are reviewed and may be considered for future development roadmaps. Please describe what you would like to see and, most importantly, how it would be useful to you or other users.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Feature area"
+      description: "Which part of Proxmox Extended Sensors does your suggestion relate to?"
+      options:
+        - "PVE"
+        - "PBS"
+        - "Cluster"
+        - "PDM"
+        - "Dashboard"
+        - "Website / Documentation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: "What would you like to see?"
+      description: "Describe the new feature or improvement you would like to see."
+      placeholder: "Tell us about your idea..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "What problem would this solve?"
+      description: "Explain the use case, limitation, or problem this feature would help solve."
+      placeholder: "Why would this feature be useful? What are you currently unable to do?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "How would you like it to work?"
+      description: "If you have an idea of how the feature could work, describe it here."
+      placeholder: "Describe the behavior or workflow you have in mind..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "Additional context"
+      description: "Add screenshots, examples, links, references, hardware details, or any other information that may help us understand the suggestion."
+      placeholder: "Anything else that could help us evaluate the idea..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: "Existing requests"
+      description: "Please check existing issues before submitting a new request."
+      options:
+        - label: "I have searched the existing issues and could not find an equivalent feature request."
+          required: true
