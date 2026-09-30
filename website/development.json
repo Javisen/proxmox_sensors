@@ -25,6 +25,16 @@
       "progress": null,
       "title": "Corosync QDevice Monitoring",
       "message": "Explore native PVE API monitoring for Corosync quorum and QDevice status in the CLUSTER module, including node availability and degraded QDevice connectivity."
+      "suggested_by": "PetziAt"
+    }
+    {
+      "id": "vm-disk-usage",
+      "active": true,
+      "status": "study",
+      "progress": null,
+      "title": "VM Disk Usage",
+      "message": "Explore optional VM filesystem usage monitoring through the QEMU Guest Agent, providing disk usage metrics for compatible VMs when explicitly enabled by the user."
+      "suggested_by": "cyberthom42"
     }
   ]
 }
