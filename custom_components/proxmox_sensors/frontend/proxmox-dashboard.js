@@ -5,10 +5,31 @@ const TITLES = {pve: "PVE", pbs: "PBS", cluster: "Cluster"};
 const ICONS = {pve: "mdi:server", pbs: "mdi:backup-restore", cluster: "mdi:server-network"};
 const HEALTH_TILES = new Set(["cpu", "memory", "swap", "rootfs", "load", "iowait", "ksm", "score",
   "cpu_usage", "ram_usage", "ram_total", "ram_used", "ram_free", "temperature"]);
-// `background` is a native Lovelace view property. HA's hui-root applies it to
-// hui-view-background for the active view, so it cannot leak to app chrome or
-// unrelated dashboards. Card Mod remains responsible for card-level styling.
-const DASHBOARD_BACKGROUND = "#0b1216";
+
+// Theme-aware palette. All colours derive from the active Home Assistant theme,
+// so the dashboard follows each device's light/dark setting. Tints are mixed
+// from --primary-text-color, which inverts with the theme. The view background
+// is left to the theme. Only the brand accent and storage bar stay fixed.
+const ACCENT = "#ef7d00";
+const STORAGE_BAR = "#4193ef";
+const tint = pct => `color-mix(in srgb, var(--primary-text-color) ${pct}%, transparent)`;
+const SURFACE = tint(3);
+const HOVER = tint(7);
+const NEUTRAL_BADGE = tint(8);
+const TRACK = tint(12);
+const HOVER_BORDER = tint(35);
+const DIVIDER = "var(--divider-color)";
+const TEXT = "var(--primary-text-color)";
+const TEXT_MUTED = "var(--secondary-text-color)";
+const semanticTint = (name, pct) => `color-mix(in srgb, var(--${name}-color) ${pct}%, transparent)`;
+
+// Semantic state keys. HA Markdown only admits them as <font color> attribute
+// values, where CSS variables do not resolve. The keys stay hex tokens that the
+// CSS below matches and maps onto the theme's semantic colours.
+const STATE_OK = "#4cc653";
+const STATE_WARN = "#ffca28";
+const STATE_ERROR = "#ef5350";
+const STATE_UNKNOWN = "#a6b0b9";
 
 function options(config) {
   const selected = config.dashboards;
@@ -30,10 +51,6 @@ function label(ref) {
 function styled(card, layout, variant = "normal_card") {
   const css = layout.style?.[variant]?.css;
   return css ? {...card, card_mod: {style: css}} : card;
-}
-
-function darkView(view) {
-  return {...view, background: DASHBOARD_BACKGROUND};
 }
 
 function resourceCards(resource, block, layout, opts) {
@@ -102,57 +119,60 @@ function resourceTitle(resource) {
 // HA Markdown strips class, style and data-* attributes. All presentation
 // selectors below use admitted HTML structure, a/abbr title, and font color.
 // Dynamic CSS belongs to Card Mod's template, never inline Markdown styles.
-const PVE_CSS = `ha-card { background: #10191e; color: #fff; border: 1px solid #303b42;
-  border-top: 4px solid #ef7d00; border-radius: 15px; box-shadow: none;
-  --primary-text-color: #fff; --secondary-text-color: #b7c2cc; }
+const PVE_CSS = `ha-card { border: 1px solid ${DIVIDER};
+  border-top: 4px solid ${ACCENT}; border-radius: 15px; box-shadow: none; }
   ha-markdown { padding: 0 !important; }`;
 const PVE_MARKDOWN_CSS = `:host { padding: 0 !important; }
   * { box-sizing: border-box; }
   section { padding: 14px; min-height: 240px; }
   section > header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-  h2 { font: inherit; font-weight: 600; margin: 0; color: #fff; }
+  h2 { font: inherit; font-weight: 600; margin: 0; color: ${TEXT}; }
   ha-icon { --mdc-icon-size: 24px; flex: none; }
-  section > header > ha-icon:first-child, header > div > ha-icon { color: #ef7d00; }
-  ha-icon[icon="mdi:chevron-right"] { margin-left: auto; color: #b7c2cc; --mdc-icon-size: 18px; }
+  section > header > ha-icon:first-child, header > div > ha-icon { color: ${ACCENT}; }
+  ha-icon[icon="mdi:chevron-right"] { margin-left: auto; color: ${TEXT_MUTED}; --mdc-icon-size: 18px; }
   dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); gap: 10px; margin: 0; }
-  dl > div { border: 1px solid #303b42; border-radius: 7px; background: #151f25;
+  dl > div { border: 1px solid ${DIVIDER}; border-radius: 7px; background: ${SURFACE};
     display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 14px 6px; min-width: 0; }
-  dt { color: #cbd5df; text-align: center; overflow-wrap: anywhere; }
+  dt { color: ${TEXT_MUTED}; text-align: center; overflow-wrap: anywhere; }
   dd { margin: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  dd strong { font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
-  dd > ha-icon { color: #ef7d00; --mdc-icon-size: 30px; }
+  dd strong { font-weight: 600; color: ${TEXT}; font-variant-numeric: tabular-nums; }
+  dd > ha-icon { color: ${ACCENT}; --mdc-icon-size: 30px; }
   figure { display: grid; place-items: center; width: 100%; max-width: 88px; aspect-ratio: 1; position: relative; margin: 0; }
   figure::before { content: ''; position: absolute; inset: 0; border-radius: 50%;
-    background: conic-gradient(from 225deg, #4cc653 0deg var(--fill, 0deg), #303b42 var(--fill, 0deg) 270deg, transparent 270deg);
+    background: conic-gradient(from 225deg, var(--success-color) 0deg var(--fill, 0deg), ${DIVIDER} var(--fill, 0deg) 270deg, transparent 270deg);
     mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 0); }
   figure strong { text-align: center; overflow-wrap: anywhere; }
   nav { display: flex; flex-direction: column; gap: 5px; }
   nav > :is(a, article) { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center;
-    gap: 10px; min-height: 42px; padding: 8px; border: 1px solid #2c373e; border-radius: 8px;
-    color: #dbe3eb; background: #101a20; text-decoration: none; }
-  nav > a:hover { background: #1b2931; border-color: #697b88; }
-  nav > a:focus-visible { outline: 2px solid #ef7d00; outline-offset: 2px; }
-  nav > :is(a, article) > ha-icon { color: #ef7d00; --mdc-icon-size: 18px; }
+    gap: 10px; min-height: 42px; padding: 8px; border: 1px solid ${DIVIDER}; border-radius: 8px;
+    color: ${TEXT}; background: ${SURFACE}; text-decoration: none; }
+  nav > a:hover { background: ${HOVER}; border-color: ${HOVER_BORDER}; }
+  nav > a:focus-visible { outline: 2px solid ${ACCENT}; outline-offset: 2px; }
+  nav > :is(a, article) > ha-icon { color: ${ACCENT}; --mdc-icon-size: 18px; }
   nav span { min-width: 0; overflow-wrap: anywhere; }
   nav > article > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
   a[title="Storage"] { grid-template-columns: 20px minmax(65px, 1fr) minmax(50px, 1fr) auto 16px; }
-  a[title="Storage"] > u { background: #243037; border-radius: 8px; height: 12px; overflow: hidden; text-decoration: none; }
-  a[title="Storage"] > u::before { content: ''; display: block; height: 100%; width: var(--usage, 0%); background: #4193ef; border-radius: inherit; }
+  a[title="Storage"] > u { background: ${TRACK}; border-radius: 8px; height: 12px; overflow: hidden; text-decoration: none; }
+  a[title="Storage"] > u::before { content: ''; display: block; height: 100%; width: var(--usage, 0%); background: ${STORAGE_BAR}; border-radius: inherit; }
   a[title="Guest"] { grid-template-columns: 14px auto minmax(0, 1fr) auto 16px; }
   a[title="Guest"] > span:last-of-type { display: flex; gap: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; }
   nav > :is(a[title="Replication"], article:has(> abbr)) { grid-template-columns: 14px minmax(0, 1fr) auto 16px; }
   abbr { text-decoration: none; border: 0; }
+  font[color="${STATE_OK}"] { color: var(--success-color); }
+  font[color="${STATE_WARN}"] { color: var(--warning-color); }
+  font[color="${STATE_ERROR}"] { color: var(--error-color); }
+  font[color="${STATE_UNKNOWN}"] { color: ${TEXT_MUTED}; }
   font > i { width: 12px; height: 12px; border-radius: 50%; background: currentColor; display: inline-block; }
-  mark { display: inline-flex; align-items: center; border-radius: 9px; padding: 10px 14px; background: #253038; }
+  mark { display: inline-flex; align-items: center; border-radius: 9px; padding: 10px 14px; background: ${NEUTRAL_BADGE}; color: ${TEXT}; }
   mark > font { display: inline-flex; align-items: center; gap: 8px; }
-  mark:has(font[color="#4cc653"]) { background: #132d23; border: 1px solid #29513a; }
-  mark:has(font[color="#ef5350"]) { background: #351b20; border: 1px solid #66333b; }
+  mark:has(font[color="${STATE_OK}"]) { background: ${semanticTint("success", 15)}; border: 1px solid ${semanticTint("success", 40)}; }
+  mark:has(font[color="${STATE_ERROR}"]) { background: ${semanticTint("error", 15)}; border: 1px solid ${semanticTint("error", 40)}; }
   ha-markdown-element > header { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; min-height: 92px; padding: 16px 20px; }
   ha-markdown-element > header > div { display: flex; align-items: center; gap: 14px; min-width: 0; }
-  header > div > strong { font-weight: 600; color: #fff; }
+  header > div > strong { font-weight: 600; color: ${TEXT}; }
   aside { margin-left: auto; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
-  aside > div { display: flex; flex-direction: column; gap: 6px; border-left: 1px solid #28343b; padding-left: 16px; }
-  aside > div > span { color: #b7c2cc; }
+  aside > div { display: flex; flex-direction: column; gap: 6px; border-left: 1px solid ${DIVIDER}; padding-left: 16px; }
+  aside > div > span { color: ${TEXT_MUTED}; }
   header img { width: 56px; height: auto; object-fit: contain; }
   @media (max-width: 600px) { section { min-height: 0; } aside { margin-left: 0; gap: 12px; }
     a[title="Guest"], a[title="Storage"] { gap: 6px; } }`;
@@ -169,7 +189,7 @@ const percent = ref => `{% set n = ${expression(ref)} %}{% if is_number(n) %}{{ 
 const text = input => `{{ ${JSON.stringify(String(input))} | e }}`;
 const icon = name => `<ha-icon icon="${name}"></ha-icon>`;
 const chevron = icon('mdi:chevron-right');
-const semanticState = ref => `{% set raw = ${ref ? expression(ref) : 'none'} %}{% set s = (raw if raw is not none else '—') | string %}{% set color = '#4cc653' if s | lower in ['online','running','ok','healthy'] else '#ffca28' if s | lower in ['warning','degraded'] else '#ef5350' if s | lower in ['error','critical','offline','faulted','failed'] else '#a6b0b9' %}`;
+const semanticState = ref => `{% set raw = ${ref ? expression(ref) : 'none'} %}{% set s = (raw if raw is not none else '—') | string %}{% set color = '${STATE_OK}' if s | lower in ['online','running','ok','healthy'] else '${STATE_WARN}' if s | lower in ['warning','degraded'] else '${STATE_ERROR}' if s | lower in ['error','critical','offline','faulted','failed'] else '${STATE_UNKNOWN}' %}`;
 const statusDot = '<abbr title="{{ s | e }}"><font color="{{ color }}"><i></i></font></abbr>';
 function statusValue(ref, pill = false) {
   const body = `<font color="{{ color }}">${pill ? '<i></i> ' : ''}{{ s | e }}</font>`;
@@ -181,7 +201,7 @@ function pveMarkdown(title, content, refs = [], headingIcon = 'mdi:information-o
   const heading = title ? `<header>${icon(headingIcon)}<h2>${title}</h2>${chevron}</header>` : '';
   return {type: 'markdown', content: title ? `<section>${heading}${content}</section>` : content,
     entity_id: [...new Set(refs.map(ref => ref.entity_id))], grid_options: {columns: 12, rows: 'auto'},
-    card_mod: {style: {'.': title ? PVE_CSS : PVE_CSS.replace('border-top: 4px solid #ef7d00;', ''),
+    card_mod: {style: {'.': title ? PVE_CSS : PVE_CSS.replace(`border-top: 4px solid ${ACCENT};`, ''),
       'ha-markdown$': PVE_MARKDOWN_CSS + dynamicCSS}}};
 }
 function rowsCard(title, rows, refs, headingIcon, dynamicCSS = '') {
@@ -213,7 +233,7 @@ function pveVersion(ref) {
 }
 const PVE_CLUSTER_HEADER_CSS = `ha-markdown-element > header > div:nth-of-type(2) { margin-left: auto; min-width: 110px;
   flex-direction: column; align-items: center; gap: 6px; }
-  ha-markdown-element > header > div:nth-of-type(2) > span { color: #b7c2cc; }
+  ha-markdown-element > header > div:nth-of-type(2) > span { color: ${TEXT_MUTED}; }
   ha-markdown-element > header > aside { margin-left: 0; }
   @media (max-width: 600px) { ha-markdown-element > header > div:nth-of-type(2) { margin-left: 0; align-items: flex-start; } }`;
 function buildPveNodeHeader(group) {
@@ -259,8 +279,8 @@ if (window.addEventListener && !window[moreInfoListener]) {
 const miniPanelLink = (ref, content = '') => `<a title="PVE more-info" href="#proxmox-more-info=${encodeURIComponent(ref.entity_id)}">${content}</a>`;
 const MINI_PANEL_CSS = `dl > div { position: relative; }
   dl > div a[title="PVE more-info"] { position: absolute; inset: 0; z-index: 1; border-radius: 7px; cursor: pointer; }
-  dl > div a[title="PVE more-info"]:hover { background: rgba(255,255,255,0.035); }
-  dl > div a[title="PVE more-info"]:focus-visible { outline: 2px solid #b7c2cc; outline-offset: 2px; }`;
+  dl > div a[title="PVE more-info"]:hover { background: ${tint(5)}; }
+  dl > div a[title="PVE more-info"]:focus-visible { outline: 2px solid ${TEXT_MUTED}; outline-offset: 2px; }`;
 const PVE_TOP_CARD_CSS = `@media (min-width: 900px) { section { height: 360px; min-height: 360px; } }`;
 const PVE_CENTERED_TOP_CARD_CSS = `@media (min-width: 900px) {
   section { display: flex; flex-direction: column; }
@@ -371,7 +391,7 @@ function buildNodeInfoBlock(group) {
     }
   }
   return rowsCard('Node Info', rows, refs, 'mdi:information-outline', MORE_INFO_ROW_CSS
-    + 'nav > :is(a, article) > ha-icon { color: #ef7d00; }' + PVE_TOP_CARD_CSS);
+    + `nav > :is(a, article) > ha-icon { color: ${ACCENT}; }` + PVE_TOP_CARD_CSS);
 }
 const MORE_INFO_ROW_CSS = 'nav > a[title="PVE more-info"] { cursor: pointer; } nav > a[title="PVE more-info"] > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }';
 const moreInfoRow = miniPanelLink;
@@ -425,14 +445,14 @@ function buildPveNodeView(group, opts, basePath) {
     if (cards.length) sections.push({type: 'grid', cards});
   }
 
-  return darkView({
+  return {
     title: group.node || group.entry_id,
     path: nodeViewPath(group),
     icon: ICONS.pve,
     type: 'sections',
     max_columns: 3,
     sections
-  });
+  };
 }
 
 function guestDetailCards(resource, block, layout, opts, hass) {
@@ -459,7 +479,7 @@ function guestDetailCards(resource, block, layout, opts, hass) {
 }
 
 // PBS uses the shared presentation helpers, but only PBS model metrics.
-const PBS_ROW_CSS = MORE_INFO_ROW_CSS + 'nav > a > ha-icon { color: #ef7d00; } h3 { font: inherit; color: #b7c2cc; margin: 16px 0 8px; overflow-wrap: anywhere; }';
+const PBS_ROW_CSS = MORE_INFO_ROW_CSS + `nav > a > ha-icon { color: ${ACCENT}; } h3 { font: inherit; color: ${TEXT_MUTED}; margin: 16px 0 8px; overflow-wrap: anywhere; }`;
 function buildPbsHeader(group) {
   const refs = [...blockRefs(group, 'header'), ...blockRefs(group, 'server_health')].map(item => item.ref);
   const selected = [], facts = [];
@@ -501,7 +521,7 @@ function buildPbsActions(group, opts) {
     }
   }
   return entities.length ? {type: 'entities', title: 'Actions', show_header_toggle: false, entities,
-    card_mod: {style: PVE_CSS + 'ha-card { --card-mod-icon-color: #ef7d00; }'}} : null;
+    card_mod: {style: PVE_CSS + `ha-card { --card-mod-icon-color: ${ACCENT}; }`}} : null;
 }
 function buildPbsSections(group, opts) {
   const sections = [{type: 'grid', column_span: 3, cards: [buildPbsHeader(group)]}];
@@ -530,7 +550,7 @@ function buildClusterHeader(group) {
   const ref = clusterRef(group, 'header', 'status');
   const status = ref ? moreInfoRow(ref, `<div><span>Status</span><strong>${value(ref)}</strong></div>`) : '';
   return {...pveMarkdown(null, `<header><div><img src="/proxmox_sensors/dashboard/logo_small.png" alt="Proxmox Extended Sensors" width="56">${icon('mdi:server-network')}<strong>${text(group.cluster_id)} · Proxmox Cluster</strong></div><aside>${status}</aside></header>`, ref ? [ref] : [], 'mdi:server-network',
-    'aside > a { color: inherit; text-decoration: none; cursor: pointer; } aside > a > div { display: flex; flex-direction: column; gap: 6px; } aside span { color: #b7c2cc; }'),
+    `aside > a { color: inherit; text-decoration: none; cursor: pointer; } aside > a > div { display: flex; flex-direction: column; gap: 6px; } aside span { color: ${TEXT_MUTED}; }`),
     grid_options: {columns: 'full', rows: 'auto'}};
 }
 function clusterMetricCard(group, title, glyph, fields, detailRows = [], detailRefs = []) {
@@ -542,7 +562,7 @@ function clusterMetricCard(group, title, glyph, fields, detailRows = [], detailR
     rows.push(moreInfoRow(ref, `${icon(rowIcon || glyph)}<span>${name}</span><span>${withUnit(ref)}</span>`));
   }
   return rowsCard(title, [...rows, ...detailRows], [...refs, ...detailRefs], glyph,
-    MORE_INFO_ROW_CSS + 'nav > a > ha-icon { color: #ef7d00; }');
+    MORE_INFO_ROW_CSS + `nav > a > ha-icon { color: ${ACCENT}; }`);
 }
 function clusterSyncTime(ref, hass) {
   const state = hass.states?.[ref.entity_id];
@@ -613,14 +633,14 @@ export function generateDashboard(payload, config = {}, basePath = null, hass = 
     for (const group of groups) {
       if (family === 'pbs') {
         const sections = buildPbsSections(group, opts);
-        views.push(darkView({title: group.server_id || TITLES[family], path: `pbs-${encodePathPart(group.entry_id)}`,
-          icon: ICONS[family], type: "sections", max_columns: 3, sections}));
+        views.push({title: group.server_id || TITLES[family], path: `pbs-${encodePathPart(group.entry_id)}`,
+          icon: ICONS[family], type: "sections", max_columns: 3, sections});
         continue;
       }
       if (family === 'cluster') {
         const sections = buildClusterSections(group, hass);
-        views.push(darkView({title: group.cluster_id || TITLES[family], path: `cluster-${encodePathPart(group.entry_id)}`,
-          icon: ICONS[family], type: "sections", max_columns: 3, sections}));
+        views.push({title: group.cluster_id || TITLES[family], path: `cluster-${encodePathPart(group.entry_id)}`,
+          icon: ICONS[family], type: "sections", max_columns: 3, sections});
         continue;
       }
       const sections = [];
@@ -652,8 +672,8 @@ export function generateDashboard(payload, config = {}, basePath = null, hass = 
                   heading_style: "title"}, layout, "header_card"), ...replicationCards]});
             }
           }
-          subviews.set(path, darkView({title: resourceTitle(resource), path, type: "sections", subview: true,
-            back_path: `${basePath}/${mainPath}`, max_columns: 3, sections}));
+          subviews.set(path, {title: resourceTitle(resource), path, type: "sections", subview: true,
+            back_path: `${basePath}/${mainPath}`, max_columns: 3, sections});
           return [];
         });
         if (!cards.length) continue;
@@ -665,8 +685,8 @@ export function generateDashboard(payload, config = {}, basePath = null, hass = 
     }
   }
   // A valid native empty view provides feedback without inventing resource data.
-  if (!views.length) views.push(darkView({title: "Proxmox", path: "proxmox", type: "sections", sections: [
-    {type: "grid", cards: [{type: "markdown", content: "No representable Proxmox resources for the selected families."}]}]}));
+  if (!views.length) views.push({title: "Proxmox", path: "proxmox", type: "sections", sections: [
+    {type: "grid", cards: [{type: "markdown", content: "No representable Proxmox resources for the selected families."}]}]});
   return {title: "Proxmox Extended Sensors", views: [...views, ...subviews.values()]};
 }
 
