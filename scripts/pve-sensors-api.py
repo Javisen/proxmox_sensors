@@ -5,10 +5,55 @@ import subprocess
 import re
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import ipaddress
+
+CONFIG_PATH = "/etc/proxmox-sensors/sidecar.conf"
+
+
+def load_allowed_ips():
+    """Load and validate the allowed client IP list from the sidecar config."""
+    if not os.path.exists(CONFIG_PATH):
+        raise RuntimeError(f"Missing sidecar configuration: {CONFIG_PATH}")
+
+    allowed = []
+    with open(CONFIG_PATH, "r", encoding="utf-8") as config_file:
+        for raw_line in config_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if key.strip() == "ALLOWED_IPS":
+                for item in value.split(","):
+                    candidate = item.strip()
+                    if not candidate:
+                        continue
+                    allowed.append(str(ipaddress.ip_address(candidate)))
+
+    if not allowed:
+        raise RuntimeError("ALLOWED_IPS is missing or empty")
+
+    return frozenset(allowed)
+
+
+ALLOWED_IPS = load_allowed_ips()
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _client_is_allowed(self):
+        return self.client_address[0] in ALLOWED_IPS
+
+    def _send_forbidden(self):
+        payload = json.dumps({"error": "forbidden"})
+        self.send_response(403)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload.encode())))
+        self.end_headers()
+        self.wfile.write(payload.encode())
+
     def do_GET(self):
+        if not self._client_is_allowed():
+            self._send_forbidden()
+            return
         if self.path == "/sensors":
             self._handle_sensors()
         elif self.path == "/smart":
@@ -755,6 +800,7 @@ def main():
     port = 9000
     server = HTTPServer(("0.0.0.0", port), Handler)
     print(f"PVE Sensors API v2 started on port {port}")
+    print(f"Allowed client IPs: {', '.join(sorted(ALLOWED_IPS))}")
     print("Endpoints:")
     print(f"  GET /sensors         - lm-sensors data")
     print(f"  GET /smart           - Basic SMART data (fast)")
