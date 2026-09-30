@@ -5,10 +5,10 @@
     {
       "id": "pdm-module",
       "active": true,
-      "status": "study",
+      "status": "planned",
       "progress": null,
       "title": "Proxmox Datacenter Manager",
-      "message": "Explore PDM as a new module for centralized monitoring of PVE clusters, standalone PVE servers and PBS instances."
+      "message": "Add PDM as a new module for centralized monitoring of PVE clusters, standalone PVE servers and PBS instances."
     },
     {
       "id": "run-backup-jobs",
@@ -17,6 +17,14 @@
       "progress": null,
       "title": "Run Datacenter Backup Jobs",
       "message": "Run existing Proxmox VE Datacenter Backup Jobs directly from Home Assistant."
+    },
+    {
+      "id": "corosync-qdevice-monitoring",
+      "active": true,
+      "status": "study",
+      "progress": null,
+      "title": "Corosync QDevice Monitoring",
+      "message": "Explore native PVE API monitoring for Corosync quorum and QDevice status in the CLUSTER module, including node availability and degraded QDevice connectivity."
     }
   ]
 }
