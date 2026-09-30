@@ -1,0 +1,65 @@
+---
+import developmentSource from "../../../website/development.json";
+import { normalizeDevelopmentDocument } from "../../../scripts/project-development.mjs";
+import DocumentationHeader from "../../components/documentation/DocumentationHeader.astro";
+import RoadmapItem from "../../components/development/RoadmapItem.astro";
+import NavIcon from "../../components/NavIcon.astro";
+import AppLayout from "../../layouts/AppLayout.astro";
+import "../../styles/documentation.css";
+import "../../styles/development.css";
+
+const development = normalizeDevelopmentDocument(developmentSource);
+const activeItems = development.items.filter((item) => item.active);
+const normalizedReleaseStatus = development.releaseStatus.replaceAll("-", " ");
+const releaseStatusLabel = normalizedReleaseStatus.charAt(0).toUpperCase() + normalizedReleaseStatus.slice(1);
+const featureRequestUrl = "https://github.com/Javisen/proxmox_sensors/issues/new?template=feature_request.yml";
+---
+
+<AppLayout
+  title="Development"
+  description="Roadmap and community participation for upcoming Proxmox Extended Sensors releases."
+  hidePageHeader
+  contentClass="documentation-content development-content"
+>
+  <div class="documentation-shell development-shell">
+    <DocumentationHeader
+      title="Development"
+      section="Roadmap"
+      description="Follow the next Proxmox Extended Sensors release and see how planned work moves from study to completion."
+      showLanguageMenu={false}
+    />
+
+    <section class="development-release" aria-labelledby="development-release-title">
+      <div>
+        <p class="development-release__eyebrow">Upcoming release</p>
+        <h2 id="development-release-title">Proxmox Extended Sensors V{development.version}</h2>
+      </div>
+      <span class={`development-release__status development-release__status--${development.releaseStatus}`}>
+        <span aria-hidden="true"></span>
+        {releaseStatusLabel}
+      </span>
+    </section>
+
+    <section class="development-roadmap" aria-label={`Version ${development.version} roadmap`}>
+      {activeItems.length > 0
+        ? activeItems.map((item) => <RoadmapItem item={item} />)
+        : <p class="development-roadmap__empty">No active roadmap items are published for this release.</p>}
+    </section>
+
+    <section class="development-community" aria-labelledby="development-community-title">
+      <span class="development-community__icon"><NavIcon name="development" size={24} /></span>
+      <div>
+        <p>Community participation</p>
+        <h2 id="development-community-title">Help shape Proxmox Extended Sensors</h2>
+        <p class="development-community__message">
+          Have an idea for a new feature or improvement? Share it with us and help shape future releases.
+        </p>
+      </div>
+      <a href={featureRequestUrl} target="_blank" rel="noopener noreferrer">
+        <span>Suggest a feature</span>
+        <NavIcon name="external" size={16} />
+        <span class="visually-hidden"> (opens in a new tab)</span>
+      </a>
+    </section>
+  </div>
+</AppLayout>

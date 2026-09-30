@@ -109,6 +109,7 @@ export const homeDashboard = {
   quickLinks: [
     { label: "Installation", description: "Setup options", href: "/installation/", icon: "install" },
     { label: "Documentation", description: "Guides and reference", href: "/docs/", icon: "docs" },
+    { label: "Development", description: "V5.2.0 roadmap", href: "/development/", icon: "development" },
     { label: "PVE", description: "Proxmox VE section", href: "/pve/", icon: "server" },
     { label: "PBS", description: "Backup Server section", href: "/pbs/", icon: "backup" },
     { label: "Cluster", description: "Cluster section", href: "/cluster/", icon: "cluster" },

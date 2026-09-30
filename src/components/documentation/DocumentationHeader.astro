@@ -5,9 +5,10 @@ interface Props {
   title: string;
   description: string | string[];
   section?: string;
+  showLanguageMenu?: boolean;
 }
 
-const { title, description, section = "Documentation" } = Astro.props;
+const { title, description, section = "Documentation", showLanguageMenu = true } = Astro.props;
 const descriptionParagraphs = Array.isArray(description) ? description : [description];
 ---
 
@@ -20,5 +21,5 @@ const descriptionParagraphs = Array.isArray(description) ? description : [descri
       <p class="documentation-header__description">{paragraph}</p>
     ))}
   </div>
-  <LanguageMenu />
+  {showLanguageMenu && <LanguageMenu />}
 </header>

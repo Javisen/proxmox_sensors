@@ -1,0 +1,48 @@
+---
+import DevelopmentStatus from "./DevelopmentStatus.astro";
+import RoadmapPath from "./RoadmapPath.astro";
+
+interface Props {
+  item: {
+    id: string;
+    active: boolean;
+    status: "idea" | "study" | "planned" | "development" | "testing" | "completed" | "paused";
+    progress: number | null;
+    title: string;
+    message: string;
+  };
+}
+
+const { item } = Astro.props;
+const headingId = `development-${item.id}`;
+---
+
+<article class:list={["roadmap-item", `roadmap-item--${item.status}`]} aria-labelledby={headingId}>
+  <header class="roadmap-item__header">
+    <div>
+      <DevelopmentStatus status={item.status} />
+      <h2 id={headingId}>{item.title}</h2>
+    </div>
+    <span class="roadmap-item__id">{item.id}</span>
+  </header>
+  <p class="roadmap-item__message">{item.message}</p>
+  <RoadmapPath status={item.status} />
+  {item.progress !== null && (
+    <div class="roadmap-progress">
+      <div class="roadmap-progress__label">
+        <span>Development progress <span aria-hidden="true">—</span></span>
+        <strong>{item.progress}%</strong>
+      </div>
+      <div
+        class="roadmap-progress__track"
+        role="progressbar"
+        aria-label={`Development progress for ${item.title}`}
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={item.progress}
+      >
+        <span style={`width: ${item.progress}%`}></span>
+      </div>
+    </div>
+  )}
+</article>

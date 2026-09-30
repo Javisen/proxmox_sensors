@@ -1,0 +1,37 @@
+---
+interface Props {
+  status: "idea" | "study" | "planned" | "development" | "testing" | "completed" | "paused";
+}
+
+const { status } = Astro.props;
+const phases = ["Study", "Planned", "Development", "Testing", "Completed"];
+const phaseIndex = ["study", "planned", "development", "testing", "completed"].indexOf(status);
+const isOutsideDeliveryPath = status === "idea" || status === "paused";
+const pathDescription = status === "idea"
+  ? "Idea under consideration; no delivery phase has started."
+  : status === "paused"
+    ? "Delivery is paused; no current phase is asserted."
+    : `Current phase: ${phases[phaseIndex]}.`;
+---
+
+<div class:list={["roadmap-path", { "roadmap-path--inactive": isOutsideDeliveryPath }]}> 
+  <p class="visually-hidden">{pathDescription}</p>
+  <ol aria-hidden="true">
+    {phases.map((phase, index) => {
+      const state = isOutsideDeliveryPath
+        ? "upcoming"
+        : index < phaseIndex
+          ? "complete"
+          : index === phaseIndex
+            ? "current"
+            : "upcoming";
+      return (
+        <li class={`roadmap-path__phase roadmap-path__phase--${state}`}>
+          <span class="roadmap-path__marker">{state === "complete" ? "✓" : index + 1}</span>
+          <span>{phase}</span>
+        </li>
+      );
+    })}
+  </ol>
+  {isOutsideDeliveryPath && <p class="roadmap-path__note">{pathDescription}</p>}
+</div>

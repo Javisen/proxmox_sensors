@@ -5,6 +5,7 @@ export type NavigationIcon =
   | "cluster"
   | "dashboard"
   | "docs"
+  | "development"
   | "install"
   | "github";
 
@@ -22,6 +23,7 @@ export const navigationItems: NavigationItem[] = [
   { label: "Cluster", href: "/cluster/", icon: "cluster" },
   { label: "Dashboard", href: "/dashboard/", icon: "dashboard" },
   { label: "Documentation", href: "/docs/", icon: "docs" },
+  { label: "Development", href: "/development/", icon: "development" },
   { label: "Installation", href: "/installation/", icon: "install" },
   {
     label: "GitHub",

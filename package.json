@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "data:refresh": "node scripts/generate-project-snapshot.mjs",
-    "data:test": "node --test --test-isolation=none scripts/project-data.test.mjs scripts/project-notices.test.mjs",
+    "data:test": "node --test --test-isolation=none scripts/project-data.test.mjs scripts/project-notices.test.mjs scripts/project-development.test.mjs",
     "predev": "npm run data:refresh",
     "dev": "astro dev",
     "dev:notices": "node scripts/dev-notices-preview.mjs",

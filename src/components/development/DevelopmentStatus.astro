@@ -1,0 +1,30 @@
+---
+interface Props {
+  status: "idea" | "study" | "planned" | "development" | "testing" | "completed" | "paused";
+}
+
+const { status } = Astro.props;
+const labels = {
+  idea: "Idea",
+  study: "Study",
+  planned: "Planned",
+  development: "Development",
+  testing: "Testing",
+  completed: "Completed",
+  paused: "Paused",
+};
+const symbols = {
+  idea: "◇",
+  study: "◎",
+  planned: "▣",
+  development: "◆",
+  testing: "△",
+  completed: "✓",
+  paused: "Ⅱ",
+};
+---
+
+<span class:list={["development-status", `development-status--${status}`]}>
+  <span class="development-status__symbol" aria-hidden="true">{symbols[status]}</span>
+  {labels[status]}
+</span>
