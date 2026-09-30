@@ -28,6 +28,7 @@ from .logic.guest_selection import (
 from .logic.guest_identity import (
     guest_button_unique_id,
     guest_device_identifier,
+    legacy_identity_cluster,
     resolve_legacy_guest_identity,
 )
 from .logic.guest_identity_diagnostics import warn_ambiguous_guest
@@ -43,14 +44,20 @@ _LOGGER = logging.getLogger(__name__)
 GRACE_CYCLES = 3
 
 
-def _legacy_guest_identity_resolver(hass, entry):
+def _legacy_guest_identity_resolver(hass, entry, cluster_id=None):
     registry = er.async_get(hass)
     devices = dr.async_get(hass)
     rows = er.async_entries_for_config_entry(registry, entry.entry_id)
     device_rows = dr.async_entries_for_config_entry(devices, entry.entry_id)
+    sibling_rows = [
+        row
+        for sibling in hass.config_entries.async_entries(DOMAIN)
+        if sibling.entry_id != entry.entry_id
+        for row in er.async_entries_for_config_entry(registry, sibling.entry_id)
+    ] if cluster_id else []
     def resolve(kind, vmid, node):
         identity = resolve_legacy_guest_identity(
-            kind, vmid, node, rows, device_rows
+            kind, vmid, node, rows, device_rows, sibling_rows, cluster_id
         )
         if identity.ambiguous:
             warn_ambiguous_guest(
@@ -61,14 +68,14 @@ def _legacy_guest_identity_resolver(hass, entry):
     return resolve
 
 
-def _guest_identity_values(identity_context, resolver, kind, vmid, node):
+def _guest_identity_values(identity_context, resolver, kind, vmid, node, cluster_id=None):
     if identity_context and identity_context.use_scoped_identity:
         return node, None, False
     identity = resolver(kind, vmid, node) if resolver else None
     if identity and identity.ambiguous:
         return node, None, True
     return (identity.node if identity and identity.node else node,
-            identity.cluster_id if identity else None, False)
+            legacy_identity_cluster(identity, cluster_id), False)
 
 
 _CT_COMMANDS = [
@@ -233,7 +240,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     cluster_id = resolve_cluster_id(hass, c_data)
     identity_context = guest_identity_context(entry, cluster_id)
     resolver_factory = globals().get("_legacy_guest_identity_resolver")
-    legacy_identity_resolver = resolver_factory(hass, entry) if resolver_factory else None
+    legacy_identity_resolver = resolver_factory(hass, entry, cluster_id) if resolver_factory else None
     effective_selected_vms, effective_selected_cts = get_effective_guest_selections(
         hass, entry, cluster_id, selected_vms, selected_cts
     )
@@ -287,7 +294,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                     effective_selected_cts, ct_node, ct_id, ct_key
                 ):
                     identity_node, identity_cluster, ambiguous = _guest_identity_values(
-                        identity_context, legacy_identity_resolver, "ct", ct_id, ct_node
+                        identity_context, legacy_identity_resolver, "ct", ct_id, ct_node, cluster_id
                     )
                     if ambiguous:
                         continue
@@ -321,7 +328,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                     effective_selected_vms, vm_node, vm_id, vm_key
                 ):
                     identity_node, identity_cluster, ambiguous = _guest_identity_values(
-                        identity_context, legacy_identity_resolver, "vm", vm_id, vm_node
+                        identity_context, legacy_identity_resolver, "vm", vm_id, vm_node, cluster_id
                     )
                     if ambiguous:
                         continue
@@ -482,7 +489,7 @@ def _build_guest_button_groups(
             if not matches_selected_guest(selected_cts, ct_node, ct_id, ct_key):
                 continue
             identity_node, identity_cluster, ambiguous = _guest_identity_values(
-                identity_context, legacy_identity_resolver, "ct", ct_id, ct_node
+                identity_context, legacy_identity_resolver, "ct", ct_id, ct_node, cluster_id
             )
             if ambiguous:
                 continue
@@ -515,7 +522,7 @@ def _build_guest_button_groups(
             if not matches_selected_guest(selected_vms, vm_node, vm_id, vm_key):
                 continue
             identity_node, identity_cluster, ambiguous = _guest_identity_values(
-                identity_context, legacy_identity_resolver, "vm", vm_id, vm_node
+                identity_context, legacy_identity_resolver, "vm", vm_id, vm_node, cluster_id
             )
             if ambiguous:
                 continue
@@ -602,7 +609,7 @@ def _setup_guest_button_reconciliation(
         identity_context = guest_identity_context(entry, cluster_id)
         ent_reg = er.async_get(hass)
         resolver_factory = globals().get("_legacy_guest_identity_resolver")
-        legacy_identity_resolver = resolver_factory(hass, entry) if resolver_factory else None
+        legacy_identity_resolver = resolver_factory(hass, entry, cluster_id) if resolver_factory else None
 
         if not cluster_id and not identity_context.use_scoped_identity:
             return
