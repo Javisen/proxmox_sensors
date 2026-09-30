@@ -1,11 +1,11 @@
 {
   "notices": [
     {
-      "id": "release-5-2-0-development",
+      "id": "v5-2-0-pdm-module",
       "active": true,
       "level": "info",
-      "title": "Development of V5.2.0 begins",
-      "message": "The V5.2.0 development roadmap is currently being prepared."
+      "title": "Proxmox Datacenter Manager is coming to V5.2.0",
+      "message": "V5.2.0 will introduce PDM as a new module alongside PVE, PBS and CLUSTER, providing centralized monitoring of Proxmox infrastructure through a single Datacenter Manager connection."
     }
   ]
 }
