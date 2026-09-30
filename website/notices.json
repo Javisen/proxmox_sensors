@@ -1,9 +1,9 @@
 {
   "notices": [
     {
-      "id": "release-5-1-1-coming-soon",
+      "id": "release-5-2-0 development",
       "active": true,
-      "level": "warning",
+      "level": "development",
       "title": "Development of V5.2.0 begins",
       "message": "The V5.2.0 development roadmap is currently being prepared."
     }
