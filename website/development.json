@@ -29,10 +29,10 @@
     {
       "id": "vm-disk-usage",
       "active": true,
-      "status": "study",
+      "status": "planned",
       "progress": null,
       "title": "VM Disk Usage",
-      "message": "Explore optional VM filesystem usage monitoring through the QEMU Guest Agent, providing disk usage metrics for compatible VMs when explicitly enabled by the user. Suggested by cyberthom42"
+      "message": "VM filesystem usage has been accepted for V5.2.0 and will be implemented as part of a new optional Guest Agent Metrics capability, disabled by default and enabled through integration Options. Additional useful metrics available through the QEMU Guest Agent will continue to be evaluated. Suggested by cyberthom42."
     }
   ]
 }
