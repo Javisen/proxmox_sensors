@@ -133,6 +133,10 @@
   --status-accent: var(--status-error);
 }
 
+.roadmap-item--cancelled {
+  --status-accent: var(--status-error);
+}
+
 .roadmap-item__header {
   display: flex;
   gap: 1rem;
@@ -184,6 +188,21 @@
   border: 1px solid var(--border-default);
   border-radius: var(--radius-small);
   background: color-mix(in srgb, var(--bg-tile) 84%, transparent);
+}
+
+.roadmap-path--cancelled {
+  display: grid;
+  min-height: 4.2rem;
+  place-items: center;
+}
+
+.roadmap-path__cancelled {
+  margin: 0;
+  color: var(--status-accent);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 760;
+  line-height: 1.25;
+  text-transform: uppercase;
 }
 
 .roadmap-path ol {

@@ -6,6 +6,7 @@ export const DEVELOPMENT_STATUSES = Object.freeze([
   "testing",
   "completed",
   "paused",
+  "cancelled",
 ]);
 
 export const RELEASE_STATUSES = Object.freeze([

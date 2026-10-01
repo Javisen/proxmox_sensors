@@ -1,6 +1,6 @@
 ---
 interface Props {
-  status: "idea" | "study" | "planned" | "development" | "testing" | "completed" | "paused";
+  status: "idea" | "study" | "planned" | "development" | "testing" | "completed" | "paused" | "cancelled";
 }
 
 const { status } = Astro.props;
@@ -12,6 +12,7 @@ const labels = {
   testing: "Testing",
   completed: "Completed",
   paused: "Paused",
+  cancelled: "Cancelled",
 };
 const symbols = {
   idea: "◇",
@@ -21,6 +22,7 @@ const symbols = {
   testing: "△",
   completed: "✓",
   paused: "Ⅱ",
+  cancelled: "×",
 };
 ---
 
