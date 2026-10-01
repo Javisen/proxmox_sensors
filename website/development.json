@@ -13,10 +13,10 @@
     {
       "id": "run-backup-jobs",
       "active": true,
-      "status": "planned",
+      "status": "cancelled",
       "progress": null,
       "title": "Run Datacenter Backup Jobs",
-      "message": "Run existing Proxmox VE Datacenter Backup Jobs directly from Home Assistant."
+      "message": "Cancelled after technical review. This feature would duplicate functionality already available through the integration's Single Backup and Massive Backup actions, which can be used in Home Assistant automations to achieve the same result without adding unnecessary complexity and maintenance."
     },
     {
       "id": "corosync-qdevice-monitoring",
