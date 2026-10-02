@@ -21,10 +21,10 @@
     {
       "id": "corosync-qdevice-monitoring",
       "active": true,
-      "status": "planned",
+      "status": "development",
       "progress": null,
       "title": "Corosync QDevice Monitoring",
-      "message": "Explore native PVE API monitoring for Corosync quorum and QDevice status in the CLUSTER module, including node availability and degraded QDevice connectivity. Suggested by PetziAt"
+      "message": "Develop native Corosync QDevice monitoring for the CLUSTER module, including QDevice connection state, QNetd information and automatic detection of connectivity loss and recovery. Suggested by PetziAt"
     },
     {
       "id": "vm-disk-usage",
