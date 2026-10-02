@@ -153,7 +153,7 @@ The integration does not overwrite a dashboard that you have taken control of.
 <summary><b>PVE</b></summary>
 
 <br>
-<img src="https://github.com/Javisen/test_javisen/raw/refs/heads/main/img/Dashb_Node.png" alt="PVE dashboard" width="100%">
+<img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/Dashb_Node.png" alt="PVE dashboard" width="100%">
 
 </details>
 
@@ -161,7 +161,7 @@ The integration does not overwrite a dashboard that you have taken control of.
 <summary><b>PBS</b></summary>
 
 <br>
-<img src="https://github.com/Javisen/test_javisen/raw/refs/heads/main/img/Dashb_PBS.png" alt="PBS dashboard" width="100%">
+<img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/Dashb_PBS.png" alt="PBS dashboard" width="100%">
 
 </details>
 
@@ -169,7 +169,7 @@ The integration does not overwrite a dashboard that you have taken control of.
 <summary><b>CLUSTER</b></summary>
 
 <br>
-<img src="https://github.com/Javisen/test_javisen/raw/refs/heads/main/img/Dashb_Cluster.png" alt="CLUSTER dashboard" width="100%">
+<img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/Dashb_Cluster.png" alt="CLUSTER dashboard" width="100%">
 
 </details>
 
