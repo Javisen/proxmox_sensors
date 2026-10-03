@@ -22,7 +22,7 @@ from ..logic.guest_keys import (
 )
 from ..logic.guest_selection import get_cycle_guest_selections, allow_excluded_cluster_guest_cleanup
 from ..logic.cluster_scope import cluster_guest_identity_context, guest_identity_context, scoped_migration_target
-from ..logic.guest_identity import resolve_legacy_guest_identity
+from ..logic.guest_identity import legacy_identity_cluster, resolve_legacy_guest_identity
 from ..logic.guest_identity_diagnostics import warn_ambiguous_guest
 from ..logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
@@ -114,14 +114,20 @@ _LOGGER = logging.getLogger(__name__)
 
 
 
-def _legacy_guest_identity_resolver(hass, entry):
+def _legacy_guest_identity_resolver(hass, entry, cluster_id=None):
     registry = er.async_get(hass)
     devices = dr.async_get(hass)
     rows = er.async_entries_for_config_entry(registry, entry.entry_id)
     device_rows = dr.async_entries_for_config_entry(devices, entry.entry_id)
+    sibling_rows = [
+        row
+        for sibling in hass.config_entries.async_entries(DOMAIN)
+        if sibling.entry_id != entry.entry_id
+        for row in er.async_entries_for_config_entry(registry, sibling.entry_id)
+    ] if cluster_id else []
     def resolve(kind, vmid, node):
         identity = resolve_legacy_guest_identity(
-            kind, vmid, node, rows, device_rows
+            kind, vmid, node, rows, device_rows, sibling_rows, cluster_id
         )
         if identity.ambiguous:
             warn_ambiguous_guest(
@@ -156,7 +162,7 @@ def _build_guest_entities(
         if legacy_identity and legacy_identity.ambiguous:
             continue
         identity_node = legacy_identity.node if legacy_identity and legacy_identity.node else vm_node
-        identity_cluster = legacy_identity.cluster_id if legacy_identity else None
+        identity_cluster = legacy_identity_cluster(legacy_identity, cluster_id)
         label = vm_data.get("name", vm_id)
         entities.append(
             ProxmoxVMSensor(
@@ -199,7 +205,7 @@ def _build_guest_entities(
         if legacy_identity and legacy_identity.ambiguous:
             continue
         identity_node = legacy_identity.node if legacy_identity and legacy_identity.node else ct_node
-        identity_cluster = legacy_identity.cluster_id if legacy_identity else None
+        identity_cluster = legacy_identity_cluster(legacy_identity, cluster_id)
         label = ct_data.get("name", ct_id)
         entities.append(
             ProxmoxContainerSensor(
@@ -340,7 +346,7 @@ def _setup_guest_reconciliation(
         cluster_id = resolve_cluster_id(hass, c_data)
         identity_context = guest_identity_context(entry, cluster_id)
         resolver_factory = globals().get("_legacy_guest_identity_resolver")
-        legacy_identity_resolver = resolver_factory(hass, entry) if resolver_factory else None
+        legacy_identity_resolver = resolver_factory(hass, entry, cluster_id) if resolver_factory else None
         ent_reg = er.async_get(hass)
         effective_selected_vms, effective_selected_cts = get_cycle_guest_selections(
             hass, entry, c_data, selected_vms, selected_cts, cluster_id
@@ -1108,7 +1114,7 @@ async def async_setup_entry(
         cluster_id = resolve_cluster_id(hass, c_data)
         identity_context = guest_identity_context(entry, cluster_id)
         resolver_factory = globals().get("_legacy_guest_identity_resolver")
-        legacy_identity_resolver = resolver_factory(hass, entry) if resolver_factory else None
+        legacy_identity_resolver = resolver_factory(hass, entry, cluster_id) if resolver_factory else None
         effective_selected_vms, effective_selected_cts = get_cycle_guest_selections(
             hass, entry, c_data, selected_vms, selected_cts, cluster_id
         )

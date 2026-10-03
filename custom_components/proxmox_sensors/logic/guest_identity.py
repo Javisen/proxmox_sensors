@@ -57,11 +57,24 @@ def _legacy_device_identity(identifiers, kind, vmid):
     return result
 
 
-def resolve_legacy_guest_identity(kind, vmid, node, entity_rows=(), devices=()):
+def resolve_legacy_guest_identity(
+    kind, vmid, node, entity_rows=(), devices=(), sibling_entity_rows=(), cluster_id=None
+):
     entity_identities = {
         identity for row in entity_rows
         if (identity := _legacy_entity_identity(getattr(row, "unique_id", None), kind, vmid)) is not None
     }
+    # A guest that migrated in from another PVE entry of the same cluster must
+    # keep the cluster-scoped identity that entry gave it. Node-scoped rows left
+    # on this entry by an earlier stay would otherwise win and fork the guest
+    # into a second set of entities.
+    if cluster_id and not any(mode == "cluster" for mode, _value in entity_identities):
+        target = ("cluster", str(cluster_id).lower())
+        if any(
+            _legacy_entity_identity(getattr(row, "unique_id", None), kind, vmid) == target
+            for row in sibling_entity_rows
+        ):
+            return LegacyGuestIdentity(target[1], None)
     device_identities = set()
     for device in devices:
         device_identities.update(_legacy_device_identity(getattr(device, "identifiers", ()), kind, vmid))
@@ -74,6 +87,23 @@ def resolve_legacy_guest_identity(kind, vmid, node, entity_rows=(), devices=()):
     mode, value = identities.pop()
     return LegacyGuestIdentity(value if mode == "cluster" else None,
                                value if mode == "node" else None)
+
+
+def legacy_identity_cluster(identity, cluster_id):
+    """Cluster scope to build a guest's entities with in legacy mode.
+
+    Only an existing node-scoped identity keeps a guest node-scoped. A guest
+    with no registry history on this entry (newly selected, or just migrated
+    in) takes the cluster identity, so it matches the entities its previous
+    node created.
+    """
+    if identity is None:
+        return None
+    if identity.cluster_id:
+        return identity.cluster_id
+    if identity.node:
+        return None
+    return cluster_id
 
 
 def normalize_scope(scope) -> str:
