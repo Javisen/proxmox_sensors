@@ -39,7 +39,11 @@ from .logic.pve_local_identity import (
     PveLocalIdentityError,
     pve_local_identity_context,
 )
-from .logic.pve_devices import resolve_node_device_context, can_remove_pve_device
+from .logic.pve_devices import (
+    resolve_node_device_context,
+    reconcile_legacy_node_devices,
+    can_remove_pve_device,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -187,9 +191,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             local_identity_context = pve_local_identity_context(
                 entry, hass.config_entries.async_entries(DOMAIN)
             )
-            local_identity_context = resolve_node_device_context(
-                local_identity_context, entry, dr.async_get(hass)
-            )
+            try:
+                local_identity_context = resolve_node_device_context(
+                    local_identity_context, entry, dr.async_get(hass)
+                )
+            except PveLocalIdentityError:
+                # Resolve first; only an ambiguity that passes the dedicated
+                # casing-only preflight may mutate Entity Registry ownership.
+                local_identity_context = reconcile_legacy_node_devices(
+                    local_identity_context,
+                    entry,
+                    dr.async_get(hass),
+                    er.async_get(hass),
+                )
         except PveLocalIdentityError as err:
             raise ConfigEntryError(f"Invalid PVE local identity: {err}") from err
 
