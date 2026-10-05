@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
 from ..const import DOMAIN
-from .base import ProxmoxBaseSensor
+from .base import ProxmoxBaseSensor, node_section
 
 
 class ProxmoxDimmSensor(ProxmoxBaseSensor):
@@ -29,8 +29,7 @@ class ProxmoxDimmSensor(ProxmoxBaseSensor):
 
     def _get_dimm(self):
         return (
-            self.coordinator.data.get("memory", {})
-            .get(self._node, {})
+            node_section(self.coordinator.data, "memory", self._node)
             .get("dimms", {})
             .get(self._dimm_id, {})
         )

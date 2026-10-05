@@ -1,6 +1,6 @@
 """Node sensors for Proxmox Extended Sensors (CPU, Memory, Tasks, and System)."""
 
-from .base import ProxmoxBaseSensor
+from .base import ProxmoxBaseSensor, same_node
 from ..const import DOMAIN
 from ..logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
@@ -196,13 +196,13 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
             per_guest = {}
 
             for vm_id, vm in data.get("vms", {}).items():
-                if vm.get("node") == self._node:
+                if same_node(vm.get("node"), self._node):
                     value = vm.get(key, 0) or 0
                     total += value
                     per_guest[vm.get("name", vm_id)] = value
 
             for ct_id, ct in data.get("cts", {}).items():
-                if ct.get("node") == self._node:
+                if same_node(ct.get("node"), self._node):
                     value = ct.get(key, 0) or 0
                     total += value
                     per_guest[ct.get("name", ct_id)] = value
@@ -258,11 +258,11 @@ class ProxmoxNodeSensor(ProxmoxBaseSensor):
         key = "netin" if direction == "rx" else "netout"
 
         for vm in data.get("vms", {}).values():
-            if vm.get("node") == self._node:
+            if same_node(vm.get("node"), self._node):
                 total += vm.get(key, 0) or 0
 
         for ct in data.get("cts", {}).values():
-            if ct.get("node") == self._node:
+            if same_node(ct.get("node"), self._node):
                 total += ct.get(key, 0) or 0
 
         return total
@@ -883,7 +883,7 @@ class PVEBackupProgressSensor(ProxmoxBaseSensor):
                     "vzdump" in str(task.get("type", "")).lower()
                     or "backup" in str(task.get("id", "")).lower()
                     or "vzdump" in str(task.get("upid", "")).lower()
-                ) and task.get("node") == self._node:
+                ) and same_node(task.get("node"), self._node):
                     backup_tasks.append(
                         {
                             "id": task.get("id", task.get("upid", "unknown")),

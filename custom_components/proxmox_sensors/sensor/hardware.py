@@ -4,7 +4,7 @@ import re
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
-from .base import ProxmoxBaseSensor
+from .base import ProxmoxBaseSensor, node_section
 from ..const import DOMAIN
 
 
@@ -363,7 +363,13 @@ class ProxmoxHardwareNVMeSensor(ProxmoxBaseSensor):
         self._attr_icon = "mdi:thermometer-lines"
 
     def _get_smart_info(self):
-        smart_data = self.coordinator.data.get("smart", {}).get(self._node, {})
+        smart_data = {
+            key: disk
+            for key, disk in node_section(
+                self.coordinator.data, "smart", self._node
+            ).items()
+            if isinstance(disk, dict)
+        }
 
         if self._device_prefix in smart_data:
             disk = smart_data[self._device_prefix]

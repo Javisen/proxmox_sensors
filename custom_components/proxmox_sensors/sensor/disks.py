@@ -4,7 +4,7 @@ import logging
 
 from homeassistant.helpers import device_registry as dr
 
-from .base import ProxmoxBaseSensor
+from .base import ProxmoxBaseSensor, node_section
 from ..const import DOMAIN
 from ..logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
@@ -78,7 +78,13 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
 
     def _find_smart_data_by_serial(self):
         """Search SMART data by serial number."""
-        smart_data = self.coordinator.data.get("smart", {}).get(self._node, {})
+        smart_data = {
+            disk_id: disk_smart
+            for disk_id, disk_smart in node_section(
+                self.coordinator.data, "smart", self._node
+            ).items()
+            if isinstance(disk_smart, dict)
+        }
 
         if not smart_data or not self._serial:
             return None
@@ -98,7 +104,9 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
             smart_model = (
                 disk_smart.get("model", "").replace(" ", "_").replace("-", "_").lower()
             )
-            if smart_model and clean_model in smart_model or smart_model in clean_model:
+            if smart_model and (
+                clean_model in smart_model or smart_model in clean_model
+            ):
                 return disk_smart
 
         return None

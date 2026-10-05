@@ -9,6 +9,32 @@ from ..logic.pve_local_identity import (
     node_device_identifier,
 )
 
+
+def same_node(first, second):
+    """Compare two non-empty PVE node names without regard to case."""
+    if not isinstance(first, str) or not isinstance(second, str):
+        return False
+    if not first.strip() or not second.strip():
+        return False
+    return first.casefold() == second.casefold()
+
+
+def node_section(data, section, node):
+    """Return one unambiguous node-keyed coordinator section."""
+    if not isinstance(data, dict):
+        return {}
+    nodes = data.get(section) or {}
+    if not isinstance(nodes, dict) or not isinstance(node, str) or not node.strip():
+        return {}
+    if node in nodes:
+        value = nodes[node]
+        return value if isinstance(value, dict) else {}
+    matches = [value for key, value in nodes.items() if same_node(key, node)]
+    if len(matches) != 1:
+        return {}
+    return matches[0] if isinstance(matches[0], dict) else {}
+
+
 # ============== BASE SENSOR FOR PVE ==========================
 
 
