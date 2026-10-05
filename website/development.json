@@ -5,7 +5,7 @@
     {
       "id": "pdm-module",
       "active": true,
-      "status": "planned",
+      "status": "development",
       "progress": null,
       "title": "Proxmox Datacenter Manager",
       "message": "Add PDM as a new module for centralized monitoring of PVE clusters, standalone PVE servers and PBS instances."
