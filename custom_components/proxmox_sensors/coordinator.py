@@ -672,9 +672,12 @@ async def create_proxmox_coordinator(hass, entry, client):
                         (client.get_containers, hass, node, True),
                         (client.get_storages, hass, node, True),
                         (client.get_zfs_pools, hass, node, True),
-                        (client.get_disks, hass, node, True),
-                        (client.get_mounts, hass, node, True),
                     ]
+
+                    if enable_physical_disks:
+                        tasks.append((client.get_disks, hass, node, True))
+
+                    tasks.append((client.get_mounts, hass, node, True))
 
                     if enable_smart_monitoring:
                         tasks.append((client.get_smart_data_http, hass, node, True))
@@ -863,23 +866,29 @@ async def create_proxmox_coordinator(hass, entry, client):
 
                     # -------- Node disks --------
 
-                    disks = results[idx]
-                    idx += 1
-
-                    if isinstance(disks, Exception):
-                        result["node_disks"] = _last_good_non_guest_section(
-                            "node_disks", []
-                        )
-                    else:
-                        result["node_disks"] = _remember_non_guest_section(
-                            "node_disks",
-                            (
-                                [disk for disk in disks if isinstance(disk, dict)]
-                                if isinstance(disks, list)
-                                else []
-                            ),
-                        )
+                    if not enable_physical_disks:
+                        # Not fetched, so nothing polls the disks. Confirm the
+                        # empty section so any old disk entities are cleaned up.
+                        result["node_disks"] = []
                         _mark_cleanup_confirmed(result, "node_disks")
+                    else:
+                        disks = results[idx]
+                        idx += 1
+
+                        if isinstance(disks, Exception):
+                            result["node_disks"] = _last_good_non_guest_section(
+                                "node_disks", []
+                            )
+                        else:
+                            result["node_disks"] = _remember_non_guest_section(
+                                "node_disks",
+                                (
+                                    [disk for disk in disks if isinstance(disk, dict)]
+                                    if isinstance(disks, list)
+                                    else []
+                                ),
+                            )
+                            _mark_cleanup_confirmed(result, "node_disks")
 
                     # -------- MOUNTS --------
 
