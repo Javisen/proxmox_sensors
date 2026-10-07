@@ -1,18 +1,18 @@
 {
   "notices": [
     {
-      "id": "v5-1-2-sidecar-security",
+      "id": "new-v5.2.0-release",
       "active": true,
-      "level": "warning",
-      "title": "Hardware Sidecar Security Update",
-      "message": "Existing Sidecar users must re-run the installer on every PVE/PBS host to enable the new IP access restrictions introduced in V5.1.2."
+      "level": "info",
+      "title": "New V5.2.0 ready for release.",
+      "message": "New Proxmox Datacenter Manager monitoring - PDM Dashboard View - QDevice - VM Disk Usage / Guest Agent Metrics"
     },
     {
       "id": "v5-2-0-pdm-module",
       "active": true,
       "level": "info",
-      "title": "Proxmox Datacenter Manager is coming to V5.2.0",
-      "message": "V5.2.0 will introduce PDM as a new module alongside PVE, PBS and CLUSTER, providing centralized monitoring of Proxmox infrastructure through a single Datacenter Manager connection."
+      "title": "Proxmox Datacenter Manager monitoring in V5.2.0",
+      "message": "V5.2.0 introduces PDM as a new module alongside PVE, PBS and CLUSTER, providing centralized monitoring of Proxmox infrastructure through a single Datacenter Manager connection."
     }
   ]
 }
