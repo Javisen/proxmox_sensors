@@ -5,18 +5,18 @@
     {
       "id": "pdm-module",
       "active": true,
-      "status": "development",
+      "status": "testing",
       "progress": null,
       "title": "Proxmox Datacenter Manager",
       "message": "Add PDM as a new module for centralized monitoring of PVE clusters, standalone PVE servers and PBS instances."
     },
     {
-      "id": "run-backup-jobs",
+      "id": "module-dashboard-pdm",
       "active": true,
-      "status": "cancelled",
+      "status": "development",
       "progress": null,
-      "title": "Run Datacenter Backup Jobs",
-      "message": "Cancelled after technical review. This feature would duplicate functionality already available through the integration's Single Backup and Massive Backup actions, which can be used in Home Assistant automations to achieve the same result without adding unnecessary complexity and maintenance."
+      "title": "PDM Dashboard View",
+      "message": "Development of the dedicated Proxmox Datacenter Manager dashboard view. The new layout uses the existing PDM entities and attributes to provide a three-column overview of PVE and PBS resource usage, datacenter updates, inventory, storage capacity, and configured remotes, while preserving the visual language and responsive behavior of the existing dashboard."
     },
     {
       "id": "corosync-qdevice-monitoring",
