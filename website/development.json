@@ -5,7 +5,7 @@
     {
       "id": "pdm-module",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "Proxmox Datacenter Manager",
       "message": "Add PDM as a new module for centralized monitoring of PVE clusters, standalone PVE servers and PBS instances."
@@ -13,7 +13,7 @@
     {
       "id": "module-dashboard-pdm",
       "active": true,
-      "status": "development",
+      "status": "completed",
       "progress": null,
       "title": "PDM Dashboard View",
       "message": "Development of the dedicated Proxmox Datacenter Manager dashboard view. The new layout uses the existing PDM entities and attributes to provide a three-column overview of PVE and PBS resource usage, datacenter updates, inventory, storage capacity, and configured remotes, while preserving the visual language and responsive behavior of the existing dashboard."
@@ -21,7 +21,7 @@
     {
       "id": "corosync-qdevice-monitoring",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "Corosync QDevice Monitoring",
       "message": "Validate Corosync QDevice monitoring in a real PVE cluster, including connection loss and recovery, dynamic entity creation and removal, and safe handling of API failures. Suggested by PetziAt"
@@ -29,7 +29,7 @@
     {
       "id": "vm-disk-usage",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "VM Disk Usage",
       "message": "VM filesystem usage has been accepted for V5.2.0 and will be implemented as part of a new optional Guest Agent Metrics capability, disabled by default and enabled through integration Options. Additional useful metrics available through the QEMU Guest Agent will continue to be evaluated. Suggested by cyberthom42."
