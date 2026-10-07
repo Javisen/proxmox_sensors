@@ -51,6 +51,11 @@
           "verify_ssl": "验证 SSL 证书"
         }
       },
+      "credentials_pdm": {
+        "title": "3. Access Credentials — Proxmox Datacenter Manager",
+        "description": "Enter the API token details for PDM (port 8443).",
+        "data": {"user": "User (including realm)", "token_id": "Token ID", "token_secret": "Token Secret", "verify_ssl": "Verify SSL Certificate"}
+      },
       "cluster_association": {
         "title": "CLUSTER 关联",
         "description": "创建新关联，或恢复无关联 CLUSTER 的 PVE 条目所用关联。名称和主机地址不能用于推断成员关系。",
@@ -152,6 +157,7 @@
           "enable_physical_disks": "启用物理磁盘监控",
           "enable_smart_monitoring": "启用 SMART 与 NVMe 健康监控",
           "enable_node_controls": "启用节点电源控制",
+          "enable_guest_agent_metrics": "启用 Guest Agent 指标",
           "enable_backup_progress": "启用备份进度传感器",
           "enable_storage_list": "启用存储列表传感器",
           "enable_nodes_list": "启用节点列表传感器",
@@ -226,6 +232,9 @@
       },
       "vm_status": {
         "name": "状态"
+      },
+      "vm_disk_usage": {
+        "name": "虚拟机磁盘使用率"
       },
       "vm_cpu_usage": {
         "name": "CPU 使用率"
@@ -414,6 +423,27 @@
       },
       "cluster_ha_status": {
         "name": "HA 状态"
+      },
+      "cluster_qdevice": {
+        "name": "Corosync QDevice"
+      },
+      "pdm_status": {
+        "name": "Datacenter Status"
+      },
+      "pdm_inventory": {
+        "name": "Datacenter Inventory"
+      },
+      "pdm_capacity": {
+        "name": "Datacenter Capacity"
+      },
+      "pdm_updates": {
+        "name": "Datacenter Updates"
+      },
+      "pdm_remote_status": {
+        "name": "Remote Status"
+      },
+      "pdm_remote_overview": {
+        "name": "Remote Overview"
       },
       "cluster_firewall": {
         "name": "防火墙"
@@ -698,7 +728,7 @@
       }
     }
   },
-  "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Proxmox 集群"}}, "cluster_scope_action": {"options": {"keep": "保持与集群关联", "independent": "独立运行 — 不在节点间迁移 VM/LXC 实体"}}},
+  "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Proxmox 集群", "pdm": "Proxmox Datacenter Manager"}}, "cluster_scope_action": {"options": {"keep": "保持与集群关联", "independent": "独立运行 — 不在节点间迁移 VM/LXC 实体"}}},
   "services": {
     "create_vzdump_backup": {
       "name": "Proxmox：启动备份",

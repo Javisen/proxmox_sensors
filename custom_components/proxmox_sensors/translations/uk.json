@@ -51,6 +51,11 @@
           "verify_ssl": "Перевіряти SSL-сертифікат"
         }
       },
+      "credentials_pdm": {
+        "title": "3. Access Credentials — Proxmox Datacenter Manager",
+        "description": "Enter the API token details for PDM (port 8443).",
+        "data": {"user": "User (including realm)", "token_id": "Token ID", "token_secret": "Token Secret", "verify_ssl": "Verify SSL Certificate"}
+      },
       "cluster_association": {
         "title": "Прив’язка CLUSTER",
         "description": "Створіть нову прив’язку або відновіть прив’язку PVE без пов’язаного CLUSTER. Назва й адреса не визначають членство.",
@@ -152,6 +157,7 @@
           "enable_physical_disks": "Увімкнути моніторинг фізичних дисків",
           "enable_smart_monitoring": "Увімкнути моніторинг здоров'я SMART та NVMe",
           "enable_node_controls": "Увімкнути керування живленням вузла",
+          "enable_guest_agent_metrics": "Увімкнути метрики Guest Agent",
           "enable_backup_progress": "Увімкнути датчик прогресу резервного копіювання",
           "enable_storage_list": "Увімкнути датчик списку сховищ",
           "enable_nodes_list": "Увімкнути датчик списку вузлів",
@@ -226,6 +232,9 @@
       },
       "vm_status": {
         "name": "Статус"
+      },
+      "vm_disk_usage": {
+        "name": "Використання диска ВМ"
       },
       "vm_cpu_usage": {
         "name": "Використання ЦП"
@@ -414,6 +423,27 @@
       },
       "cluster_ha_status": {
         "name": "Статус HA"
+      },
+      "cluster_qdevice": {
+        "name": "QDevice Corosync"
+      },
+      "pdm_status": {
+        "name": "Datacenter Status"
+      },
+      "pdm_inventory": {
+        "name": "Datacenter Inventory"
+      },
+      "pdm_capacity": {
+        "name": "Datacenter Capacity"
+      },
+      "pdm_updates": {
+        "name": "Datacenter Updates"
+      },
+      "pdm_remote_status": {
+        "name": "Remote Status"
+      },
+      "pdm_remote_overview": {
+        "name": "Remote Overview"
       },
       "cluster_firewall": {
         "name": "Файрвол"
@@ -698,7 +728,7 @@
       }
     }
   },
-  "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Кластер Proxmox"}}, "cluster_scope_action": {"options": {"keep": "Зберегти зв’язок із кластером", "independent": "Незалежно — без міграції сутностей VM/LXC між вузлами"}}},
+  "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Кластер Proxmox", "pdm": "Proxmox Datacenter Manager"}}, "cluster_scope_action": {"options": {"keep": "Зберегти зв’язок із кластером", "independent": "Незалежно — без міграції сутностей VM/LXC між вузлами"}}},
   "services": {
     "create_vzdump_backup": {
       "name": "Proxmox: Запустити резервне копіювання",

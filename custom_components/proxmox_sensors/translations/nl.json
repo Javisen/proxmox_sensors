@@ -51,6 +51,11 @@
           "verify_ssl": "SSL-certificaat verifiëren"
         }
       },
+      "credentials_pdm": {
+        "title": "3. Access Credentials — Proxmox Datacenter Manager",
+        "description": "Enter the API token details for PDM (port 8443).",
+        "data": {"user": "User (including realm)", "token_id": "Token ID", "token_secret": "Token Secret", "verify_ssl": "Verify SSL Certificate"}
+      },
       "cluster_association": {
         "title": "CLUSTER-koppeling",
         "description": "Maak een nieuwe koppeling of herstel die van PVE-vermeldingen zonder gekoppelde CLUSTER. Namen en hosts bepalen nooit het lidmaatschap.",
@@ -152,6 +157,7 @@
           "enable_physical_disks": "Bewaking van fysieke schijven inschakelen",
           "enable_smart_monitoring": "SMART- en NVMe-gezondheidsbewaking inschakelen",
           "enable_node_controls": "Knooppunt-energiebediening inschakelen",
+          "enable_guest_agent_metrics": "Guest Agent-statistieken inschakelen",
           "enable_backup_progress": "Backup-voortgangssensor inschakelen",
           "enable_storage_list": "Opslaglijstsensor inschakelen",
           "enable_nodes_list": "Knooppuntlijstsensor inschakelen",
@@ -226,6 +232,9 @@
       },
       "vm_status": {
         "name": "Status"
+      },
+      "vm_disk_usage": {
+        "name": "VM-schijfgebruik"
       },
       "vm_cpu_usage": {
         "name": "CPU-gebruik"
@@ -414,6 +423,27 @@
       },
       "cluster_ha_status": {
         "name": "HA-status"
+      },
+      "cluster_qdevice": {
+        "name": "Corosync QDevice"
+      },
+      "pdm_status": {
+        "name": "Datacenter Status"
+      },
+      "pdm_inventory": {
+        "name": "Datacenter Inventory"
+      },
+      "pdm_capacity": {
+        "name": "Datacenter Capacity"
+      },
+      "pdm_updates": {
+        "name": "Datacenter Updates"
+      },
+      "pdm_remote_status": {
+        "name": "Remote Status"
+      },
+      "pdm_remote_overview": {
+        "name": "Remote Overview"
       },
       "cluster_firewall": {
         "name": "Firewall"
@@ -698,7 +728,7 @@
       }
     }
   },
-  "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Proxmox-cluster"}}, "cluster_scope_action": {"options": {"keep": "Gekoppeld blijven aan het cluster", "independent": "Onafhankelijk — geen migratie van VM/LXC-entiteiten tussen knooppunten"}}},
+  "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Proxmox-cluster", "pdm": "Proxmox Datacenter Manager"}}, "cluster_scope_action": {"options": {"keep": "Gekoppeld blijven aan het cluster", "independent": "Onafhankelijk — geen migratie van VM/LXC-entiteiten tussen knooppunten"}}},
   "services": {
     "create_vzdump_backup": {
       "name": "Proxmox: Backup starten",

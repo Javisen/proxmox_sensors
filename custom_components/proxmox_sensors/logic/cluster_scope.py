@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import logging
 import re
 from uuid import UUID, uuid4
-
+from ..const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -318,15 +318,24 @@ def recovery_registry_conflict(scope, pve_entry_ids, entity_rows, devices) -> bo
             return True
     for device in devices:
         identifiers = getattr(device, "identifiers", ()) or ()
-        if not any(domain == "proxmox_sensors" and isinstance(identifier, str)
-                   and guest_device.fullmatch(identifier)
-                   for domain, identifier in identifiers):
+
+        proxmox_ids = [
+            id_data[1] for id_data in identifiers
+            if isinstance(id_data, tuple) and len(id_data) == 2 and id_data[0] == DOMAIN
+        ]
+
+        if not proxmox_ids:
             continue
+
+        if not any(isinstance(i, str) and guest_device.fullmatch(i) for i in proxmox_ids):
+            continue
+
         owners = getattr(device, "config_entries", None)
         if owners is None:
             owners = {getattr(device, "config_entry_id", None)}
         if not owners or not set(owners) <= members:
             return True
+
     return False
 
 

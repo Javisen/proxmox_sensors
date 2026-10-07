@@ -1,6 +1,6 @@
 """Pure availability of dashboard families from the complete normalized inventory."""
 
-DASHBOARD_TYPES = ("pve", "pbs", "cluster")
+DASHBOARD_TYPES = ("pdm", "pve", "pbs", "cluster")
 
 
 def representable_entities(resource, *, include_controls=False):

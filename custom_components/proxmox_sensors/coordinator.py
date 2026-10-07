@@ -13,11 +13,13 @@ from .logic.guest_keys import (
     make_guest_key,
     matches_selected_guest,
 )
+from .logic.guest_agent import collect_vm_disk_usage
 from .logic.guest_selection import (
     get_effective_guest_selections,
     get_entry_guest_selection,
     set_effective_guest_selections,
 )
+from .logic.pdm import build_pdm_remotes, merge_pdm_sections, merge_pdm_updates
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -138,6 +140,10 @@ async def create_proxmox_coordinator(hass, entry, client):
     enable_lm_sensors = data.get("enable_lm_sensors", True)
     enable_pbs_tasks = data.get("enable_pbs_tasks", True)
     enable_smart_monitoring = data.get("enable_smart_monitoring", True)
+    enable_guest_agent_metrics = entry.options.get(
+        "enable_guest_agent_metrics",
+        entry.data.get("enable_guest_agent_metrics", False),
+    )
 
     enable_memory_monitoring = entry.options.get(
         "enable_memory_monitoring",
@@ -215,6 +221,7 @@ async def create_proxmox_coordinator(hass, entry, client):
     _onboot_cycle = {"n": 0}
     _last_good_non_guest: dict = {}
     _last_good_guests: dict = {"vms": {}, "cts": {}}
+    _last_good_guest_agent: dict = {}
     _last_good_cluster: dict = {}
     _last_good_pbs: dict = {}
     # This capability belongs to this coordinator instance only. Reloading an
@@ -370,6 +377,20 @@ async def create_proxmox_coordinator(hass, entry, client):
 
         if guest_specs:
             await asyncio.gather(*(_fetch_one(*spec) for spec in guest_specs))
+
+    async def _refresh_guest_agent_metrics(raw_vms, selected_values):
+        """Fetch independent per-VM QGA metrics while preserving last-good data."""
+        return await collect_vm_disk_usage(
+            raw_vms,
+            guest_key_for=lambda vmid: make_guest_key(node, vmid),
+            is_selected=lambda vm, guest_key: matches_selected_guest(
+                selected_values, node, vm["vmid"], guest_key
+            ),
+            fetch_fsinfo=lambda vmid: limited_task(
+                client.get_vm_fsinfo, hass, node, vmid
+            ),
+            last_good=_last_good_guest_agent,
+        )
 
     async def async_update_data():
         nonlocal _pbs_node_status_capability
@@ -795,6 +816,25 @@ async def create_proxmox_coordinator(hass, entry, client):
 
                     await _refresh_onboot_batch(onboot_specs)
 
+                    if enable_guest_agent_metrics and not isinstance(vms, Exception):
+                        (
+                            result["guest_agent_disk_usage"],
+                            result["guest_agent_metrics_status"],
+                        ) = await _refresh_guest_agent_metrics(
+                            vms, effective_selected_vms
+                        )
+                    elif enable_guest_agent_metrics:
+                        result["guest_agent_disk_usage"] = dict(
+                            _last_good_guest_agent
+                        )
+                        result["guest_agent_metrics_status"] = {
+                            guest_key: "inventory_error"
+                            for guest_key in _last_good_guest_agent
+                        }
+                    else:
+                        result["guest_agent_disk_usage"] = {}
+                        result["guest_agent_metrics_status"] = {}
+
                     if isinstance(vms, Exception):
                         result["vms"] = _preserved_guest_map(
                             "vm", result["cluster_resources_ok"], cluster_resources
@@ -1147,6 +1187,7 @@ async def create_cluster_coordinator(hass, entry, client):
             "cluster_status": "cluster status",
             "cluster_ha": "cluster HA status",
             "cluster_firewall": "cluster firewall options",
+            "cluster_qdevice": "cluster QDevice",
             "backup_jobs_raw": "backup jobs",
             "cluster_tasks": "cluster tasks",
             "cluster_replication": "cluster replication",
@@ -1182,6 +1223,7 @@ async def create_cluster_coordinator(hass, entry, client):
                     backup_jobs,
                     backup_tasks,
                     cluster_replication,
+                    cluster_qdevice,
                 ) = await asyncio.gather(
                     limited_task(client.get_cluster_resources, hass, True),
                     limited_task(client.get_cluster_status, hass, True),
@@ -1190,6 +1232,7 @@ async def create_cluster_coordinator(hass, entry, client):
                     limited_task(client.get_backup_jobs, hass, True),
                     limited_task(client.get_cluster_tasks, hass, True),
                     replication_task(),
+                    limited_task(client.get_cluster_qdevice, hass, True),
                     return_exceptions=True,
                 )
 
@@ -1205,6 +1248,12 @@ async def create_cluster_coordinator(hass, entry, client):
                 )
                 result["cluster_firewall"] = _cluster_dict_result(
                     "cluster_firewall", cluster_firewall
+                )
+                result["cluster_qdevice"] = _cluster_dict_result(
+                    "cluster_qdevice", cluster_qdevice
+                )
+                result["cluster_qdevice_ok"] = not isinstance(
+                    cluster_qdevice, Exception
                 )
                 backup_jobs_raw = _cluster_list_result("backup_jobs_raw", backup_jobs)
                 result["cluster_tasks"] = _cluster_list_result(
@@ -1244,4 +1293,81 @@ async def create_cluster_coordinator(hass, entry, client):
     coordinator.client = client
     coordinator.api = client
 
+    return coordinator
+
+
+async def create_pdm_coordinator(hass, entry, client):
+    """Create the PDM coordinator using the integration's polling model."""
+    semaphore = asyncio.Semaphore(5)
+    last_good = {}
+
+    async def limited_task(coro_func, *args):
+        async with semaphore:
+            async with asyncio.timeout(15):
+                return await coro_func(*args)
+
+    async def async_update_pdm():
+        async with asyncio.timeout(25):
+            responses = await asyncio.gather(
+                limited_task(client.get_pdm_version, hass),
+                limited_task(client.get_pdm_remotes, hass),
+                limited_task(client.get_pdm_resources, hass),
+                limited_task(client.get_pdm_status, hass),
+                limited_task(client.get_pdm_subscriptions, hass),
+                limited_task(client.get_pdm_updates, hass),
+                return_exceptions=True,
+            )
+        keys = ("version", "remotes", "resources", "status", "subscriptions")
+        sections, sections_ok = merge_pdm_sections(last_good, keys, responses[:5])
+        for key, response in zip(keys, responses[:5]):
+            if isinstance(response, Exception) and key in last_good:
+                _LOGGER.warning("PDM: retaining last-good %s after API error", key)
+
+        for required in ("remotes", "status"):
+            if sections[required] is None:
+                error = responses[keys.index(required)]
+                raise UpdateFailed(f"PDM {required} unavailable: {error}") from error
+        resources = sections["resources"] if sections["resources"] is not None else []
+        subscriptions = (
+            sections["subscriptions"] if sections["subscriptions"] is not None else []
+        )
+        updates, updates_endpoint_fresh, updates_snapshot_complete = merge_pdm_updates(
+            last_good,
+            responses[5],
+            sections["remotes"],
+            sections_ok["remotes"],
+        )
+        sections_ok["updates"] = updates_endpoint_fresh
+        if not updates_snapshot_complete and "updates" in last_good:
+            _LOGGER.warning("PDM: retaining last-good updates after incomplete snapshot")
+        return {
+            "server_type": "PDM",
+            "pdm_version": sections["version"] or {},
+            "pdm_remote_inventory": sections["remotes"],
+            "pdm_resources": resources,
+            "pdm_status": sections["status"],
+            "pdm_subscriptions": subscriptions,
+            "pdm_updates": updates,
+            "pdm_updates_snapshot_complete": updates_snapshot_complete,
+            "pdm_remotes": build_pdm_remotes(
+                sections["remotes"], sections["status"], resources, subscriptions
+            ),
+            "pdm_sections_ok": sections_ok,
+            "pdm_sections_available": {
+                key: key in last_good for key in (*keys, "updates")
+            },
+            "_cleanup_confirmed": {"pdm_remotes": sections_ok["remotes"]},
+            "last_update": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=f"proxmox_pdm_{entry.entry_id}",
+        update_method=async_update_pdm,
+        update_interval=timedelta(seconds=60),
+    )
+    coordinator.client = client
+    coordinator.api = client
+    coordinator.pdm_display_name = entry.title
     return coordinator

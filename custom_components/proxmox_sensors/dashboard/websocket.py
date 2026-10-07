@@ -6,10 +6,12 @@ from .layout import get_dashboard_layout
 from .pve_resources import build_pve_dashboard_model
 from .pbs_resources import build_pbs_dashboard_model
 from .cluster_resources import build_cluster_dashboard_model
+from .pdm_resources import build_pdm_dashboard_model
 
 COMMAND = "proxmox_sensors/dashboard_models"
 _REGISTERED = "proxmox_sensors.dashboard_websocket_registered"
-_MAPPERS = {"pve": build_pve_dashboard_model, "pbs": build_pbs_dashboard_model,
+_MAPPERS = {"pdm": build_pdm_dashboard_model,
+            "pve": build_pve_dashboard_model, "pbs": build_pbs_dashboard_model,
             "cluster": build_cluster_dashboard_model}
 
 

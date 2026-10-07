@@ -74,10 +74,10 @@ class GuestMigrationPlan:
 
 
 _SENSOR = re.compile(
-    r"pve_cluster_(?P<scope>.+)_proxmox_(?P<kind>vm|ct)_(?P=scope)_(?P<guest>[0-9]+)_(?P<metric>status|cpu_usage|memory_used|memory_total|disk_total|disk_used|uptime|network_rx|network_tx)_v1$"
+    r"pve_cluster_(?P<scope>.+)_proxmox_(?P<kind>vm|ct)_(?P=scope)_(?P<guest>[0-9]+)_(?P<metric>status|cpu_usage|memory_used|memory_total|disk_total|disk_used|disk_usage|uptime|network_rx|network_tx)_v1$"
 )
 _LEGACY_SENSOR = re.compile(
-    r"proxmox_(?P<kind>vm|ct)_(?P<scope>.+)_(?P<guest>[0-9]+)_(?P<metric>status|cpu_usage|memory_used|memory_total|disk_total|disk_used|uptime|network_rx|network_tx)_v1$"
+    r"proxmox_(?P<kind>vm|ct)_(?P<scope>.+)_(?P<guest>[0-9]+)_(?P<metric>status|cpu_usage|memory_used|memory_total|disk_total|disk_used|disk_usage|uptime|network_rx|network_tx)_v1$"
 )
 _VM_BUTTON = re.compile(
     r"proxmox_(?P<kind>vm)_cluster_(?P<scope>.+)_(?P<guest>[0-9]+)_(?P<command>start|shutdown|stop|reboot|reset|pause|hibernate|resume)$"

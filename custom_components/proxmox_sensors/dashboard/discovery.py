@@ -14,6 +14,16 @@ DISPLAY_ATTRIBUTES = frozenset({
     "ram_total_bytes",
 })
 
+PDM_DISPLAY_ATTRIBUTES = frozenset({
+    "remotes", "pve_remotes", "pbs_remotes", "failed_remotes", "sections_fresh",
+    "pve_nodes", "pbs_nodes", "qemu", "lxc", "storages", "pbs_datastores", "sdn_zones",
+    "pve_cpu_stats", "pve_memory_stats", "pve_storage_stats",
+    "pbs_cpu_stats", "pbs_memory_stats", "pbs_storage_stats",
+    "oldest_last_refresh", "newest_last_refresh", "oldest_refresh_age",
+    "endpoint_fresh", "snapshot_complete",
+    "remote_type", "subscription", "status_fresh", "inventory", "capacity", "resources_fresh",
+})
+
 # Only the existing node overview (translation_key=proxmox_node) exposes these
 # header references. Values/payloads are never copied into the inventory.
 NODE_HEADER_ATTRIBUTES = frozenset({
@@ -98,7 +108,7 @@ def build_inventory(entries, rows, devices, states, selections=None):
             "resource_id": info["key"], "kind": info["kind"],
             "title": (getattr(device_for_name, "name_by_user", None)
                       or getattr(device_for_name, "name", None) or info["label"])
-                     if info["kind"] in ("vm", "ct", "datastore") else info["label"],
+                     if info["kind"] in ("vm", "ct", "datastore", "pdm_remote") else info["label"],
             "entry_id": display_owner["entry_id"], "cluster_id": display_owner.get("cluster_id"),
             "node": display_owner.get("node"), "server_id": display_owner.get("server_id"),
             "guest_id": info["guest"][2] if info.get("guest") else None,
@@ -109,7 +119,9 @@ def build_inventory(entries, rows, devices, states, selections=None):
         value = getattr(state, "state", None)
         translation_key = getattr(row, "translation_key", None)
         allowed_attributes = DISPLAY_ATTRIBUTES
-        if owner["platform_type"] == "PVE" and translation_key == "proxmox_node":
+        if owner["platform_type"] == "PDM":
+            allowed_attributes = allowed_attributes | PDM_DISPLAY_ATTRIBUTES
+        elif owner["platform_type"] == "PVE" and translation_key == "proxmox_node":
             allowed_attributes = allowed_attributes | NODE_HEADER_ATTRIBUTES
         resource["entities"].append({
             "entity_id": row.entity_id, "unique_id": row.unique_id,
@@ -169,7 +181,8 @@ def discover_inventory(hass):
         normalized.append({"entry_id": entry.entry_id, "platform_type": platform,
                            "title": entry.title or platform, "node": entry.data.get("node") if platform == "PVE" else None,
                            "server_id": entry.data.get("server_id") if platform == "PBS" else None,
-                           "cluster_id": cluster, "pve_identity_id": pve_identity_id})
+                           "cluster_id": cluster, "pve_identity_id": pve_identity_id,
+                           "pdm_identity_id": entry.data.get("pdm_identity_id") if platform == "PDM" else None})
         rows.extend(er.async_entries_for_config_entry(registry, entry.entry_id))
         if platform == "PVE":
             try:

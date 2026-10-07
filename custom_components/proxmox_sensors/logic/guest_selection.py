@@ -227,7 +227,7 @@ def allow_excluded_cluster_guest_cleanup(hass, entry, data, unique_id):
     scope = re.escape(cluster.replace(" ", "_"))
     match = re.fullmatch(
         rf"pve_cluster_{scope}_proxmox_(vm|ct)_{scope}_([0-9]+)_"
-        r"(status|cpu_usage|memory_used|memory_total|disk_total|disk_used|uptime|network_rx|network_tx)_v1",
+        r"(status|cpu_usage|memory_used|memory_total|disk_total|disk_used|disk_usage|uptime|network_rx|network_tx)_v1",
         unique_id or "",
     )
     if not match or (match[1] == "vm" and match[3] == "disk_used"):

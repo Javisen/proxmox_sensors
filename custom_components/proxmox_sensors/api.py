@@ -71,7 +71,7 @@ class ProxmoxClient:
         self._proxmox: Optional[ProxmoxAPI] = None
 
     def _build_client_sync(self):
-        if self._server_type == "PBS":
+        if self._server_type in ("PBS", "PDM"):
             return
 
         port = self._port or 8006
@@ -104,7 +104,7 @@ class ProxmoxClient:
             self._proxmox = None
 
     async def get_api_client(self, hass):
-        if self._server_type == "PBS":
+        if self._server_type in ("PBS", "PDM"):
             return None
 
         if self._proxmox is None:
@@ -116,6 +116,10 @@ class ProxmoxClient:
         if self._server_type == "PBS":
             return await hass.async_add_executor_job(
                 self._pbs_request, "GET", path, None, raise_errors
+            )
+        if self._server_type == "PDM":
+            return await hass.async_add_executor_job(
+                self._pdm_request, "GET", path, None, raise_errors
             )
 
         proxmox = await self.get_api_client(hass)
@@ -165,6 +169,8 @@ class ProxmoxClient:
             return None
 
     async def post(self, hass, path: str, data=None) -> Any:
+        if self._server_type == "PDM":
+            return None
         proxmox = await self.get_api_client(hass)
         if proxmox is None:
             return None
@@ -270,6 +276,19 @@ class ProxmoxClient:
         """Fetch a VM's config (includes 'onboot'); not present in the list
         endpoint, so this is a separate, per-guest call."""
         return await self.get(hass, f"nodes/{node}/qemu/{vmid}/config") or {}
+
+    async def get_vm_fsinfo(self, hass, node: str, vmid) -> list:
+        """Return QEMU Guest Agent filesystem information for one VM."""
+        data = await self.get(
+            hass,
+            f"nodes/{node}/qemu/{vmid}/agent/get-fsinfo",
+            raise_errors=True,
+        )
+        if isinstance(data, dict) and isinstance(data.get("result"), list):
+            data = data["result"]
+        if not isinstance(data, list):
+            raise ValueError("Invalid Guest Agent get-fsinfo response: expected a list")
+        return data
 
     async def get_ct_config(self, hass, node: str, vmid):
         """Fetch a CT's config (includes 'onboot'); not present in the list
@@ -553,6 +572,110 @@ class ProxmoxClient:
         return await self.get(
             hass, "cluster/firewall/options", raise_errors=raise_errors
         ) or {}
+
+    async def get_cluster_qdevice(self, hass, raise_errors: bool = False):
+        """Return the Corosync QDevice configuration and status."""
+        data = await self.get(
+            hass, "cluster/config/qdevice", raise_errors=raise_errors
+        )
+        if not isinstance(data, dict):
+            raise ValueError("Invalid QDevice response: expected a mapping")
+        return data
+
+    def _pdm_request(
+        self, method: str, path: str, data=None, raise_errors: bool = False
+    ):
+        if method != "GET":
+            if raise_errors:
+                raise ValueError("The PDM client is read-only")
+            return None
+        port = self._port or 8443
+        clean_host = (
+            self._host.replace("https://", "")
+            .replace("http://", "")
+            .split("/")[0]
+            .split(":")[0]
+        )
+        url = f"https://{clean_host}:{port}/api2/json/{path}"
+        if not self._user or not self._token_id or not self._token_secret:
+            if raise_errors:
+                raise AuthenticationError("PDM token authentication is incomplete")
+            return None
+        token_full = (
+            self._token_id
+            if "!" in self._token_id
+            else f"{self._user}!{self._token_id}"
+        )
+        headers = {
+            "Authorization": f"PDMAPIToken {token_full}:{self._token_secret}",
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.get(
+                url, headers=headers, verify=self._verify_ssl, timeout=15
+            )
+            if response.status_code >= 400:
+                if raise_errors:
+                    _raise_for_auth_or_permission(response.status_code, path)
+                    raise CannotConnect(
+                        f"PDM HTTP {response.status_code} while requesting {path}"
+                    )
+                return None
+            payload = response.json()
+            if not isinstance(payload, dict) or "data" not in payload:
+                raise ValueError("Invalid PDM API response envelope")
+            return payload["data"]
+        except (AuthenticationError, PermissionError, CannotConnect):
+            raise
+        except requests.exceptions.RequestException as err:
+            if raise_errors:
+                raise CannotConnect(f"PDM request failed for {path}") from err
+            return None
+        except Exception:
+            if raise_errors:
+                raise
+            return None
+
+    async def get_pdm_version(self, hass):
+        data = await self.get(hass, "version", raise_errors=True)
+        if not isinstance(data, dict):
+            raise ValueError("Invalid PDM version response")
+        return data
+
+    async def get_pdm_remotes(self, hass):
+        from .logic.pdm import validate_pdm_remote_inventory
+
+        return validate_pdm_remote_inventory(
+            await self.get(hass, "remotes/remote", raise_errors=True)
+        )
+
+    async def get_pdm_resources(self, hass):
+        from .logic.pdm import validate_pdm_resource_groups
+
+        return validate_pdm_resource_groups(
+            await self.get(hass, "resources/list", raise_errors=True)
+        )
+
+    async def get_pdm_status(self, hass):
+        from .logic.pdm import validate_pdm_status
+
+        return validate_pdm_status(
+            await self.get(hass, "resources/status", raise_errors=True)
+        )
+
+    async def get_pdm_subscriptions(self, hass):
+        from .logic.pdm import validate_pdm_subscriptions
+
+        return validate_pdm_subscriptions(
+            await self.get(hass, "resources/subscription", raise_errors=True)
+        )
+
+    async def get_pdm_updates(self, hass):
+        from .logic.pdm import validate_pdm_updates_envelope
+
+        return validate_pdm_updates_envelope(
+            await self.get(hass, "remotes/updates/summary", raise_errors=True)
+        )
 
     def _pbs_request(
         self, method: str, path: str, data=None, raise_errors: bool = False

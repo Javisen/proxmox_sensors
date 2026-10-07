@@ -186,7 +186,7 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
         conf = self.config_entry.data
         server_type = conf.get(CONF_PLATFORM_TYPE, "PVE")
 
-        if server_type == "CLUSTER":
+        if server_type in ("CLUSTER", "PDM"):
             return await self.async_step_cluster(user_input)
         elif server_type == "PBS":
             return await self.async_step_pbs(user_input)
@@ -397,7 +397,8 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
             options = self.config_entry.options or {}
             wol_mac_map = options.get("wol_macs", {})
             for key in (CONF_VERIFY_SSL, "enable_lm_sensors", "enable_physical_disks",
-                        "enable_smart_monitoring", "enable_node_controls"):
+                        "enable_smart_monitoring", "enable_node_controls",
+                        "enable_guest_agent_metrics"):
                 if key in user_input:
                     new_data[key] = user_input[key]
             if "storage" in user_input:
@@ -537,6 +538,10 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
                             default=conf.get("enable_node_controls", False),
                         ): bool,
                         vol.Optional(
+                            "enable_guest_agent_metrics",
+                            default=conf.get("enable_guest_agent_metrics", False),
+                        ): bool,
+                        vol.Optional(
                             CONF_VERIFY_SSL,
                             default=conf.get(CONF_VERIFY_SSL, False),
                         ): bool,
@@ -569,6 +574,10 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
                         vol.Optional(
                             "enable_node_controls",
                             default=conf.get("enable_node_controls", False),
+                        ): bool,
+                        vol.Optional(
+                            "enable_guest_agent_metrics",
+                            default=conf.get("enable_guest_agent_metrics", False),
                         ): bool,
                         vol.Optional(
                             CONF_VERIFY_SSL,

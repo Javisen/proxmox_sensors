@@ -13,7 +13,7 @@ class LegacyGuestIdentity:
     ambiguous: bool = False
 
 
-_METRICS = "status|cpu_usage|memory_used|memory_total|disk_total|disk_used|uptime|network_rx|network_tx"
+_METRICS = "status|cpu_usage|memory_used|memory_total|disk_total|disk_used|disk_usage|uptime|network_rx|network_tx"
 
 
 def _legacy_entity_identity(unique_id, kind, vmid):

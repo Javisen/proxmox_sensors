@@ -76,7 +76,11 @@ from .disks import ProxmoxDiskSensor
 from .storage import ProxmoxStorageSensor, ProxmoxStorageAttributeSensor
 
 # Virtual Machines
-from .vm import ProxmoxVMSensor, ProxmoxVMAttributeSensor
+from .vm import (
+    ProxmoxVMSensor,
+    ProxmoxVMAttributeSensor,
+    ProxmoxVMDiskUsageSensor,
+)
 
 # Containers
 from .ct import ProxmoxContainerSensor, ProxmoxContainerAttributeSensor
@@ -183,6 +187,18 @@ def _build_guest_entities(
                     icon,
                     guest_key=vm_key,
                     cluster_id=identity_cluster, identity_context=identity_context,
+                )
+            )
+        if vm_key in c_data.get("guest_agent_disk_usage", {}):
+            entities.append(
+                ProxmoxVMDiskUsageSensor(
+                    coordinator,
+                    vm_id,
+                    identity_node,
+                    label,
+                    guest_key=vm_key,
+                    cluster_id=identity_cluster,
+                    identity_context=identity_context,
                 )
             )
 
@@ -413,6 +429,21 @@ def _setup_guest_reconciliation(
 
             for gkey in list(live_guest_instances.keys()):
                 if gkey in current_groups:
+                    live_ids = {
+                        entity._attr_unique_id
+                        for entity in live_guest_instances[gkey]
+                    }
+                    new_members = [
+                        entity
+                        for entity in current_groups[gkey]
+                        if entity._attr_unique_id not in live_ids
+                    ]
+                    if new_members:
+                        async_add_entities(new_members)
+                        live_guest_instances[gkey].extend(new_members)
+                        known_unique_ids.update(
+                            entity._attr_unique_id for entity in new_members
+                        )
                     # Still local and healthy — clear any stale grace count.
                     missing_everywhere_counter.pop(gkey, None)
                     continue
@@ -610,6 +641,32 @@ def _cleanup_section_for_unique_id(unique_id, entry, server_type):
     return None
 
 
+def _is_guest_agent_metric_unique_id(unique_id) -> bool:
+    """Return whether a Registry row belongs to VM Disk Usage."""
+    uid = (unique_id or "").lower()
+    return (
+        uid.startswith("pve_")
+        and "_proxmox_vm_" in uid
+        and uid.endswith("_disk_usage_v1")
+    )
+
+
+def _cleanup_disabled_guest_agent_entities(registry, entries, enabled):
+    """Remove only Guest Agent metric rows when the option is explicitly off."""
+    if enabled:
+        return set()
+
+    removed = set()
+    for row in entries:
+        if row.domain != "sensor" or not _is_guest_agent_metric_unique_id(
+            row.unique_id
+        ):
+            continue
+        registry.async_remove(row.entity_id)
+        removed.add(row.entity_id)
+    return removed
+
+
 def _setup_storage_reconciliation(hass, entry, coordinator, node, storage_groups):
     deleting = {}
     devices = dr.async_get(hass)
@@ -763,6 +820,15 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
 
+    if data.get("server_type") == "PDM":
+        from .pdm import setup_pdm_sensors
+
+        if not coordinator.data:
+            _LOGGER.warning("No data found in PDM coordinator")
+            return
+        setup_pdm_sensors(hass, coordinator, entry, async_add_entities)
+        return
+
     selected_vms = entry.options.get(
         "selected_vms", entry.data.get("selected_vms", None)
     )
@@ -803,6 +869,11 @@ async def async_setup_entry(
 
     enable_cluster = entry.options.get(
         "enable_cluster", entry.data.get("enable_cluster", True)
+    )
+
+    enable_guest_agent_metrics = entry.options.get(
+        "enable_guest_agent_metrics",
+        entry.data.get("enable_guest_agent_metrics", False),
     )
 
     hass.data[DOMAIN][entry.entry_id]["enable_node_controls"] = enable_node_controls
@@ -1247,6 +1318,13 @@ async def async_setup_entry(
 
     ent_reg = er.async_get(hass)
     existing_entries = er.async_entries_for_config_entry(ent_reg, entry.entry_id)
+    removed_guest_agent_entities = (
+        _cleanup_disabled_guest_agent_entities(
+            ent_reg, existing_entries, enable_guest_agent_metrics
+        )
+        if server_type == "PVE"
+        else set()
+    )
     new_unique_ids = {getattr(entity, "_attr_unique_id", None) for entity in entities}
     cleanup_confirmed = c_data.get("_cleanup_confirmed", {})
     dev_reg = dr.async_get(hass)
@@ -1273,6 +1351,8 @@ async def async_setup_entry(
         }
 
     for entity_entry in existing_entries:
+        if entity_entry.entity_id in removed_guest_agent_entities:
+            continue
         if entity_entry.domain != "sensor":
             continue
 
@@ -1280,6 +1360,12 @@ async def async_setup_entry(
             continue
 
         if entity_entry.unique_id in legacy_pbs_last_action_ids:
+            continue
+
+        if (server_type == "CLUSTER"
+                and entity_entry.unique_id == f"pve_{entry.entry_id}_cluster_qdevice"):
+            # QDevice reconciliation owns this optional entity.  In
+            # particular, an unconfirmed API error must never remove it.
             continue
 
         cleanup_section = _cleanup_section_for_unique_id(
@@ -1329,11 +1415,13 @@ async def async_setup_entry(
 
     if server_type == "CLUSTER":
         from .replication import setup_replication_sensors
+        from .cluster import setup_qdevice_sensor
 
         context = cluster_guest_identity_context(
             entry, hass.config_entries.async_entries(DOMAIN), entry.data.get("cluster_name")
         )
         setup_replication_sensors(hass, coordinator, entry, async_add_entities, context)
+        setup_qdevice_sensor(hass, coordinator, entry, async_add_entities)
 
     # Live VM/CT migration handling
     if server_type == "PVE":

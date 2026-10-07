@@ -30,7 +30,7 @@ from .const import (
 
 from .api import ProxmoxClient
 from .coordinator import (
-    create_proxmox_coordinator, create_cluster_coordinator,
+    create_proxmox_coordinator, create_cluster_coordinator, create_pdm_coordinator,
     is_pbs_configuration_error, is_pbs_temporary_unavailable,
 )
 from .pbs_identity import async_remember_pbs_identity
@@ -44,6 +44,7 @@ from .logic.pve_devices import (
     reconcile_legacy_node_devices,
     can_remove_pve_device,
 )
+from .logic.pdm import PDMIdentityError, pdm_identity_scope
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -181,6 +182,9 @@ async def _migrate_guest_ids_to_cluster_scope(
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
+    if entry.data.get(CONF_PLATFORM_TYPE) == "PDM":
+        return await _async_setup_pdm_entry(hass, entry)
+
     #  CLUSTER entry (autocreated)
     if entry.data.get(CONF_PLATFORM_TYPE) == "CLUSTER":
         return await _async_setup_cluster_entry(hass, entry)
@@ -311,7 +315,49 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_config_entry_device(
     hass: HomeAssistant, config_entry: ConfigEntry, device_entry: dr.DeviceEntry
 ) -> bool:
+    if config_entry.data.get(CONF_PLATFORM_TYPE) == "PDM":
+        return True
     return can_remove_pve_device(hass, config_entry, device_entry)
+
+
+async def _async_setup_pdm_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up a PDM config entry."""
+    data = entry.data
+    try:
+        pdm_identity_scope(entry, hass.config_entries.async_entries(DOMAIN))
+    except PDMIdentityError as err:
+        raise ConfigEntryError(f"Invalid PDM identity: {err}") from err
+    client = ProxmoxClient(
+        host=data[CONF_HOST],
+        user=data[CONF_USER],
+        token_id=data.get(CONF_TOKEN_ID),
+        token_secret=data.get(CONF_TOKEN_SECRET),
+        server_type="PDM",
+        verify_ssl=data.get(CONF_VERIFY_SSL, False),
+    )
+    coordinator = await create_pdm_coordinator(hass, entry, client)
+    try:
+        async with asyncio.timeout(30):
+            await coordinator.async_config_entry_first_refresh()
+    except Exception as err:
+        if is_pbs_configuration_error(err):
+            raise ConfigEntryError(
+                f"PDM authentication or permission error for {data[CONF_HOST]}"
+            ) from err
+        raise ConfigEntryNotReady(
+            f"Unable to connect to Proxmox Datacenter Manager {data[CONF_HOST]}"
+        ) from err
+
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = {
+        "client": client,
+        "coordinator": coordinator,
+        "node": data.get(CONF_NODE, "PDM"),
+        "server_type": "PDM",
+        "features": data.get("features", {}),
+    }
+    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+    return True
 
 
 async def _async_setup_cluster_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -360,7 +406,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         runtime["unloading"] = True
 
     try:
-        if entry.data.get(CONF_PLATFORM_TYPE) == "CLUSTER":
+        if entry.data.get(CONF_PLATFORM_TYPE) in ("CLUSTER", "PDM"):
             unload_ok = await hass.config_entries.async_unload_platforms(
                 entry, [Platform.SENSOR]
             )

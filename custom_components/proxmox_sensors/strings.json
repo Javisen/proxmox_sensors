@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "1. Server Connection",
-        "description": "Enter your Proxmox server address. The port is managed automatically (8006 for PVE / 8007 for PBS).",
+        "description": "Enter your Proxmox server address. The port is managed automatically (8006 for PVE / 8007 for PBS / 8443 for PDM).",
         "data": {
           "host": "Server Address (IP or FQDN)",
           "platform_type": "Server Type"
@@ -57,6 +57,16 @@
         "menu_options": {
           "new_cluster_association": "Create new association",
           "recover_cluster_scope": "Recover association of existing PVE entries"
+        }
+      },
+      "credentials_pdm": {
+        "title": "3. Access Credentials — Proxmox Datacenter Manager",
+        "description": "Enter the API token details for PDM (port 8443).",
+        "data": {
+          "user": "User (including realm)",
+          "token_id": "Token ID",
+          "token_secret": "Token Secret",
+          "verify_ssl": "Verify SSL Certificate"
         }
       },
       "recover_cluster_scope": {
@@ -152,6 +162,7 @@
           "enable_physical_disks": "Enable physical disk monitoring",
           "enable_smart_monitoring": "Enable SMART & NVMe health monitoring",
           "enable_node_controls": "Enable node power controls",
+          "enable_guest_agent_metrics": "Enable Guest Agent Metrics",
           "enable_backup_progress": "Enable backup progress sensor",
           "enable_storage_list": "Enable storage list sensor",
           "enable_nodes_list": "Enable nodes list sensor",
@@ -230,6 +241,9 @@
       },
       "vm_status": {
         "name": "Status"
+      },
+      "vm_disk_usage": {
+        "name": "VM Disk Usage"
       },
       "vm_cpu_usage": {
         "name": "CPU Usage"
@@ -418,6 +432,27 @@
       },
       "cluster_ha_status": {
         "name": "HA Status"
+      },
+      "cluster_qdevice": {
+        "name": "Corosync QDevice"
+      },
+      "pdm_status": {
+        "name": "Datacenter Status"
+      },
+      "pdm_inventory": {
+        "name": "Datacenter Inventory"
+      },
+      "pdm_capacity": {
+        "name": "Datacenter Capacity"
+      },
+      "pdm_updates": {
+        "name": "Datacenter Updates"
+      },
+      "pdm_remote_status": {
+        "name": "Remote Status"
+      },
+      "pdm_remote_overview": {
+        "name": "Remote Overview"
       },
       "cluster_firewall": {
         "name": "Firewall"
@@ -721,7 +756,8 @@
       "options": {
         "pve": "Proxmox VE",
         "pbs": "Proxmox Backup Server",
-        "cluster": "Proxmox Cluster"
+        "cluster": "Proxmox Cluster",
+        "pdm": "Proxmox Datacenter Manager"
       }
     },
     "cluster_scope_action": {

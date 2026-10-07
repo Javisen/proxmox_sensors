@@ -10,6 +10,7 @@ from .layout import get_dashboard_layout
 from .pve_resources import build_pve_dashboard_model
 from .pbs_resources import build_pbs_dashboard_model
 from .cluster_resources import build_cluster_dashboard_model
+from .pdm_resources import build_pdm_dashboard_model
 from .selection import available_dashboard_types
 
 SERVICE_DASHBOARD_PREVIEW = "dashboard_preview"
@@ -31,6 +32,9 @@ def async_register_preview(hass: HomeAssistant) -> None:
             "excluded": inventory["excluded"],
             "inventory": inventory,
         }
+        if "pdm" in available:
+            response["pdm_dashboard_model"] = build_pdm_dashboard_model(
+                inventory, response["dashboard_layouts"]["pdm"])
         if "pve" in available:
             response["pve_dashboard_model"] = build_pve_dashboard_model(
                 inventory, response["dashboard_layouts"]["pve"])

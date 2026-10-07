@@ -15,6 +15,7 @@ CONF_PLATFORM_TYPE = "platform_type"
 CONF_SENSORS = "sensors"
 PVE_LOCAL_IDENTITY_VERSION = "pve_local_identity_version"
 PVE_IDENTITY_ID = "pve_identity_id"
+PDM_IDENTITY_ID = "pdm_identity_id"
 
 # Supported server types
 SERVER_PVE = "PVE"

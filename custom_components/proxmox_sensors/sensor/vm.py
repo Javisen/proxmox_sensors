@@ -286,3 +286,57 @@ class ProxmoxVMAttributeSensor(ProxmoxBaseSensor):
                         pass
 
         return attrs
+
+
+class ProxmoxVMDiskUsageSensor(ProxmoxVMAttributeSensor):
+    """Linux root filesystem usage reported by QEMU Guest Agent."""
+
+    def __init__(
+        self,
+        coordinator,
+        vm_id,
+        node,
+        label,
+        guest_key=None,
+        cluster_id=None,
+        identity_context=None,
+    ):
+        super().__init__(
+            coordinator,
+            vm_id,
+            node,
+            label,
+            "disk_usage",
+            "%",
+            "mdi:chart-donut",
+            guest_key=guest_key,
+            cluster_id=cluster_id,
+            identity_context=identity_context,
+        )
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    def _get_disk_usage_data(self):
+        data = self.coordinator.data or {}
+        metrics = data.get("guest_agent_disk_usage", {})
+        return metrics.get(self._guest_key)
+
+    def _get_value(self):
+        metrics = self._get_disk_usage_data()
+        return metrics.get("usage") if isinstance(metrics, dict) else None
+
+    @property
+    def available(self):
+        return super().available and isinstance(self._get_disk_usage_data(), dict)
+
+    @property
+    def extra_state_attributes(self):
+        metrics = self._get_disk_usage_data()
+        if not isinstance(metrics, dict):
+            return {}
+        return {
+            "total": metrics.get("total"),
+            "used": metrics.get("used"),
+            "free": metrics.get("free"),
+            "filesystem_type": metrics.get("filesystem_type"),
+            "additional_filesystems": metrics.get("additional_filesystems", []),
+        }

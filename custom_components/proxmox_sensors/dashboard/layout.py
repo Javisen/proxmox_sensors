@@ -28,6 +28,14 @@ _STYLE = {
 
 # IDs and order are a logical contract, not frontend view/section identifiers.
 _BLOCKS = {
+    "pdm": (
+        ("header", "Proxmox Datacenter Manager", "mdi:view-dashboard", "header"),
+        ("datacenter_status", "Datacenter Status", "mdi:heart-pulse", "summary"),
+        ("capacity", "Datacenter Capacity", "mdi:database", "summary"),
+        ("inventory", "Datacenter Inventory", "mdi:server-network", "summary"),
+        ("updates", "Datacenter Updates", "mdi:package-up", "activity"),
+        ("remotes", "PVE / PBS Remotes", "mdi:lan-connect", "resource_group"),
+    ),
     "pve": (
         ("header", "Proxmox VE", "mdi:server", "header"),
         ("node_health", "Node health", "mdi:heart-pulse", "summary"),
@@ -63,6 +71,7 @@ _BLOCKS = {
 }
 
 _GROUPING = {
+    "pdm": {"scope": "datacenter", "keys": ["entry_id", "pdm_identity_id"]},
     "pve": {"scope": "node", "keys": ["entry_id"]},
     "pbs": {"scope": "server", "keys": ["entry_id", "server_id"]},
     "cluster": {"scope": "cluster", "keys": ["entry_id", "cluster_id"]},

@@ -1,8 +1,8 @@
 /** Generated dashboard only: selection and resource identities belong to Python. */
 const TYPE = "proxmox-sensors";
-const FAMILIES = ["pve", "pbs", "cluster"];
-const TITLES = {pve: "PVE", pbs: "PBS", cluster: "Cluster"};
-const ICONS = {pve: "mdi:server", pbs: "mdi:backup-restore", cluster: "mdi:server-network"};
+const FAMILIES = ["pdm", "pve", "pbs", "cluster"];
+const TITLES = {pdm: "PDM", pve: "PVE", pbs: "PBS", cluster: "Cluster"};
+const ICONS = {pdm: "mdi:view-dashboard", pve: "mdi:server", pbs: "mdi:backup-restore", cluster: "mdi:server-network"};
 const HEALTH_TILES = new Set(["cpu", "memory", "swap", "rootfs", "load", "iowait", "ksm", "score",
   "cpu_usage", "ram_usage", "ram_total", "ram_used", "ram_free", "temperature"]);
 // `background` is a native Lovelace view property. HA's hui-root applies it to
@@ -13,7 +13,7 @@ const DASHBOARD_BACKGROUND = "#0b1216";
 function options(config) {
   const selected = config.dashboards;
   if (selected !== undefined && (!Array.isArray(selected) || selected.some(x => !FAMILIES.includes(x)))) {
-    throw new Error("dashboards must be an array containing pve, pbs or cluster");
+    throw new Error("dashboards must be an array containing pdm, pve, pbs or cluster");
   }
   for (const key of ["show_diagnostics", "show_maintenance_controls"]) {
     if (config[key] !== undefined && typeof config[key] !== "boolean") throw new Error(`${key} must be boolean`);
@@ -169,7 +169,7 @@ const percent = ref => `{% set n = ${expression(ref)} %}{% if is_number(n) %}{{ 
 const text = input => `{{ ${JSON.stringify(String(input))} | e }}`;
 const icon = name => `<ha-icon icon="${name}"></ha-icon>`;
 const chevron = icon('mdi:chevron-right');
-const semanticState = ref => `{% set raw = ${ref ? expression(ref) : 'none'} %}{% set s = (raw if raw is not none else '—') | string %}{% set color = '#4cc653' if s | lower in ['online','running','ok','healthy'] else '#ffca28' if s | lower in ['warning','degraded'] else '#ef5350' if s | lower in ['error','critical','offline','faulted','failed'] else '#a6b0b9' %}`;
+const semanticState = ref => `{% set raw = ${ref ? expression(ref) : 'none'} %}{% set s = (raw if raw is not none else '—') | string %}{% set color = '#4cc653' if s | lower in ['online','running','ok','good','healthy','connected'] else '#ffca28' if s | lower in ['warning','degraded','partial'] else '#ef5350' if s | lower in ['error','critical','offline','faulted','failed'] else '#a6b0b9' if s | lower in ['unknown','unavailable'] else '#a6b0b9' %}`;
 const statusDot = '<abbr title="{{ s | e }}"><font color="{{ color }}"><i></i></font></abbr>';
 function statusValue(ref, pill = false) {
   const body = `<font color="{{ color }}">${pill ? '<i></i> ' : ''}{{ s | e }}</font>`;
@@ -458,6 +458,160 @@ function guestDetailCards(resource, block, layout, opts, hass) {
   return cards;
 }
 
+function pdmBlockRef(group, block, metric) {
+  return blockRefs(group, block).find(({ref}) => ref.metric === metric)?.ref;
+}
+const pdmMapNumber = (ref, key, unit = '', digits = 2) =>
+  `{% set data = ${expression(ref)} %}{% set n = data.get(${JSON.stringify(key)}) if data is mapping else none %}{% if is_number(n) %}{{ n | float | round(${digits}) }}${unit}{% else %}—{% endif %}`;
+const pdmMapPercent = ref => pdmMapNumber(ref, 'used_percent', ' %');
+const pdmMapFill = (ref, key = 'used_percent') =>
+  `{% set data = ${expression(ref)} %}{% set n = data.get(${JSON.stringify(key)}) if data is mapping else none %}{{ ([0, [100, n | float] | min] | max) * 2.7 if is_number(n) else 0 }}`;
+const PDM_COMPACT_CSS = `section { min-height: 0; }
+  section > header { margin-bottom: 12px; }
+  dl > div { gap: 8px; padding: 10px 6px; }
+  dd { gap: 8px; }
+  dd > span { color: #b7c2cc; font-size: .88em; text-align: center; }
+  nav > :is(a, article) { min-height: 38px; }`;
+function pdmHeader(group) {
+  const status = pdmBlockRef(group, 'datacenter_status', 'status');
+  const capacity = pdmBlockRef(group, 'capacity', 'capacity');
+  const remoteParts = [];
+  const remoteRefs = [];
+  for (const resource of group.blocks.remotes || []) {
+    const remoteStatus = metricRef(resource, 'status');
+    const type = remoteStatus
+      ? `{% set t = state_attr(${JSON.stringify(remoteStatus.entity_id)}, 'remote_type') %}{{ (t | upper if t else 'Remote') | e }}`
+      : 'Remote';
+    if (remoteStatus) remoteRefs.push(remoteStatus);
+    remoteParts.push(`${text(pdmRemoteTitle(resource))} (${type})`);
+  }
+  const secondary = remoteParts.length ? remoteParts.join(' + ') : 'No remotes';
+  const facts = [
+    capacity ? moreInfoRow(capacity, `<div><span>Capacity</span><strong>${percent(capacity)}</strong></div>`) : '',
+    status ? moreInfoRow(status, `<div><span>Status</span><strong>${statusValue(status, true)}</strong></div>`) : '',
+  ].join('');
+  return {...pveMarkdown(null, `<header><div><img src="/proxmox_sensors/dashboard/logo_small.png" alt="Proxmox Extended Sensors" width="56">${icon('mdi:view-dashboard')}<div><strong>${text(group.title || group.entry_id)} · Proxmox Datacenter Manager</strong><span>${secondary}</span></div></div><aside>${facts}</aside></header>`, [...(status ? [status] : []), ...(capacity ? [capacity] : []), ...remoteRefs], 'mdi:view-dashboard',
+    'header > div > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; } header > div > div > span, aside span { color: #b7c2cc; } aside > a { color: inherit; text-decoration: none; cursor: pointer; } aside > a > div { display: flex; flex-direction: column; gap: 6px; border-left: 1px solid #28343b; padding-left: 16px; } aside > a:first-child > div { border-left: 0; padding-left: 0; }'),
+    grid_options: {columns: 'full', rows: 'auto'}};
+}
+function pdmInventoryCount(ref, attribute) {
+  return `{% set data = state_attr(${JSON.stringify(ref.entity_id)}, ${JSON.stringify(attribute)}) %}{% set ns = namespace(total=0, known=false) %}{% if data is mapping %}{% for n in data.values() %}{% if is_number(n) %}{% set ns.total = ns.total + n | int %}{% set ns.known = true %}{% endif %}{% endfor %}{% endif %}{{ ns.total if ns.known else '—' }}`;
+}
+function pdmInventoryCard(group) {
+  const ref = pdmBlockRef(group, 'inventory', 'inventory');
+  if (!ref) return null;
+  const panels = [
+    ['mdi:monitor', 'Nodes', `{% set n = ${expression(ref)} %}{{ n | int if is_number(n) else '—' }}`],
+    ['mdi:cube-outline', 'VMs', pdmInventoryCount(ref, 'qemu')],
+    ['mdi:cube', 'CTs', pdmInventoryCount(ref, 'lxc')],
+    ['mdi:database', 'PVE Storage', pdmInventoryCount(ref, 'storages')],
+    ['mdi:backup-restore', 'PBS Datastores', pdmInventoryCount(ref, 'pbs_datastores')],
+    ['mdi:lan', 'SDN Zones', pdmInventoryCount(ref, 'sdn_zones')],
+  ].map(([glyph, title, display]) => `<div><dt>${icon(glyph)}</dt><dd><strong>${display}</strong><span>${title}</span>${miniPanelLink(ref)}</dd></div>`);
+  return pveMarkdown('Datacenter Inventory', `<dl>${panels.join('')}</dl>`, [ref], 'mdi:server-network',
+    MINI_PANEL_CSS + PDM_COMPACT_CSS + PVE_TOP_CARD_CSS + PVE_CENTERED_TOP_CARD_CSS
+    + 'dl { grid-template-columns: repeat(3, minmax(0, 1fr)); } dd strong { font-size: 1.25em; }');
+}
+function pdmUpdatesCard(group) {
+  const ref = pdmBlockRef(group, 'updates', 'updates');
+  if (!ref) return null;
+  const remotes = `{% set data = state_attr(${JSON.stringify(ref.entity_id)}, 'remotes') %}{% if data is mapping %}{% for remote_name, remote in data | dictsort %}{% set ns = namespace(total=0, known=false) %}{% if remote is mapping and remote.get('nodes') is mapping %}{% for node in remote.get('nodes').values() %}{% if node is mapping and is_number(node.get('number_of_updates')) %}{% set ns.total = ns.total + node.get('number_of_updates') | int %}{% set ns.known = true %}{% endif %}{% endfor %}{% endif %}<article>${icon('mdi:source-branch')}<span><strong>{{ remote_name | e }}</strong>{% if remote is mapping and remote.get('remote_type') %} ({{ remote.get('remote_type') | upper | e }}){% endif %}</span><span>{{ ns.total if ns.known else '—' }}</span></article>{% if remote is mapping and remote.get('nodes') is mapping %}{% for node_name, node in remote.get('nodes') | dictsort %}<article>${icon('mdi:chevron-right')}<span>{{ node_name | e }}</span><span>{% if node is mapping and is_number(node.get('number_of_updates')) %}{{ node.get('number_of_updates') | int }}{% else %}—{% endif %}</span></article>{% endfor %}{% endif %}{% endfor %}{% else %}<article>${icon('mdi:alert-circle-outline')}<span>Update breakdown unavailable</span><span>—</span></article>{% endif %}`;
+  const total = `{% set n = ${expression(ref)} %}{% if is_number(n) %}{{ n | int }}{% else %}—{% endif %}`;
+  const freshness = `{% set endpoint = state_attr(${JSON.stringify(ref.entity_id)}, 'endpoint_fresh') %}{% set complete = state_attr(${JSON.stringify(ref.entity_id)}, 'snapshot_complete') %}{% set age = state_attr(${JSON.stringify(ref.entity_id)}, 'oldest_refresh_age') %}<font color="{{ '#4cc653' if endpoint and complete else '#ffca28' if complete else '#a6b0b9' }}">{{ 'Endpoint current' if endpoint and complete else 'Last complete snapshot' if complete else 'Unavailable' }}</font>{% if age %} · {{ age | e }}{% endif %}`;
+  return pveMarkdown('Datacenter Updates', `<div><strong>${icon('mdi:cog')} ${total}</strong><span>Updates available</span><small>${freshness}</small></div><nav>${remotes}</nav>${miniPanelLink(ref)}`,
+    [ref], 'mdi:package-up', PDM_COMPACT_CSS + PVE_TOP_CARD_CSS
+    + 'section { position: relative; display: flex; flex-direction: column; } section > div { display: flex; flex-direction: column; align-items: center; flex: none; margin: 2px 0 12px; } section > div strong { font-size: 1.7em; } section > div > span, section > div > small { color: #b7c2cc; text-align: center; } section > nav { flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid #334149; padding-top: 8px; } nav > article { grid-template-columns: 18px minmax(0, 1fr) auto; border: 0; padding: 2px 0; min-height: 23px; background: transparent; } nav > article > ha-icon { --mdc-icon-size: 15px; } section > a { position: absolute; inset: 0; }');
+}
+function pdmRemoteTitle(resource) {
+  const title = String(resource.title || '').trim();
+  return title.startsWith('PDM Remote: ') ? title.slice(12) : title || 'Remote';
+}
+function pdmFreshness(statusRef, overviewRef) {
+  const status = statusRef
+    ? `state_attr(${JSON.stringify(statusRef.entity_id)}, 'status_fresh')`
+    : 'false';
+  const resources = overviewRef
+    ? `state_attr(${JSON.stringify(overviewRef.entity_id)}, 'resources_fresh')`
+    : 'false';
+  return `{% set status_fresh = ${status} %}{% set resources_fresh = ${resources} %}<font color="{{ '#4cc653' if status_fresh and resources_fresh else '#ffca28' }}">{{ 'Fresh' if status_fresh and resources_fresh else 'Partial' }}</font>`;
+}
+function pdmRemotesCard(group) {
+  const rows = [], refs = [];
+  for (const resource of group.blocks.remotes || []) {
+    const status = resource.references.find(ref => ref.metric === 'status' && !ref.attribute);
+    const overview = resource.references.find(ref => ref.metric === 'overview' && !ref.attribute);
+    const anchor = status || overview;
+    if (!anchor) continue;
+    refs.push(...[status, overview].filter(Boolean));
+    const type = status
+      ? `{% set t = state_attr(${JSON.stringify(status.entity_id)}, 'remote_type') %}{{ (t | upper if t else 'REMOTE') | e }}`
+      : 'REMOTE';
+    const state = status ? statusValue(status) : '<font color="#a6b0b9">Unknown</font>';
+    const count = overview ? value(overview) : '—';
+    rows.push(moreInfoRow(anchor, `${icon('mdi:lan-connect')}<span><strong>${text(pdmRemoteTitle(resource))}</strong> · ${type}</span><span>${state} · ${count} resources · ${pdmFreshness(status, overview)}</span>`));
+  }
+  if (!rows.length) {
+    return pveMarkdown('PVE / PBS Remotes', `<nav><article>${icon('mdi:lan-disconnect')}<span>No remotes</span></article></nav>`, [], 'mdi:lan-connect',
+      PDM_COMPACT_CSS + PVE_TOP_CARD_CSS + 'section { display: flex; flex-direction: column; } nav { flex: 1; justify-content: center; } nav > article { grid-template-columns: 24px minmax(0, 1fr); }');
+  }
+  return rowsCard('PVE / PBS Remotes', rows, refs, 'mdi:lan-connect', MORE_INFO_ROW_CSS
+    + PDM_COMPACT_CSS + PVE_TOP_CARD_CSS + 'section { display: flex; flex-direction: column; } section > nav { flex: 1; min-height: 0; overflow-y: auto; } nav > a > ha-icon { color: #ef7d00; } nav > a > span:last-child { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }');
+}
+function pdmPlatformCapacityCard(group, prefix, title, glyph) {
+  const refs = {
+    cpu: pdmBlockRef(group, 'capacity', `${prefix}_cpu_stats`),
+    memory: pdmBlockRef(group, 'capacity', `${prefix}_memory_stats`),
+    storage: pdmBlockRef(group, 'capacity', `${prefix}_storage_stats`),
+  };
+  if (!refs.cpu && !refs.memory && !refs.storage) return null;
+  const selected = Object.values(refs).filter(Boolean), panels = [], css = [];
+  if (refs.cpu) {
+    const details = `${pdmMapNumber(refs.cpu, 'used_threads')} / ${pdmMapNumber(refs.cpu, 'max_threads')} threads`;
+    const allocated = prefix === 'pve' ? `<span>${pdmMapNumber(refs.cpu, 'allocated_cores')} allocated cores</span>` : '';
+    panels.push(`<div><dt>CPU</dt><dd><figure><strong>${pdmMapPercent(refs.cpu)}</strong></figure><span>${details}</span>${allocated}${miniPanelLink(refs.cpu)}</dd></div>`);
+    css.push(`dl > div:nth-child(${panels.length}) figure { --fill: ${pdmMapFill(refs.cpu)}deg; }`);
+  }
+  for (const [key, label] of [['memory', 'Memory'], ['storage', 'Storage']]) {
+    const ref = refs[key];
+    if (!ref) continue;
+    panels.push(`<div><dt>${label}</dt><dd><figure><strong>${pdmMapPercent(ref)}</strong></figure><span>${pdmMapNumber(ref, 'used_gib')} / ${pdmMapNumber(ref, 'total_gib')} GiB</span>${miniPanelLink(ref)}</dd></div>`);
+    css.push(`dl > div:nth-child(${panels.length}) figure { --fill: ${pdmMapFill(ref)}deg; }`);
+  }
+  const card = pveMarkdown(title, `<dl>${panels.join('')}</dl>`, selected, glyph,
+    MINI_PANEL_CSS + PDM_COMPACT_CSS + PVE_TOP_CARD_CSS + PVE_CENTERED_TOP_CARD_CSS
+    + 'dl { grid-template-columns: repeat(3, minmax(0, 1fr)); } figure { max-width: 112px; } @media (max-width: 600px) { dl { grid-template-columns: 1fr; } }' + css.join(''));
+  const available = selected.map(ref => `{% set item = ${expression(ref)} %}{% if item is mapping and item | length > 0 %}{% set ns.visible = true %}{% endif %}`).join('');
+  card.card_mod.style['.'] += `{% set ns = namespace(visible=false) %}${available} ha-card { display: {{ 'block' if ns.visible else 'none' }}; }`;
+  return card;
+}
+function pdmStorageCard(group) {
+  const rows = [], refs = [], css = [];
+  for (const [prefix, title] of [['pve', 'PVE Storage'], ['pbs', 'PBS Storage']]) {
+    const ref = pdmBlockRef(group, 'capacity', `${prefix}_storage_stats`);
+    if (!ref) continue;
+    refs.push(ref);
+    const row = moreInfoRow(ref, `${icon('mdi:harddisk')}<span><strong>${title}</strong><small>${pdmMapNumber(ref, 'used_gib')} / ${pdmMapNumber(ref, 'total_gib')} GiB</small></span><u></u><span>${pdmMapPercent(ref)}</span>`);
+    rows.push(`{% set storage = ${expression(ref)} %}{% if storage is mapping and storage | length > 0 %}${row}{% endif %}`);
+    css.push(`nav > a:nth-child(${rows.length}) > u { --usage: ${pdmMapFill(ref)}%; }`);
+  }
+  return rows.length ? rowsCard('Storage', rows, refs, 'mdi:database', MORE_INFO_ROW_CSS + PDM_COMPACT_CSS + PVE_TOP_CARD_CSS
+    + 'section { display: flex; flex-direction: column; } section > nav { flex: 1; justify-content: center; } nav > a { grid-template-columns: 24px minmax(100px, .65fr) minmax(80px, 1fr) auto; } nav > a > span:first-of-type { display: grid; gap: 2px; } nav small { color: #b7c2cc; } nav u { height: 10px; border-radius: 6px; background: #243037; overflow: hidden; } nav u::before { content: ""; display: block; width: var(--usage, 0%); height: 100%; background: #4193ef; } @media (max-width: 600px) { nav > a { grid-template-columns: 20px minmax(0, 1fr) auto; } nav > a > u { display: none; } }' + css.join('')) : null;
+}
+function buildPdmSections(group) {
+  const sections = [{type: 'grid', column_span: 3, cards: [pdmHeader(group)]}];
+  for (const card of [
+    pdmPlatformCapacityCard(group, 'pve', 'Virtual Environment (PVE)', 'mdi:monitor'),
+    pdmPlatformCapacityCard(group, 'pbs', 'Backup Server (PBS)', 'mdi:server'),
+    pdmUpdatesCard(group),
+    pdmInventoryCard(group),
+    pdmStorageCard(group),
+    pdmRemotesCard(group),
+  ]) {
+    if (card) sections.push({type: 'grid', cards: [card]});
+  }
+  return sections;
+}
+
 // PBS uses the shared presentation helpers, but only PBS model metrics.
 const PBS_ROW_CSS = MORE_INFO_ROW_CSS + 'nav > a > ha-icon { color: #ef7d00; } h3 { font: inherit; color: #b7c2cc; margin: 16px 0 8px; overflow-wrap: anywhere; }';
 function buildPbsHeader(group) {
@@ -611,6 +765,11 @@ export function generateDashboard(payload, config = {}, basePath = null, hass = 
       (a.node || a.entry_id || "").localeCompare(b.node || b.entry_id || "", undefined,
         {numeric: true, sensitivity: "base"})) : model.groups;
     for (const group of groups) {
+      if (family === 'pdm') {
+        views.push(darkView({title: group.title || TITLES[family], path: `pdm-${encodePathPart(group.entry_id)}`,
+          icon: ICONS[family], type: "sections", max_columns: 3, sections: buildPdmSections(group)}));
+        continue;
+      }
       if (family === 'pbs') {
         const sections = buildPbsSections(group, opts);
         views.push(darkView({title: group.server_id || TITLES[family], path: `pbs-${encodePathPart(group.entry_id)}`,
@@ -685,6 +844,6 @@ if (!customElements.get(elementName)) customElements.define(elementName, Proxmox
 window.customStrategies = window.customStrategies || [];
 if (!window.customStrategies.some(item => item.type === TYPE && item.strategyType === "dashboard")) {
   window.customStrategies.push({type: TYPE, strategyType: "dashboard", name: "Proxmox Extended Sensors",
-    description: "Generated PVE, PBS and Cluster dashboards from your configured Proxmox resources.",
+    description: "Generated PDM, PVE, PBS and Cluster dashboards from your configured Proxmox resources.",
     documentationURL: "https://github.com/Javisen/proxmox_sensors"});
 }

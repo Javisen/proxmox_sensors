@@ -38,6 +38,21 @@ def classify_entity(row, entry, identifiers):
     """Return family plus resource type/key/label and optional guest identity."""
     uid = row.unique_id or ""
     key = getattr(row, "translation_key", None) or ""
+    if entry["platform_type"] == "PDM":
+        scope = entry.get("pdm_identity_id")
+        root = f"pdm_server_{scope}" if scope else None
+        if root and (root in identifiers or uid.startswith(f"pdm_{scope}_")
+                     and "_remote_" not in uid):
+            return {"family": "pdm", "kind": "pdm", "label": "Datacenter",
+                    "key": resource_id(entry["entry_id"], "pdm")}
+        prefix = f"pdm_remote_{scope}_" if scope else None
+        matches = sorted(identifier for identifier in identifiers
+                         if prefix and identifier.startswith(prefix))
+        if len(matches) == 1 and re.fullmatch(re.escape(prefix) + r"[0-9a-f]{64}", matches[0]):
+            return {"family": "pdm_remote", "kind": "pdm_remote", "label": "PDM Remote",
+                    "key": resource_id(entry["entry_id"], "pdm_remote", matches[0][len(prefix):])}
+        return {"family": "pdm", "kind": "pdm_unknown", "label": "PDM",
+                "key": resource_id(entry["entry_id"], "pdm_unknown", uid)}
     guest = guest_identity(uid, identifiers, entry)
     if guest is None and key.startswith(("vm_", "ct_")):
         match = re.fullmatch(r"proxmox_" + re.escape((entry.get("node") or "").lower())

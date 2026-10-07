@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 import logging
-
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.core import callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
@@ -421,7 +422,106 @@ class ProxmoxClusterHASensor(ProxmoxClusterBaseSensor):
 
 
 # ---------------------------------------------------------------------------
-# 9. FIREWALL Status
+# 9. COROSYNC QDEVICE
+# ---------------------------------------------------------------------------
+
+
+class ProxmoxClusterQDeviceSensor(ProxmoxClusterBaseSensor):
+    """Corosync QDevice connection status."""
+
+    def __init__(self, coordinator, entry_id: str, node: str):
+        super().__init__(coordinator, entry_id, node)
+        self._attr_translation_key = "cluster_qdevice"
+        self._attr_unique_id = f"pve_{entry_id}_cluster_qdevice"
+        self._attr_icon = "mdi:shield-link-variant"
+
+    def _qdevice(self) -> dict:
+        value = self.coordinator.data.get("cluster_qdevice", {})
+        return value if isinstance(value, dict) else {}
+
+    @property
+    def native_value(self):
+        return self._qdevice().get("State", "unknown")
+
+    @property
+    def extra_state_attributes(self):
+        qdevice = self._qdevice()
+        return {
+            "QNetd host": qdevice.get("QNetd host"),
+            "Last poll call": qdevice.get("Last poll call"),
+            "Model": qdevice.get("Model"),
+            "Algorithm": qdevice.get("Algorithm"),
+            "Tie-breaker": qdevice.get("Tie-breaker"),
+        }
+
+
+def setup_qdevice_sensor(hass, coordinator, entry, async_add_entities):
+    """Reconcile the optional QDevice entity for one CLUSTER entry."""
+    registry = er.async_get(hass)
+    unique_id = f"pve_{entry.entry_id}_cluster_qdevice"
+    instance = None
+    removing_task = None
+
+    def registered_row():
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
+        return registry.async_get(entity_id) if entity_id else None
+
+    async def remove_entity():
+        nonlocal instance
+        try:
+            for entity in (instance,) if instance is not None else ():
+                if getattr(entity, "hass", None) is not None:
+                    await entity.async_remove(force_remove=True)
+        except Exception:
+            _LOGGER.exception("Failed to remove QDevice entity")
+        finally:
+            row = registered_row()
+            if row is not None and row.config_entry_id == entry.entry_id:
+                registry.async_remove(row.entity_id)
+            instance = None
+
+    @callback
+    def reconcile():
+        nonlocal instance, removing_task
+        data = coordinator.data or {}
+        if data.get("cluster_qdevice_ok") is not True:
+            return
+
+        if removing_task is not None:
+            if not removing_task.done():
+                return
+            removing_task = None
+
+        qdevice = data.get("cluster_qdevice")
+        configured = isinstance(qdevice, dict) and bool(qdevice)
+        row = registered_row()
+
+        if configured:
+            if instance is not None:
+                return
+            if row is not None and row.config_entry_id != entry.entry_id:
+                return
+            instance = ProxmoxClusterQDeviceSensor(
+                coordinator, entry.entry_id, entry.data.get("node", "")
+            )
+            async_add_entities([instance])
+            return
+
+        if instance is not None or (
+            row is not None and row.config_entry_id == entry.entry_id
+        ):
+            removing_task = hass.async_create_task(remove_entity())
+            # If the device is reconfigured before removal finishes, make
+            # that same update eligible for recreation once the registry row
+            # has been cleaned up.
+            removing_task.add_done_callback(lambda _task: reconcile())
+
+    reconcile()
+    entry.async_on_unload(coordinator.async_add_listener(reconcile))
+
+
+# ---------------------------------------------------------------------------
+# 10. FIREWALL Status
 # ---------------------------------------------------------------------------
 
 
