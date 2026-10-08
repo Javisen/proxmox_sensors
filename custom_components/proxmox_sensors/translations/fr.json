@@ -112,6 +112,8 @@
     "error": {
       "recovery_unavailable": "Le groupe de PVE a changé ou son identité est en conflit avec le Registry. Choisissez à nouveau ; aucun CLUSTER n'a été créé.",
       "cluster_unavailable": "Le cluster sélectionné ne peut plus être rejoint. Revenez en arrière ou sélectionnez un autre cluster.",
+      "invalid_host": "Enter a valid hostname or IP address without a protocol, path, or port.",
+      "ipv6_not_supported": "IPv6 addresses are currently supported only for PVE and CLUSTER connections.",
       "cannot_connect": "Erreur de connexion. Vérifiez l'adresse du serveur.",
       "invalid_auth": "Échec d'authentification. Vérifiez les identifiants ou les permissions du jeton.",
       "insufficient_permissions": "Le compte ne dispose pas des autorisations suffisantes pour accéder aux ressources Proxmox requises.",

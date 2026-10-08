@@ -112,6 +112,8 @@
     "error": {
       "recovery_unavailable": "PVE 组已变化，或其身份与 Registry 冲突。请重新选择；未创建 CLUSTER。",
       "cluster_unavailable": "所选集群已无法加入。请返回或选择其他集群。",
+      "invalid_host": "Enter a valid hostname or IP address without a protocol, path, or port.",
+      "ipv6_not_supported": "IPv6 addresses are currently supported only for PVE and CLUSTER connections.",
       "cannot_connect": "连接错误。请检查服务器地址。",
       "invalid_auth": "认证失败。请检查凭据或 Token 权限。",
       "insufficient_permissions": "该账户没有足够的权限访问所需的 Proxmox 资源。",

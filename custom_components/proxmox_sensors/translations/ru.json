@@ -112,6 +112,8 @@
     "error": {
       "recovery_unavailable": "Группа PVE изменилась или её идентичность конфликтует с Registry. Выберите снова; CLUSTER не создан.",
       "cluster_unavailable": "Выбранный кластер больше недоступен для присоединения. Вернитесь назад или выберите другой кластер.",
+      "invalid_host": "Enter a valid hostname or IP address without a protocol, path, or port.",
+      "ipv6_not_supported": "IPv6 addresses are currently supported only for PVE and CLUSTER connections.",
       "cannot_connect": "Ошибка подключения. Проверьте адрес сервера.",
       "invalid_auth": "Ошибка аутентификации. Проверьте учетные данные или права токена.",
       "insufficient_permissions": "У учетной записи недостаточно прав для доступа к необходимым ресурсам Proxmox.",

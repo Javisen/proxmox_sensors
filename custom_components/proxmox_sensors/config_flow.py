@@ -1,8 +1,10 @@
 """CONFIG FLOW for Proxmox Extended Sensors."""
 
 from __future__ import annotations
+import ipaddress
 import logging
 import asyncio
+import re
 from .logic.cluster_scope import (
     ACTIVE_SCOPE, CLUSTER_SCOPE_ID, CLUSTER_SCOPE_STATE, new_cluster_scope_id,
     cluster_entry_scope_status, entry_cluster_scope_id, recoverable_pve_scopes,
@@ -69,6 +71,8 @@ PDM_EXTRA_ENDPOINTS = [
     "remotes/updates/summary",
 ]
 
+_HOST_LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?")
+
 
 def _pbs_server_id_index(server_id: str | None) -> int | None:
     server_id = str(server_id or "").lower()
@@ -100,6 +104,52 @@ def _next_pbs_server_id(entries, reserved_server_ids=()):
 
 def _normalized_config_host(value) -> str:
     return str(value or "").strip().rstrip(".").lower()
+
+
+def _config_host_error(value, platform) -> str | None:
+    """Validate a new config-entry host against the clients' real support."""
+    host = str(value or "").strip()
+    platform = str(platform or "").upper()
+    if not host or any(char.isspace() for char in host):
+        return "invalid_host"
+    if "://" in host or any(char in host for char in "/?#@"):
+        return "invalid_host"
+
+    address = host
+    if host.startswith("["):
+        if not host.endswith("]"):
+            return "invalid_host"
+        address = host[1:-1]
+        try:
+            parsed = ipaddress.ip_address(address)
+        except ValueError:
+            return "invalid_host"
+        if parsed.version != 6:
+            return "invalid_host"
+    else:
+        try:
+            parsed = ipaddress.ip_address(address)
+        except ValueError:
+            parsed = None
+
+    if parsed is not None:
+        if parsed.version == 6 and platform not in ("PVE", "CLUSTER"):
+            return "ipv6_not_supported"
+        return None
+
+    if ":" in host or set(host) <= set("0123456789."):
+        return "invalid_host"
+
+    hostname = host.rstrip(".")
+    if not hostname or len(hostname) > 253:
+        return "invalid_host"
+    try:
+        labels = [label.encode("idna").decode("ascii") for label in hostname.split(".")]
+    except UnicodeError:
+        return "invalid_host"
+    if not all(_HOST_LABEL.fullmatch(label) for label in labels):
+        return "invalid_host"
+    return None
 
 
 def _config_entry_platform(data) -> str:
@@ -177,9 +227,16 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None) -> FlowResult:
 
+        errors = {}
         if user_input is not None:
-            self._config.update(user_input)
-            return await self.async_step_auth_method()
+            error = _config_host_error(
+                user_input.get(CONF_HOST), user_input.get(CONF_PLATFORM_TYPE)
+            )
+            if error is None:
+                user_input = {**user_input, CONF_HOST: user_input[CONF_HOST].strip()}
+                self._config.update(user_input)
+                return await self.async_step_auth_method()
+            errors[CONF_HOST] = error
 
         return self.async_show_form(
             step_id="user",
@@ -191,6 +248,7 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
+            errors=errors,
         )
 
     async def _server_type_labels(self):
