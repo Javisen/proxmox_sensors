@@ -336,9 +336,13 @@ class ProxmoxClient:
         )
 
     async def get_disks(self, hass, node: str, raise_errors: bool = False):
+        # skipsmart=1: without it PVE runs `smartctl -H` on every disk for each
+        # call, which wakes spun down HDDs on every poll. The health/wearout
+        # fields it adds are not used; SMART comes from get_smart_data_http.
         return (
             await self.get(
-                hass, f"nodes/{node}/disks/list", raise_errors=raise_errors
+                hass, f"nodes/{node}/disks/list?skipsmart=1",
+                raise_errors=raise_errors,
             )
             or []
         )
