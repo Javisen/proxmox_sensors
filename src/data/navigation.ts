@@ -18,6 +18,7 @@ export interface NavigationItem {
 
 export const navigationItems: NavigationItem[] = [
   { label: "Home", href: "/", icon: "home" },
+  { label: "PDM", href: "/pdm/", icon: "server" },
   { label: "PVE", href: "/pve/", icon: "server" },
   { label: "PBS", href: "/pbs/", icon: "backup" },
   { label: "Cluster", href: "/cluster/", icon: "cluster" },

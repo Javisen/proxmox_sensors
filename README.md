@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/Javisen/proxmox_sensors/main/img/logo_int.png" alt="Proxmox Extended Sensors Logo" width="600"/>
 </p>
 
-> **Advanced Proxmox VE & PBS monitoring, control and dashboard integration for Home Assistant.**
+> **Advanced Proxmox VE, PBS & PDM monitoring, control and dashboard integration for Home Assistant.**
 
 # 🚀 Proxmox Extended Sensors
 
@@ -32,6 +32,7 @@
 - [Migration-Safe VM & LXC Monitoring](#-migration-safe-vm--lxc-monitoring)
 - [Resilient Monitoring & Fault Isolation](#%EF%B8%8F-resilient-monitoring--fault-isolation)
 - [PVE Replication Status](#-pve-replication-status)
+- [Proxmox Datacenter Manager (PDM)](#-proxmox-datacenter-manager-pdm)
 - [Proxmox Backup Server (PBS)](#%EF%B8%8F-proxmox-backup-server-pbs)
 - [Remote / Hosted PBS](#%EF%B8%8F-remote--hosted-pbs)
 - [Multi-PBS Support](#-multi-pbs-support)
@@ -49,7 +50,7 @@
 
 ## 🚀 Introduction
 
-**Proxmox Extended Sensors** brings detailed Proxmox VE, Proxmox Backup Server and cluster monitoring into Home Assistant, with stable entity identity, hardware telemetry, backup and replication information, maintenance actions and an optional dynamic Lovelace dashboard.
+**Proxmox Extended Sensors** brings detailed Proxmox VE, Proxmox Backup Server, Proxmox Datacenter Manager and cluster monitoring into Home Assistant, with stable entity identity, hardware telemetry, backup and replication information, maintenance actions and an optional dynamic Lovelace dashboard.
 
 The integration is designed for both standalone Proxmox nodes and multi-node environments. It isolates partial API failures, preserves valid data during temporary outages and tracks VM/LXC guests across correctly associated cluster nodes without tying their logical Home Assistant identity to the physical node currently hosting them.
 
@@ -61,13 +62,14 @@ The integration is designed for both standalone Proxmox nodes and multi-node env
 - 🔄 **Migration-safe VM/LXC identity** — guests can keep their Home Assistant identity when moving between correctly associated nodes.
 - 🛡️ **Partial-failure resilience** — a failing API section does not unnecessarily invalidate unrelated data.
 - 🔁 **PVE Replication monitoring** — global status plus per-job runtime information.
+- 🌐 **PDM centralized monitoring** — overall health, inventory, capacity, updates and per-remote PVE/PBS summaries.
 - 🗄️ **PBS monitoring and maintenance** — datastore usage, backups, deduplication, GC, Prune, Verify and Sync where available.
 - ☁️ **Remote / hosted PBS connectivity** — standard PBS API connections can also be used with hosted services when the provider exposes the required permissions.
 - ❤️ **Sidecar Status** — diagnostic health for Memory, Mounts, Sensors and SMART endpoints.
 - 🌡️ **Hardware monitoring** — CPU, temperatures, voltages, fans, NVMe, SMART, DIMM/SMBIOS and Raspberry Pi CPU temperature where exposed.
 - ⚡ **Physical Wake-on-LAN** — wake a configured physical PVE node directly from the integration, even while the node is offline.
 - 📊 **VM/LXC resource monitoring** — including CT memory/disk and VM memory percentages.
-- 🎨 **Dynamic Proxmox Dashboard** — PVE, PBS and CLUSTER dashboards generated from the resources available in Home Assistant.
+- 🎨 **Dynamic Proxmox Dashboard** — PVE, PBS, CLUSTER and PDM dashboards generated from the resources available in Home Assistant.
 
 > [!CAUTION]
 > **Upgrading from an older installation?**  
@@ -107,6 +109,7 @@ The optional dashboard system builds a complete Lovelace starting point from the
 - **PVE** — node health, temperatures, node information, storage, CTs, VMs, diagnostics and replication.
 - **PBS** — server/datastore information, backups, maintenance, tasks and actions.
 - **CLUSTER** — cluster health, resources, system state, backup health and replication.
+- **PDM** — centralized infrastructure status, inventory, capacity, updates and configured remotes.
 
 When multiple PBS or CLUSTER instances are configured, the dashboard keeps each instance in its **own separate view**. Resources from different PBS servers or clusters are not combined simply because they have the same visible names. PVE views can also reflect their explicit CLUSTER association.
 
@@ -132,7 +135,7 @@ Only dashboard types backed by real resources are offered. The dashboard is opti
 3. Reload the browser.
 4. Create a new dashboard from **Settings → Dashboards → Add dashboard → Community**.
 5. Select **Proxmox Extended Sensors**.
-6. Choose one of the dashboard types offered for your installation: **PVE**, **PBS** or **CLUSTER**.
+6. Choose one of the dashboard types offered for your installation: **PVE**, **PBS**, **CLUSTER** or **PDM**.
 
 The generated dashboard remains strategy-driven until you choose **Take Control**.
 
@@ -153,7 +156,7 @@ The integration does not overwrite a dashboard that you have taken control of.
 <summary><b>PVE</b></summary>
 
 <br>
-<img src="https://github.com/Javisen/test_javisen/raw/refs/heads/main/img/Dashb_Node.png" alt="PVE dashboard" width="100%">
+<img src="https://github.com/Javisen/proxmox_sensors/raw/refs/heads/main/img/Dashb_Node.png" alt="PVE dashboard" width="100%">
 
 </details>
 
@@ -161,7 +164,7 @@ The integration does not overwrite a dashboard that you have taken control of.
 <summary><b>PBS</b></summary>
 
 <br>
-<img src="https://github.com/Javisen/test_javisen/raw/refs/heads/main/img/Dashb_PBS.png" alt="PBS dashboard" width="100%">
+<img src="https://github.com/Javisen/proxmox_sensors/raw/refs/heads/main/img/Dashb_PBS.png" alt="PBS dashboard" width="100%">
 
 </details>
 
@@ -169,7 +172,15 @@ The integration does not overwrite a dashboard that you have taken control of.
 <summary><b>CLUSTER</b></summary>
 
 <br>
-<img src="https://github.com/Javisen/test_javisen/raw/refs/heads/main/img/Dashb_Cluster.png" alt="CLUSTER dashboard" width="100%">
+<img src="https://github.com/Javisen/proxmox_sensors/raw/refs/heads/main/img/Dashb_Cluster.png" alt="CLUSTER dashboard" width="100%">
+
+</details>
+
+<details>
+<summary><b>PDM</b></summary>
+
+<br>
+<img src="https://github.com/Javisen/proxmox_sensors/raw/refs/heads/main/img/Dashb_PDM.png" alt="PDM dashboard" width="100%">
 
 </details>
 
@@ -210,6 +221,29 @@ Native monitoring for Proxmox VE replication jobs includes:
 - Duration, last/next replication, source and target, guest type, failure count and runtime freshness.
 
 Replication identity is based on the Proxmox replication job rather than only the physical node, allowing replication information to remain associated with a migrated guest.
+
+---
+
+## 🌐 Proxmox Datacenter Manager (PDM)
+
+Starting with **V5.2.0**, Proxmox Extended Sensors supports **Proxmox Datacenter Manager** as a fourth connection type alongside PVE, PBS and CLUSTER.
+
+PDM provides a centralized view of connected Proxmox VE and Proxmox Backup Server environments through a single PDM connection.
+
+### Available sensors
+
+| Sensor | Description |
+|---|---|
+| **Status** | Overall PDM health and remote status. |
+| **Inventory** | Managed PVE/PBS nodes, VMs, containers and storage inventory. |
+| **Capacity** | Aggregated CPU, memory and storage usage. |
+| **Updates** | Available updates across monitored remotes. |
+| **Remote Status** | Status and subscription information for each configured remote. |
+| **Remote Overview** | Resource inventory and capacity for each remote. |
+
+A dedicated **PDM Dashboard** provides an overview of infrastructure health, inventory, capacity, updates and configured remotes.
+
+PDM focuses on **centralized monitoring**. For detailed node hardware metrics, individual VM/LXC monitoring and management actions, configure the corresponding PVE, PBS or CLUSTER connections.
 
 ---
 
@@ -295,6 +329,7 @@ When a sidecar endpoint fails, previously valid hardware values can be preserved
 Monitor the Proxmox cluster as a whole with dedicated entities for:
 
 - Nodes online
+- Quorum and configured Corosync QDevice status
 - CPU and RAM usage
 - Running VMs and CTs
 - Storage usage
@@ -356,10 +391,9 @@ VM and LXC monitoring includes guest state and resource information exposed by P
 - CT memory percentage
 - CT disk percentage
 - VM memory percentage
+- Optional **Guest Agent Metrics** for VM root filesystem percentage via QEMU Guest Agent
 - `onboot`, expected state and state/onboot matching information
 - Cluster-aware migration continuity for correctly associated nodes
-
-> VM disk percentage is not exposed because the integration does not currently have a sufficiently reliable source metric for it.
 
 ---
 
@@ -402,7 +436,7 @@ The integration provides backup orchestration directly from Home Assistant.
 3. Click **Download**.
 4. Restart Home Assistant.
 5. Go to **Settings → Devices & Services → Add Integration**.
-6. Search for **Proxmox Extended Sensors** and configure your PVE, PBS and/or CLUSTER connection.
+6. Search for **Proxmox Extended Sensors** and configure your PVE, PBS, CLUSTER and/or PDM connection.
 
 > The optional Proxmox Dashboard is installed separately. See [Dynamic Proxmox Dashboard](#-dynamic-proxmox-dashboard).
 

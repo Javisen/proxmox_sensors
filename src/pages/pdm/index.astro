@@ -1,0 +1,132 @@
+---
+import ProductShowcaseSection from "../../components/showcase/ProductShowcaseSection.astro";
+import AppLayout from "../../layouts/AppLayout.astro";
+import "../../styles/pve-showcase.css";
+import "../../styles/pdm-showcase.css";
+
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+const capabilities = ["Datacenter", "PVE Remotes", "PBS Remotes", "Capacity", "Inventory", "Updates", "Dashboard"];
+---
+
+<AppLayout
+  title="PDM"
+  description="See what Proxmox Extended Sensors brings from Proxmox Datacenter Manager into Home Assistant."
+  hidePageHeader
+  contentClass="pve-showcase-content"
+>
+  <div class="pve-page pdm-page">
+    <section class="pve-product-hero" aria-labelledby="pdm-hero-title">
+      <div class="pve-product-hero__statement">
+        <p class="pve-product-hero__eyebrow">Proxmox Datacenter Manager</p>
+        <h1 id="pdm-hero-title">Bring your Datacenter into Home Assistant</h1>
+        <p class="pve-product-hero__lead">Monitor centralized status, capacity, inventory, updates and PVE/PBS remotes from one PDM connection.</p>
+        <div class="pve-product-hero__actions">
+          <a class="pve-action pve-action--primary" href="#pdm-story">Explore PDM</a>
+          <a class="pve-action pve-action--secondary" href={withBase("/docs/pdm/")}>PDM Documentation</a>
+        </div>
+      </div>
+
+      <div class="pve-product-hero__identity" aria-label="PDM monitoring capabilities">
+        <div class="pve-product-hero__mark" aria-hidden="true">
+          <span>PDM</span>
+          <small>your Datacenter, in view</small>
+        </div>
+        <ul class="pve-product-hero__capabilities">
+          {capabilities.map((capability) => <li>{capability}</li>)}
+        </ul>
+      </div>
+    </section>
+
+    <div id="pdm-story" class="pve-story pdm-story">
+      <ProductShowcaseSection
+        id="datacenter-capacity"
+        label="Datacenter Capacity"
+        title="Capacity across PVE and PBS"
+        description="Read aggregate CPU, memory and storage usage for the PVE and PBS environments managed by PDM."
+        capabilities={["PVE Capacity", "PBS Capacity", "CPU", "Memory", "Storage"]}
+        images={[{
+          src: "/images/documentation/pdm/pdm_capacity.png",
+          alt: "PDM dashboard capacity panels showing aggregate CPU, memory and storage usage for PVE and PBS.",
+          width: 948,
+          height: 345,
+        }]}
+      />
+
+      <ProductShowcaseSection
+        id="inventory-remotes"
+        label="Inventory & Remotes"
+        title="One view of managed environments"
+        description="See centralized resource counts together with the current state and freshness of every configured PVE or PBS remote."
+        capabilities={["Nodes", "VMs", "Containers", "Storage", "Remote Status"]}
+        images={[{
+          src: "/images/documentation/pdm/pdm_inventory.png",
+          alt: "PDM dashboard panels showing Datacenter Inventory and the configured PVE and PBS remotes.",
+          width: 951,
+          height: 365,
+        }]}
+        reverse
+      />
+
+      <ProductShowcaseSection
+        id="datacenter-updates"
+        label="Datacenter Updates"
+        title="Updates, grouped where they belong"
+        description="Follow the total updates reported by PDM, their distribution by remote and node, and the freshness of the retained snapshot."
+        capabilities={["Available Updates", "By Remote", "By Node", "Snapshot Freshness"]}
+        images={[{
+          src: "/images/documentation/pdm/pdm_updates.png",
+          alt: "Datacenter Updates panel showing an update total, PVE and PBS remotes, their nodes and snapshot freshness.",
+          width: 474,
+          height: 346,
+        }]}
+      />
+
+      <ProductShowcaseSection
+        id="pdm-dashboard"
+        label="PDM Dashboard"
+        title="The Datacenter at a glance"
+        description="Use the dedicated three-column PDM dashboard to bring status, capacity, inventory, storage, updates and remotes into one responsive Home Assistant view."
+        capabilities={["Status", "Capacity", "Inventory", "Updates", "Remotes"]}
+        images={[{
+          src: "/images/documentation/pdm/pdm_dashboard.png",
+          alt: "Complete Proxmox Extended Sensors PDM dashboard with status, capacity, inventory, updates, storage and remotes.",
+          width: 1423,
+          height: 813,
+        }]}
+        reverse
+      />
+    </div>
+
+    <section class="pve-final-cta" aria-labelledby="pdm-cta-title">
+      <div>
+        <p>Go deeper</p>
+        <h2 id="pdm-cta-title">Want the technical details?</h2>
+      </div>
+      <nav aria-label="PDM technical resources">
+        <a href={withBase("/docs/pdm/")}>PDM Documentation</a>
+        <a href={withBase("/docs/reference/")}>Entity Reference</a>
+        <a href={withBase("/docs/getting-started/")}>Getting Started</a>
+      </nav>
+    </section>
+  </div>
+
+  <script>
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealItems = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+
+    if (!reducedMotion && "IntersectionObserver" in window) {
+      document.documentElement.classList.add("pve-motion-ready");
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      }, { rootMargin: "0px 0px -12%", threshold: 0.12 });
+      revealItems.forEach((item) => observer.observe(item));
+    }
+  </script>
+</AppLayout>

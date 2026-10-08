@@ -14,7 +14,7 @@ import DocumentationLayout from "../../layouts/DocumentationLayout.astro";
         <p>Browse by area</p>
         <h2 id="documentation-hub-title">Find the right starting point</h2>
       </div>
-      <span>Six focused areas</span>
+      <span>{documentationCategories.length} focused areas</span>
     </div>
     <div class="documentation-card-grid">
       {documentationCategories.map((category) => <DocumentationCard category={category} />)}

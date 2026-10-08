@@ -1,0 +1,24 @@
+.pdm-story .product-showcase--reverse {
+  grid-template-columns: minmax(25rem, 1.28fr) minmax(17rem, 0.72fr);
+}
+
+.pdm-story .product-showcase__frame {
+  width: min(100%, 52rem);
+  margin-inline: auto;
+}
+
+.pdm-story .product-showcase__frame img {
+  object-fit: contain;
+}
+
+@media (max-width: 75rem) {
+  .pdm-story .product-showcase--reverse {
+    grid-template-columns: minmax(22rem, 1.2fr) minmax(16rem, 0.8fr);
+  }
+}
+
+@media (max-width: 56.25rem) {
+  .pdm-story .product-showcase--reverse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

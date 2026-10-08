@@ -32,6 +32,23 @@ export const documentationCategories: DocumentationCategory[] = [
     ],
   },
   {
+    slug: "pdm",
+    title: "PDM",
+    href: "/docs/pdm/",
+    icon: "server",
+    summary: "Centralized monitoring for Proxmox Datacenter Manager and its PVE/PBS remotes.",
+    introduction: "A focused guide to connecting Proxmox Datacenter Manager and understanding its centralized status, capacity, inventory, remotes and update information.",
+    topics: [
+      { title: "Overview", description: "Understand the purpose and current scope of PDM monitoring." },
+      { title: "Configuration", description: "Add a PDM connection to Home Assistant." },
+      { title: "Authentication", description: "Prepare the API token used by the PDM connection." },
+      { title: "Datacenter Monitoring", description: "Read centralized status, inventory and capacity." },
+      { title: "Remotes", description: "Understand the PVE/PBS remotes managed by PDM." },
+      { title: "Updates", description: "Interpret available updates and snapshot freshness." },
+      { title: "Troubleshooting", description: "Diagnose connection, permission and data-availability issues." },
+    ],
+  },
+  {
     slug: "pve",
     title: "PVE",
     href: "/docs/pve/",
