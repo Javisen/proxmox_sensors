@@ -1,15 +1,28 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
+import { defaultLocale, isLocale } from "../../i18n/config";
+import { translate } from "../../i18n/content";
 import "../../styles/dashboard-showcase.css";
 
 const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const withBase = (href: string) => `${baseUrl}${href.replace(/^\//, "")}`;
+const locale = isLocale(Astro.currentLocale) ? Astro.currentLocale : defaultLocale;
 
 const dashboardSlides = [
-  { name: "PVE", src: "/images/dashboard/dashboard-pve.png", width: 1682, height: 1064, alt: "Complete Proxmox Extended Sensors dashboard for a Proxmox VE environment." },
-  { name: "PBS", src: "/images/dashboard/dashboard-pbs.png", width: 1658, height: 1072, alt: "Complete Proxmox Extended Sensors dashboard for a Proxmox Backup Server environment." },
-  { name: "Cluster", src: "/images/dashboard/dashboard-cluster.png", width: 1656, height: 1075, alt: "Complete Proxmox Extended Sensors dashboard for a Proxmox cluster environment." },
+  { name: "PVE", src: "/images/dashboard/dashboard-pve.png", width: 1682, height: 1064, alt: translate(locale, "Complete Proxmox Extended Sensors dashboard for a Proxmox VE environment.") },
+  { name: "PBS", src: "/images/dashboard/dashboard-pbs.png", width: 1658, height: 1072, alt: translate(locale, "Complete Proxmox Extended Sensors dashboard for a Proxmox Backup Server environment.") },
+  { name: "Cluster", src: "/images/dashboard/dashboard-cluster.png", width: 1656, height: 1075, alt: translate(locale, "Complete Proxmox Extended Sensors dashboard for a Proxmox cluster environment.") },
 ];
+const phraseSequence = [
+  { text: translate(locale, "Your PVE dashboard."), slide: 0 },
+  { text: translate(locale, "Your PBS dashboard."), slide: 1 },
+  { text: translate(locale, "Your Cluster dashboard."), slide: 2 },
+  { text: translate(locale, "Your dashboard."), slide: 2 },
+];
+const openDashboardLabel = (name: string) => locale === "es"
+  ? `Abrir la imagen completa del dashboard ${name}`
+  : `Open the complete ${name} dashboard image`;
+const dashboardNoun = locale === "es" ? "dashboard" : "dashboard";
 ---
 
 <AppLayout title="Dashboard" description="Explore the automatic Proxmox Extended Sensors dashboard for PVE, PBS and Cluster environments." hidePageHeader contentClass="dashboard-showcase-content">
@@ -25,7 +38,7 @@ const dashboardSlides = [
       <div class="dashboard-showcase-hero__visual">
         <div class="dashboard-carousel" data-dashboard-carousel>
           {dashboardSlides.map((slide, index) => (
-            <button id={`dashboard-slide-${index}`} class:list={["dashboard-carousel__slide", { "is-active": index === 0 }]} type="button" data-dashboard-slide={index} aria-label={`Open the complete ${slide.name} dashboard image`} aria-hidden={index === 0 ? "false" : "true"} tabindex={index === 0 ? "0" : "-1"} inert={index === 0 ? undefined : true}>
+            <button id={`dashboard-slide-${index}`} class:list={["dashboard-carousel__slide", { "is-active": index === 0 }]} type="button" data-dashboard-slide={index} aria-label={openDashboardLabel(slide.name)} aria-hidden={index === 0 ? "false" : "true"} tabindex={index === 0 ? "0" : "-1"} inert={index === 0 ? undefined : true}>
               <img src={withBase(slide.src)} alt={slide.alt} width={slide.width} height={slide.height} loading={index === 0 ? "eager" : "lazy"} decoding="async" />
               <span>View full dashboard</span>
             </button>
@@ -89,13 +102,7 @@ const dashboardSlides = [
     </figure>
   </dialog>
 
-  <script define:vars={{ dashboardSlides, baseUrl }}>
-    const phraseSequence = [
-      { text: "Your PVE dashboard.", slide: 0 },
-      { text: "Your PBS dashboard.", slide: 1 },
-      { text: "Your Cluster dashboard.", slide: 2 },
-      { text: "Your dashboard.", slide: 2 },
-    ];
+  <script define:vars={{ dashboardSlides, baseUrl, phraseSequence, dashboardNoun }}>
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const phrase = document.querySelector("[data-dashboard-phrase]");
     const slides = [...document.querySelectorAll("[data-dashboard-slide]")];
@@ -183,7 +190,7 @@ const dashboardSlides = [
       lightboxImage.alt = selected.alt;
       lightboxImage.width = selected.width;
       lightboxImage.height = selected.height;
-      lightboxCaption.textContent = `${selected.name} dashboard`;
+      lightboxCaption.textContent = `${selected.name} ${dashboardNoun}`;
       lightbox.showModal();
     }));
 

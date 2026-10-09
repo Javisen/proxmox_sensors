@@ -5,4 +5,15 @@ export default defineConfig({
   trailingSlash: "always",
   site: "https://proxmox-sensors.es",
   base: "/",
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en", "es"],
+    fallback: {
+      es: "en",
+    },
+    routing: {
+      prefixDefaultLocale: false,
+      fallbackType: "rewrite",
+    },
+  },
 });

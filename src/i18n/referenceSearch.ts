@@ -1,0 +1,46 @@
+import type { Locale } from "./config";
+
+export const referenceSearchCopy = (locale: Locale) => locale === "es" ? {
+  label: "Buscar en Reference",
+  placeholder: "Buscar sensores, entidades o atributos…",
+  help: "Busca por nombre, identificador técnico, atributo o capacidad.",
+  results: "resultados",
+  result: "resultado",
+  suggestions: "Sugerencias de Reference",
+  noMatches: "No hay coincidencias. Prueba con otro nombre, identificador o atributo.",
+  attributes: "Atributos",
+} : {
+  label: "Search Reference",
+  placeholder: "Search sensors, entities or attributes…",
+  help: "Search by name, technical identifier, attribute or capability.",
+  results: "results",
+  result: "result",
+  suggestions: "Reference suggestions",
+  noMatches: "No matches. Try another name, identifier or attribute.",
+  attributes: "Attributes",
+};
+
+export const referenceSearchAliases = (locale: Locale): Record<string, string> => locale === "es" ? {
+  atributo: "attribute",
+  atributos: "attributes",
+  actualizacion: "update",
+  actualizaciones: "updates",
+  almacenamiento: "storage",
+  capacidad: "capacity",
+  copia: "backup",
+  copias: "backup",
+  disco: "disk",
+  discos: "disks",
+  estado: "status",
+  estados: "status",
+  memoria: "memory",
+  nodo: "node",
+  nodos: "nodes",
+  remoto: "remote",
+  remotos: "remotes",
+  replicacion: "replication",
+  tarea: "task",
+  tareas: "tasks",
+  temperatura: "temperature",
+  uso: "usage",
+} : {};

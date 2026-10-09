@@ -2,6 +2,9 @@
 import ContextNav from "../components/ContextNav.astro";
 import NavIcon from "../components/NavIcon.astro";
 import SidebarContent from "../components/SidebarContent.astro";
+import { isLocale, localeFromPath, localizePath, type Locale } from "../i18n/config";
+import { ui } from "../i18n/ui";
+import { spanishPageTranslations, translate } from "../i18n/content";
 import "../styles/global.css";
 
 interface Props {
@@ -9,7 +12,7 @@ interface Props {
   description?: string;
   hidePageHeader?: boolean;
   contentClass?: string;
-  language?: "en" | "es";
+  language?: Locale;
 }
 
 const {
@@ -17,25 +20,19 @@ const {
   description = `${title} — Proxmox Extended Sensors`,
   hidePageHeader = false,
   contentClass,
-  language = "en",
+  language: requestedLanguage,
 } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 const hasContextNavigation = Astro.slots.has("context");
-const shellText = language === "es"
-  ? {
-      skip: "Saltar al contenido",
-      open: "Abrir navegación",
-      navigation: "Navegación principal",
-      close: "Cerrar navegación",
-    }
-  : {
-      skip: "Skip to content",
-      open: "Open navigation",
-      navigation: "Primary navigation",
-      close: "Close navigation",
-    };
+const language = requestedLanguage
+  ?? (isLocale(Astro.currentLocale) ? Astro.currentLocale : localeFromPath(Astro.url.pathname, baseUrl));
+const englishPath = localizePath(Astro.url.pathname, "en", baseUrl);
+const spanishPath = localizePath(Astro.url.pathname, "es", baseUrl);
+const canonicalUrl = new URL(englishPath, Astro.site ?? Astro.url.origin);
+const localizedTitle = translate(language, title);
+const localizedDescription = translate(language, description);
 ---
 
 <!doctype html>
@@ -43,13 +40,17 @@ const shellText = language === "es"
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content={description} />
+    <meta name="description" content={localizedDescription} />
     <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="en" href={canonicalUrl} />
+    <link rel="alternate" hreflang="es" href={new URL(spanishPath, canonicalUrl)} />
+    <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
     <link rel="icon" type="image/png" href={`${baseUrl}assets/logo_int.png`} />
-    <title>{title} | Proxmox Extended Sensors</title>
+    <title>{localizedTitle} | Proxmox Extended Sensors</title>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">{shellText.skip}</a>
+    <a class="skip-link" href="#main-content">{ui(language, "shell.skip")}</a>
 
     <div class="app-shell">
       <aside class="desktop-sidebar">
@@ -60,22 +61,22 @@ const shellText = language === "es"
         <button
           class="icon-button"
           type="button"
-          aria-label={shellText.open}
+          aria-label={ui(language, "shell.openNavigation")}
           aria-haspopup="dialog"
           data-open-navigation
         >
           <NavIcon name="menu" />
         </button>
-        <a class="mobile-brand" href={baseUrl}>Proxmox Extended Sensors</a>
+        <a class="mobile-brand" href={localizePath("/", language, baseUrl)}>Proxmox Extended Sensors</a>
       </header>
 
-      <dialog class="mobile-drawer" aria-label={shellText.navigation} data-navigation-dialog>
+      <dialog class="mobile-drawer" aria-label={ui(language, "shell.primaryNavigation")} data-navigation-dialog>
         <div class="drawer-panel">
           <div class="drawer-actions">
             <button
               class="icon-button"
               type="button"
-              aria-label={shellText.close}
+              aria-label={ui(language, "shell.closeNavigation")}
               data-close-navigation
             >
               <NavIcon name="close" />
@@ -90,7 +91,7 @@ const shellText = language === "es"
           <header class="page-header">
             <div class="page-heading">
               <p class="page-eyebrow">Proxmox Extended Sensors</p>
-              <h1>{title}</h1>
+              <h1>{localizedTitle}</h1>
             </div>
             {hasContextNavigation ? (
               <ContextNav>
@@ -128,5 +129,61 @@ const shellText = language === "es"
         link.addEventListener("click", closeNavigation);
       });
     </script>
+    {language === "es" && (
+      <script is:inline define:vars={{ translations: spanishPageTranslations, baseUrl }}>
+        const ignoredTags = new Set(["CODE", "PRE", "SCRIPT", "STYLE"]);
+        const spanishMonths = {
+          Jan: "ene", Feb: "feb", Mar: "mar", Apr: "abr", May: "may", Jun: "jun",
+          Jul: "jul", Aug: "ago", Sep: "sept", Oct: "oct", Nov: "nov", Dec: "dic",
+        };
+        const translateValue = (value) => {
+          const trimmed = value.trim();
+          const patterns = [
+            [/^(\d+) focused areas$/, "$1 áreas temáticas"],
+            [/^(\d+) sections$/, "$1 secciones"],
+            [/^(\d+) planned areas$/, "$1 áreas planificadas"],
+            [/^(\d[\d.,]*) stars$/, "$1 estrellas"],
+          ];
+          const translated = translations[trimmed]
+            ?? patterns.reduce((result, [pattern, replacement]) => (
+              result === trimmed ? trimmed.replace(pattern, replacement) : result
+            ), trimmed);
+          const localized = translated.replace(
+            /^(\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4})$/,
+            (_, day, month, year) => `${day} ${spanishMonths[month]} ${year}`,
+          );
+          return localized !== trimmed ? value.replace(trimmed, localized) : value;
+        };
+
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode);
+        textNodes.forEach((node) => {
+          if (node.parentElement && !ignoredTags.has(node.parentElement.tagName)) {
+            node.nodeValue = translateValue(node.nodeValue ?? "");
+          }
+        });
+
+        document.querySelectorAll("[aria-label], [title], [placeholder]").forEach((element) => {
+          ["aria-label", "title", "placeholder"].forEach((attribute) => {
+            const value = element.getAttribute(attribute);
+            if (value) element.setAttribute(attribute, translateValue(value));
+          });
+        });
+
+        document.querySelectorAll("a[href]").forEach((link) => {
+          const href = link.getAttribute("href");
+          if (
+            !href
+            || href.startsWith("#")
+            || !href.startsWith(baseUrl)
+            || link.getAttribute("hreflang") === "en"
+          ) return;
+          const relative = href.slice(baseUrl.length);
+          if (relative === "es" || relative.startsWith("es/")) return;
+          link.setAttribute("href", `${baseUrl}es/${relative}`);
+        });
+      </script>
+    )}
   </body>
 </html>

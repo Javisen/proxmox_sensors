@@ -1,5 +1,5 @@
 import type { NavigationIcon } from "./navigation";
-import { projectSnapshot } from "./projectSnapshot";
+import { projectSnapshot, type ProjectContributorData } from "./projectSnapshot";
 
 export type DashboardTone = "neutral" | "success" | "warning" | "pending";
 
@@ -9,6 +9,10 @@ export interface DashboardMetric {
   detail: string;
   tone?: DashboardTone;
   compact?: boolean;
+  wide?: boolean;
+  href?: string;
+  contributors?: ProjectContributorData[];
+  contributorCount?: number;
 }
 
 export interface QuickLink {
@@ -105,6 +109,15 @@ export const homeDashboard = {
       detail: projectSnapshot.repositoryDisabled ? "Disabled on GitHub" : "GitHub status",
       tone: repositoryTone,
     },
+    ...(projectSnapshot.contributorCount === null ? [] : [{
+      label: "Contributors",
+      value: projectSnapshot.contributorCount.toLocaleString("en-US"),
+      detail: "View all on GitHub",
+      href: "https://github.com/Javisen/proxmox_sensors/graphs/contributors",
+      contributors: projectSnapshot.contributors,
+      contributorCount: projectSnapshot.contributorCount,
+      wide: true,
+    }]),
   ] satisfies DashboardMetric[],
   quickLinks: [
     { label: "Installation", description: "Setup options", href: "/installation/", icon: "install" },

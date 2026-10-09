@@ -1,0 +1,43 @@
+---
+import {
+  localeLabels,
+  localizePath,
+  supportedLocales,
+  type Locale,
+} from "../i18n/config";
+import { ui } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<nav class="language-switcher" aria-label={ui(locale, "shell.changeLanguage")}>
+  <span class="language-switcher__label">{ui(locale, "shell.language")}</span>
+  <ul>
+    {supportedLocales.map((option) => {
+      const current = option === locale;
+      return (
+        <li>
+          <a
+            class:list={["language-switcher__option", current && "is-current"]}
+            href={localizePath(Astro.url.pathname, option, baseUrl)}
+            hreflang={option}
+            lang={option}
+            aria-current={current ? "page" : undefined}
+            aria-label={current
+              ? `${localeLabels[option]} — ${ui(locale, "shell.currentLanguage")}`
+              : localeLabels[option]}
+          >
+            {option.toUpperCase()}
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</nav>

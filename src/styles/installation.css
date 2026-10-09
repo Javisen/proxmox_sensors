@@ -607,6 +607,10 @@
     font-size: clamp(3.2rem, 15vw, 4.8rem);
   }
 
+  html[lang="es"] .installation-hero h1 {
+    font-size: clamp(2.7rem, 11vw, 4rem);
+  }
+
   .installation-hero__lead {
     grid-template-columns: 1fr;
     gap: 0.5rem;

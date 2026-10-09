@@ -219,6 +219,57 @@ a {
   color: var(--accent-proxmox);
 }
 
+.language-switcher {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0.85rem 0.1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-default);
+}
+
+.language-switcher__label {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.language-switcher ul {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.language-switcher__option {
+  display: inline-grid;
+  min-width: 2rem;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  font-weight: 760;
+  text-decoration: none;
+  place-items: center;
+}
+
+.language-switcher__option:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.language-switcher__option.is-current {
+  border-color: rgba(229, 112, 0, 0.36);
+  background: var(--accent-proxmox-soft);
+  color: var(--accent-proxmox);
+}
+
 .external-indicator {
   display: inline-flex;
   color: var(--text-muted);

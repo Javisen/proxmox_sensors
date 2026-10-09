@@ -25,6 +25,14 @@ export interface SnapshotSource {
   error: string | null;
 }
 
+export interface ProjectContributorData {
+  name: string;
+  login: string | null;
+  avatarUrl: string | null;
+  profileUrl: string | null;
+  contributions: number;
+}
+
 export interface ProjectSnapshot {
   schemaVersion: 1;
   freshness: SnapshotFreshness;
@@ -36,6 +44,8 @@ export interface ProjectSnapshot {
   stars: number;
   forks: number;
   openIssues: number;
+  contributorCount: number | null;
+  contributors: ProjectContributorData[];
   repositoryStatus: RepositoryStatus;
   repositoryDisabled: boolean;
   notices: ProjectNoticeData[];
@@ -45,6 +55,7 @@ export interface ProjectSnapshot {
     githubRelease: SnapshotSource;
     githubRepository: SnapshotSource;
     githubIssues: SnapshotSource;
+    githubContributors: SnapshotSource;
     hacs: SnapshotSource;
     projectNotices: SnapshotSource;
   };

@@ -9,6 +9,8 @@
   "stars": 68,
   "forks": 13,
   "openIssues": 1,
+  "contributorCount": null,
+  "contributors": [],
   "repositoryStatus": "Active",
   "repositoryDisabled": false,
   "notices": [
@@ -49,6 +51,13 @@
       "checkedAt": "2026-09-29T15:26:37.378Z",
       "lastSuccessfulAt": "2026-09-29T15:26:37.378Z",
       "error": null
+    },
+    "githubContributors": {
+      "status": "unavailable",
+      "url": "https://api.github.com/repos/Javisen/proxmox_sensors/contributors?per_page=100&anon=1",
+      "checkedAt": "2026-09-29T15:26:37.378Z",
+      "lastSuccessfulAt": null,
+      "error": "No canonical contributors snapshot is available yet"
     },
     "hacs": {
       "status": "fresh",

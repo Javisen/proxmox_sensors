@@ -3,13 +3,14 @@ import type { ReferenceEntity } from "../../data/reference";
 
 interface Props {
   entry: ReferenceEntity;
+  id: string;
 }
 
-const { entry } = Astro.props;
+const { entry, id } = Astro.props;
 const typeClass = entry.type === "Binary sensor" ? "binary" : entry.type === "Button" ? "button" : "sensor";
 ---
 
-<article class="reference-entry" data-reference-entry>
+<article id={id} class="reference-entry" data-reference-entry tabindex="-1">
   <div class="reference-entry__heading">
     <h4>{entry.name}</h4>
     <div class="reference-entry__badges" aria-label="Entity metadata">

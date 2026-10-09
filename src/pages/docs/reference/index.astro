@@ -2,6 +2,10 @@
 import NavIcon from "../../../components/NavIcon.astro";
 import ReferenceGuidance from "../../../components/documentation/ReferenceGuidance.astro";
 import ReferenceGroups from "../../../components/documentation/ReferenceGroups.astro";
+import pdmDatacenterMonitoring from "../../../components/documentation/pdm/datacenter-monitoring.md?raw";
+import pdmOverview from "../../../components/documentation/pdm/overview.md?raw";
+import pdmRemotes from "../../../components/documentation/pdm/remotes.md?raw";
+import pdmUpdates from "../../../components/documentation/pdm/updates.md?raw";
 import { getDocumentationCategory } from "../../../data/documentation";
 import {
   ctActionCount,
@@ -13,7 +17,6 @@ import {
   clusterSensorGroups,
   hardwareMemoryEntryCount,
   hardwareMemoryGroups,
-  implementedReferenceEntryCount,
   identityAvailabilityEntryCount,
   identityAvailabilityGroups,
   pbsMaintenanceEntryCount,
@@ -31,9 +34,15 @@ import {
   vmEntryCount,
   vmGroups,
 } from "../../../data/reference";
+import { buildReferenceSearchIndex, extractPdmReferenceEntries } from "../../../data/referenceSearch.mjs";
+import { defaultLocale, isLocale, localizePath } from "../../../i18n/config";
+import { translate } from "../../../i18n/content";
+import { referenceSearchAliases, referenceSearchCopy } from "../../../i18n/referenceSearch";
 import DocumentationLayout from "../../../layouts/DocumentationLayout.astro";
 import "../../../styles/reference.css";
 
+const locale = isLocale(Astro.currentLocale) ? Astro.currentLocale : defaultLocale;
+const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const category = getDocumentationCategory("reference");
 const categoryIds = [
   "pve-node",
@@ -49,18 +58,58 @@ const categoryIds = [
 ];
 if (category.topics.length !== categoryIds.length) throw new Error("Reference category map is incomplete");
 const categories = category.topics.map((topic, index) => ({ ...topic, id: categoryIds[index] }));
+const referenceSearchIndex = buildReferenceSearchIndex([
+  { module: "PVE", sectionId: "pve-node", groups: pveNodeGroups },
+  { module: "PVE", sectionId: "hardware-memory", groups: hardwareMemoryGroups },
+  { module: "PVE", sectionId: "vm-ct", groups: vmGroups },
+  { module: "PVE", sectionId: "vm-ct", groups: ctGroups },
+  { module: "PVE", sectionId: "storage-disks-zfs", groups: storageDisksZfsGroups },
+  { module: "PBS", sectionId: "pbs-server-datastores", groups: pbsServerDatastoreGroups },
+  { module: "PBS", sectionId: "pbs-maintenance-actions", groups: pbsMaintenanceGroups },
+  { module: "CLUSTER", sectionId: "cluster-sensors", groups: clusterSensorGroups },
+  { module: "CLUSTER", sectionId: "backup-replication", groups: backupReplicationGroups },
+]);
+const pdmPath = localizePath("/docs/pdm/", locale, baseUrl);
+const pdmSearchIndex = extractPdmReferenceEntries([
+  { source: pdmOverview, href: pdmPath, group: "PDM Overview" },
+  { source: pdmDatacenterMonitoring, href: `${pdmPath}#datacenter-monitoring`, group: "Datacenter Monitoring" },
+  { source: pdmRemotes, href: `${pdmPath}#remotes`, group: "Remotes" },
+  { source: pdmUpdates, href: `${pdmPath}#updates`, group: "Updates" },
+]);
+const searchIndex = [...referenceSearchIndex, ...pdmSearchIndex].map((entry) => ({
+  ...entry,
+  label: translate(locale, entry.name),
+  groupLabel: translate(locale, entry.group),
+}));
+const searchCopy = referenceSearchCopy(locale);
+const searchAliases = referenceSearchAliases(locale);
 ---
 
 <DocumentationLayout title="Reference" description={category.introduction} section="Documentation">
   <div class="reference-guide">
     <div class="reference-search" role="search">
-      <label for="reference-search-input">Search Reference</label>
-      <input id="reference-search-input" type="search" placeholder="Search entities…" autocomplete="off" aria-describedby="reference-search-help" />
-      <p id="reference-search-help">Filter the available entity dictionary by name, type, state, attributes or capability.</p>
+      <label for="reference-search-input">{searchCopy.label}</label>
+      <div class="reference-search__control">
+        <input
+          id="reference-search-input"
+          type="search"
+          placeholder={searchCopy.placeholder}
+          autocomplete="off"
+          aria-autocomplete="list"
+          aria-controls="reference-suggestions"
+          aria-describedby="reference-search-help reference-search-status"
+          aria-expanded="false"
+          role="combobox"
+        />
+        <div class="reference-suggestions" data-reference-suggestions hidden>
+          <ul id="reference-suggestions" role="listbox" aria-label={searchCopy.suggestions}></ul>
+          <p id="reference-empty" class="reference-empty" hidden>{searchCopy.noMatches}</p>
+        </div>
+      </div>
+      <p id="reference-search-help">{searchCopy.help}</p>
       <p id="reference-search-status" class="reference-search__status" role="status" aria-live="polite">
-        {implementedReferenceEntryCount} results
+        {searchIndex.length} {searchCopy.results}
       </p>
-      <p id="reference-empty" class="reference-empty" hidden>No entities match your search. Try a different name or capability.</p>
     </div>
 
     <nav id="reference-index" class="reference-index" aria-labelledby="reference-index-title">
@@ -91,7 +140,7 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
           <span>{pveNodeEntryCount} entries</span>
         </div>
         <p class="reference-section__intro">Entities attached to a Proxmox VE node. Conditional entries appear only when the relevant option or data is available.</p>
-        <ReferenceGroups groups={pveNodeGroups} />
+        <ReferenceGroups groups={pveNodeGroups} module="PVE" sectionId="pve-node" />
         <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
       </section>
 
@@ -101,7 +150,7 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
           <span>{hardwareMemoryEntryCount} entries</span>
         </div>
         <p class="reference-section__intro">Hardware monitoring must be enabled and compatible sidecar or lm-sensors data must be available. Exact dynamic names and quantities vary with the monitored system.</p>
-        <ReferenceGroups groups={hardwareMemoryGroups} />
+        <ReferenceGroups groups={hardwareMemoryGroups} module="PVE" sectionId="hardware-memory" />
         <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
       </section>
 
@@ -120,14 +169,14 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
             <h3>Virtual Machines</h3>
             <span>{vmEntryCount} sensors · {vmActionCount} actions</span>
           </div>
-          <ReferenceGroups groups={vmGroups} headingLevel="h4" />
+          <ReferenceGroups groups={vmGroups} module="PVE" sectionId="vm-ct" headingLevel="h4" />
         </div>
         <div class="reference-resource">
           <div class="reference-resource__heading">
             <h3>Containers</h3>
             <span>{ctEntryCount} sensors · {ctActionCount} actions</span>
           </div>
-          <ReferenceGroups groups={ctGroups} headingLevel="h4" />
+          <ReferenceGroups groups={ctGroups} module="PVE" sectionId="vm-ct" headingLevel="h4" />
         </div>
         <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
       </section>
@@ -138,7 +187,7 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
           <span>{storageDisksZfsEntryCount} entries</span>
         </div>
         <p class="reference-section__intro">Storage entities follow selected PVE resources, while physical disks, mounted disks and ZFS pools depend on the corresponding detected data.</p>
-        <ReferenceGroups groups={storageDisksZfsGroups} />
+        <ReferenceGroups groups={storageDisksZfsGroups} module="PVE" sectionId="storage-disks-zfs" />
         <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
       </section>
 
@@ -148,7 +197,7 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
           <span>{pbsServerDatastoreEntryCount} entries</span>
         </div>
         <p class="reference-section__intro">Server-level status and task entities are accompanied by a dynamic entity family for each discovered PBS datastore.</p>
-        <ReferenceGroups groups={pbsServerDatastoreGroups} />
+        <ReferenceGroups groups={pbsServerDatastoreGroups} module="PBS" sectionId="pbs-server-datastores" />
         <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
       </section>
 
@@ -162,7 +211,7 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
           <strong>Literal state</strong>
           <p>The current implementation can expose <code>Iniciado</code> as a GC Status state. Reference preserves that implementation value without translating it.</p>
         </aside>
-        <ReferenceGroups groups={pbsMaintenanceGroups} />
+        <ReferenceGroups groups={pbsMaintenanceGroups} module="PBS" sectionId="pbs-maintenance-actions" />
         <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
       </section>
 
@@ -172,7 +221,7 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
           <span>{clusterSensorEntryCount} entries</span>
         </div>
         <p class="reference-section__intro">Cluster-wide entities combine quorum, node availability, resources, guests, storage, firewall and HA data.</p>
-        <ReferenceGroups groups={clusterSensorGroups} />
+        <ReferenceGroups groups={clusterSensorGroups} module="CLUSTER" sectionId="cluster-sensors" />
         <a class="getting-started-section__back" href="#reference-index">↑ Back to top</a>
       </section>
 
@@ -182,7 +231,7 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
           <span>{backupReplicationEntryCount} entries</span>
         </div>
         <p class="reference-section__intro">Cluster backup health and replication entities appear only when their corresponding jobs and runtime data apply.</p>
-        <ReferenceGroups groups={backupReplicationGroups} />
+        <ReferenceGroups groups={backupReplicationGroups} module="CLUSTER" sectionId="backup-replication" />
         <aside class="reference-identity-note">
           <strong>Guest status attributes</strong>
           <p>When replication applies, VM and CT Status can also expose <code>replication_status</code>, <code>replication_jobs</code>, <code>replication_failed_jobs</code> and <code>replication</code>.</p>
@@ -213,50 +262,133 @@ const categories = category.topics.map((topic, index) => ({ ...topic, id: catego
   </div>
 </DocumentationLayout>
 
-<script>
-  const search = document.querySelector<HTMLInputElement>("#reference-search-input");
-  const entries = [...document.querySelectorAll<HTMLElement>("[data-reference-entry]")];
-  const groups = [...document.querySelectorAll<HTMLElement>("[data-reference-group]")];
-  const sections = [...document.querySelectorAll<HTMLElement>(".reference-section")];
-  const indexItems = [...document.querySelectorAll<HTMLElement>("[data-reference-index-item]")];
-  const empty = document.querySelector<HTMLElement>("#reference-empty");
-  const status = document.querySelector<HTMLElement>("#reference-search-status");
+<script define:vars={{ searchIndex, searchCopy, searchAliases }}>
+  const search = document.querySelector("#reference-search-input");
+  const suggestions = document.querySelector("[data-reference-suggestions]");
+  const suggestionList = document.querySelector("#reference-suggestions");
+  const empty = document.querySelector("#reference-empty");
+  const status = document.querySelector("#reference-search-status");
 
-  if (search && empty && status) {
-    const update = () => {
-      const query = search.value.trim().toLocaleLowerCase();
-      let visible = 0;
-
-      for (const entry of entries) {
-        const searchableText = entry.textContent?.toLocaleLowerCase() ?? "";
-        const isShortTerm = /^[a-z0-9]{1,2}$/.test(query);
-        const matches = !query || (isShortTerm
-          ? searchableText.split(/[^a-z0-9]+/).includes(query)
-          : searchableText.includes(query));
-        entry.hidden = !matches;
-        if (matches) visible += 1;
+  if (search && suggestions && suggestionList && empty && status) {
+    let activeIndex = -1;
+    let matches = [];
+    const normalize = (value) => value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase()
+      .replace(/[^a-z0-9_]+/g, " ")
+      .trim();
+    const expandQuery = (query) => query.split(" ").map((term) => searchAliases[term] ?? term).join(" ");
+    const score = (entry, query) => {
+      const expanded = expandQuery(query);
+      const name = normalize(entry.name);
+      const identifier = normalize(entry.identifier);
+      if (identifier === expanded || name === expanded) return 0;
+      if (identifier.startsWith(expanded) || name.startsWith(expanded)) return 1;
+      if (name.includes(expanded)) return 2;
+      if (entry.attributes.some((attribute) => normalize(attribute) === expanded)) return 3;
+      if (entry.attributes.some((attribute) => normalize(attribute).includes(expanded))) return 4;
+      if (entry.searchText.includes(expanded)) return 5;
+      const terms = expanded.split(" ").filter(Boolean);
+      return terms.every((term) => entry.searchText.includes(term)) ? 6 : Number.POSITIVE_INFINITY;
+    };
+    const setActive = (nextIndex) => {
+      const options = [...suggestionList.querySelectorAll("[role=option]")];
+      activeIndex = options.length ? (nextIndex + options.length) % options.length : -1;
+      options.forEach((option, index) => option.setAttribute("aria-selected", String(index === activeIndex)));
+      const active = options[activeIndex];
+      search.setAttribute("aria-activedescendant", active?.id ?? "");
+      active?.scrollIntoView({ block: "nearest" });
+    };
+    const close = () => {
+      suggestions.hidden = true;
+      search.setAttribute("aria-expanded", "false");
+      search.removeAttribute("aria-activedescendant");
+      activeIndex = -1;
+    };
+    const navigate = (entry) => {
+      close();
+      search.value = "";
+      status.textContent = `${searchIndex.length} ${searchCopy.results}`;
+      if (entry.href.startsWith("#")) {
+        const target = document.getElementById(entry.id);
+        history.pushState(null, "", entry.href);
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        target?.focus({ preventScroll: true });
+      } else {
+        window.location.assign(entry.href);
+      }
+    };
+    const render = () => {
+      const query = normalize(search.value);
+      suggestionList.replaceChildren();
+      if (!query) {
+        status.textContent = `${searchIndex.length} ${searchCopy.results}`;
+        close();
+        return;
       }
 
-      for (const group of groups) {
-        group.hidden = !group.querySelector("[data-reference-entry]:not([hidden])");
-      }
-
-      for (const section of sections) {
-        section.hidden = !section.querySelector("[data-reference-entry]:not([hidden])");
-      }
-
-      for (const item of indexItems) {
-        const sectionId = item.dataset.referenceIndexItem;
-        const section = sectionId ? document.getElementById(sectionId) : null;
-        item.hidden = section?.hidden ?? false;
-      }
-
-      empty.hidden = visible !== 0;
-      status.textContent = query
-        ? `${visible} ${visible === 1 ? "result" : "results"}`
-        : `${visible} results`;
+      matches = searchIndex
+        .map((entry) => ({ entry, score: score(entry, query) }))
+        .filter((match) => Number.isFinite(match.score))
+        .sort((left, right) => left.score - right.score || left.entry.name.localeCompare(right.entry.name))
+        .map((match) => match.entry);
+      const shown = matches.slice(0, 8);
+      shown.forEach((entry, index) => {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        const heading = document.createElement("span");
+        const module = document.createElement("strong");
+        const name = document.createElement("span");
+        const context = document.createElement("span");
+        link.id = `reference-suggestion-${index}`;
+        link.setAttribute("role", "option");
+        link.setAttribute("aria-selected", "false");
+        link.href = entry.href;
+        module.className = "reference-suggestion__module";
+        module.textContent = entry.module;
+        name.className = "reference-suggestion__name";
+        name.textContent = entry.label;
+        heading.className = "reference-suggestion__heading";
+        heading.append(module, name);
+        context.className = "reference-suggestion__context";
+        const matchingAttributes = entry.attributes.filter((attribute) => score({ ...entry, name: "", identifier: "", searchText: normalize(attribute), attributes: [attribute] }, query) < 6);
+        context.textContent = matchingAttributes.length
+          ? `${searchCopy.attributes}: ${matchingAttributes.slice(0, 2).join(", ")}`
+          : `${entry.groupLabel} · ${entry.type}`;
+        link.append(heading, context);
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          navigate(entry);
+        });
+        item.append(link);
+        suggestionList.append(item);
+      });
+      empty.hidden = matches.length !== 0;
+      suggestions.hidden = false;
+      search.setAttribute("aria-expanded", "true");
+      status.textContent = `${matches.length} ${matches.length === 1 ? searchCopy.result : searchCopy.results}`;
+      activeIndex = -1;
     };
 
-    search.addEventListener("input", update);
+    search.addEventListener("input", render);
+    search.addEventListener("focus", render);
+    search.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setActive(activeIndex + 1);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActive(activeIndex - 1);
+      } else if (event.key === "Enter" && activeIndex >= 0) {
+        event.preventDefault();
+        navigate(matches.slice(0, 8)[activeIndex]);
+      } else if (event.key === "Escape") {
+        close();
+      }
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (!suggestions.contains(event.target) && event.target !== search) close();
+    });
   }
 </script>

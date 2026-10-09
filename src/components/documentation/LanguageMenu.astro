@@ -1,24 +1,50 @@
 ---
 import NavIcon from "../NavIcon.astro";
 import { documentationLanguages } from "../../data/documentation";
+import {
+  isLocale,
+  localeFromPath,
+  localeLabels,
+  localizePath,
+  supportedLocales,
+} from "../../i18n/config";
+import { translate } from "../../i18n/content";
 
 const repositoryDocsUrl = "https://github.com/Javisen/proxmox_sensors/tree/main/docs";
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const locale = isLocale(Astro.currentLocale)
+  ? Astro.currentLocale
+  : localeFromPath(Astro.url.pathname);
+const repositoryLanguages = documentationLanguages.filter(({ code }) => !supportedLocales.includes(code as never));
 ---
 
 <div class="language-control">
-  <span class="language-control__label">Need another language?</span>
+  <span class="language-control__label">{translate(locale, "Need another language?")}</span>
   <details class="language-menu">
     <summary>
-      <span>English</span>
+      <span>{localeLabels[locale]}</span>
       <span class="language-menu__chevron" aria-hidden="true">⌄</span>
     </summary>
     <div class="language-menu__panel">
-      <p>Official repository translations</p>
-      <span class="language-menu__current" aria-current="true">
-        <span>English</span>
-        <small>Current website</small>
-      </span>
-      {documentationLanguages.map((language) => (
+      <p>{translate(locale, "Current website")}</p>
+      {supportedLocales.map((language) => language === locale ? (
+        <span class="language-menu__current" aria-current="true" lang={language}>
+          <span>{localeLabels[language]}</span>
+          <small>{translate(locale, "Current website")}</small>
+        </span>
+      ) : (
+        <a
+          href={localizePath(Astro.url.pathname, language, baseUrl)}
+          hreflang={language}
+          lang={language}
+        >
+          <span>{localeLabels[language]}</span>
+        </a>
+      ))}
+      <p>{translate(locale, "Official repository translations")}</p>
+      {repositoryLanguages.map((language) => (
         <a
           href={`${repositoryDocsUrl}/${language.code}`}
           target="_blank"

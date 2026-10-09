@@ -60,6 +60,15 @@
 
 .dashboard-showcase-hero h1 span { color: var(--dashboard-bright); }
 
+html[lang="es"] .dashboard-showcase-hero {
+  grid-template-columns: minmax(25rem, 0.95fr) minmax(30rem, 1.05fr);
+  gap: clamp(1rem, 3vw, 3rem);
+}
+
+html[lang="es"] .dashboard-showcase-hero h1 {
+  font-size: clamp(3.5rem, 5.7vw, 6.2rem);
+}
+
 .dashboard-showcase-hero__dynamic {
   min-height: 1.6em;
   margin: clamp(1.75rem, 3vw, 2.6rem) 0 0;
@@ -275,6 +284,7 @@
 
 @media (max-width: 68rem) {
   .dashboard-showcase-hero { min-height: 0; grid-template-columns: minmax(0, 1fr); padding-block: 5rem; }
+  html[lang="es"] .dashboard-showcase-hero { grid-template-columns: minmax(0, 1fr); }
   .dashboard-showcase-hero__copy { max-width: 50rem; }
   .dashboard-showcase-hero__visual { width: min(100%, 58rem); }
   .dashboard-feature { min-height: 0; grid-template-columns: minmax(0, 1fr); }

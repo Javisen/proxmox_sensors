@@ -11,6 +11,7 @@ export const SOURCE_URLS = Object.freeze({
   githubIssues: `https://api.github.com/search/issues?q=${encodeURIComponent(
     `repo:${REPOSITORY} is:issue is:open`,
   )}&per_page=1`,
+  githubContributors: `https://api.github.com/repos/${REPOSITORY}/contributors?per_page=100&anon=1`,
   hacs: "https://raw.githubusercontent.com/hacs/default/master/integration",
   projectNotices: `https://raw.githubusercontent.com/${REPOSITORY}/main/website/notices.json`,
 });
@@ -55,6 +56,27 @@ function booleanValue(value, field) {
   }
 
   return value;
+}
+
+function nullableNonNegativeInteger(value, field) {
+  return value === null ? null : nonNegativeInteger(value, field);
+}
+
+function safeUrl(value, field, allowedOrigins) {
+  const normalized = requiredString(value, field);
+  let url;
+
+  try {
+    url = new URL(normalized);
+  } catch {
+    throw new Error(`${field} must be a valid URL`);
+  }
+
+  if (url.protocol !== "https:" || !allowedOrigins.includes(url.origin)) {
+    throw new Error(`${field} must use an approved HTTPS origin`);
+  }
+
+  return url.toString();
 }
 
 function normalizeVersion(tagName) {
@@ -152,6 +174,69 @@ async function fetchIssues(fetchImpl) {
   };
 }
 
+function normalizeContributor(contributor, index) {
+  if (!isObject(contributor)) {
+    throw new Error(`contributors[${index}] must be an object`);
+  }
+
+  const contributions = nonNegativeInteger(contributor.contributions, `contributors[${index}].contributions`);
+  const login = typeof contributor.login === "string" && contributor.login.trim() !== ""
+    ? contributor.login.trim()
+    : null;
+
+  if (login === null) {
+    return {
+      name: requiredString(contributor.name, `contributors[${index}].name`),
+      login: null,
+      avatarUrl: null,
+      profileUrl: null,
+      contributions,
+    };
+  }
+
+  return {
+    name: login,
+    login,
+    avatarUrl: safeUrl(
+      contributor.avatar_url,
+      `contributors[${index}].avatar_url`,
+      ["https://avatars.githubusercontent.com", "https://github.com"],
+    ),
+    profileUrl: safeUrl(
+      contributor.html_url,
+      `contributors[${index}].html_url`,
+      ["https://github.com"],
+    ),
+    contributions,
+  };
+}
+
+async function fetchContributors(fetchImpl) {
+  const contributors = [];
+
+  for (let page = 1; page <= 10; page += 1) {
+    const separator = SOURCE_URLS.githubContributors.includes("?") ? "&" : "?";
+    const result = await getJson(fetchImpl, `${SOURCE_URLS.githubContributors}${separator}page=${page}`);
+
+    if (!Array.isArray(result)) {
+      throw new Error("GitHub contributors response must be an array");
+    }
+
+    contributors.push(...result.map((contributor, index) => (
+      normalizeContributor(contributor, contributors.length + index)
+    )));
+
+    if (result.length < 100) {
+      return {
+        contributorCount: contributors.length,
+        contributors,
+      };
+    }
+  }
+
+  throw new Error("GitHub contributors response exceeded the supported pagination limit");
+}
+
 async function fetchHacs(fetchImpl) {
   const repositories = await getJson(fetchImpl, SOURCE_URLS.hacs);
 
@@ -196,6 +281,24 @@ export function validateSnapshot(snapshot) {
   nonNegativeInteger(snapshot.stars, "snapshot.stars");
   nonNegativeInteger(snapshot.forks, "snapshot.forks");
   nonNegativeInteger(snapshot.openIssues, "snapshot.openIssues");
+  nullableNonNegativeInteger(snapshot.contributorCount, "snapshot.contributorCount");
+
+  if (!Array.isArray(snapshot.contributors)) {
+    throw new Error("Snapshot contributors must be an array");
+  }
+  snapshot.contributors.forEach((contributor, index) => normalizeContributor({
+    name: contributor.name,
+    login: contributor.login,
+    avatar_url: contributor.avatarUrl,
+    html_url: contributor.profileUrl,
+    contributions: contributor.contributions,
+  }, index));
+  if (
+    (snapshot.contributorCount === null && snapshot.contributors.length !== 0)
+    || (snapshot.contributorCount !== null && snapshot.contributorCount !== snapshot.contributors.length)
+  ) {
+    throw new Error("Snapshot contributorCount must match the contributors array");
+  }
 
   if (!["Active", "Archived"].includes(snapshot.repositoryStatus)) {
     throw new Error("Snapshot repositoryStatus is invalid");
@@ -258,6 +361,10 @@ export async function createProjectSnapshot({ fetchImpl, fallback, now = new Dat
     githubIssues: {
       fields: ["openIssues"],
       promise: fetchIssues(fetchImpl),
+    },
+    githubContributors: {
+      fields: ["contributorCount", "contributors"],
+      promise: fetchContributors(fetchImpl),
     },
     hacs: {
       fields: ["hacsListed"],

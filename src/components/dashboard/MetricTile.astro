@@ -4,14 +4,63 @@ import type { DashboardMetric } from "../../data/homeDashboard";
 
 type Props = DashboardMetric;
 
-const { label, value, detail, tone = "neutral", compact = false } = Astro.props;
+const {
+  label,
+  value,
+  detail,
+  tone = "neutral",
+  compact = false,
+  wide = false,
+  href,
+  contributors = [],
+} = Astro.props;
 const showBadge = tone !== "neutral";
+const visibleContributors = contributors
+  .filter((contributor) => contributor.avatarUrl !== null && contributor.profileUrl !== null);
 ---
 
-<div class:list={["metric-tile", `metric-tile--${tone}`]}>
+<div class:list={[
+  "metric-tile",
+  `metric-tile--${tone}`,
+  wide && "metric-tile--wide",
+  contributors.length > 0 && "metric-tile--contributors",
+]}>
   <dt>{label}</dt>
-  <dd class:list={["metric-tile__value", compact && "metric-tile__value--compact"]}>{value}</dd>
+  <dd class:list={[
+    "metric-tile__value",
+    compact && "metric-tile__value--compact",
+    contributors.length > 0 && "metric-tile__value--contributors",
+  ]}>{value}</dd>
+  {contributors.length > 0 && (
+    <dd class="metric-tile__contributors" aria-label="Contributors with GitHub profiles">
+      <span class="contributor-avatars">
+        {visibleContributors.map((contributor) => (
+          <a
+            class="contributor-avatar"
+            href={contributor.profileUrl!}
+            target="_blank"
+            rel="noreferrer"
+            title={contributor.name}
+            aria-label={`View ${contributor.name}'s GitHub profile`}
+          >
+            <img
+              src={contributor.avatarUrl!}
+              alt={`${contributor.name}'s GitHub avatar`}
+              width="32"
+              height="32"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+        ))}
+      </span>
+    </dd>
+  )}
   <dd class="metric-tile__detail">
-    {showBadge ? <StatusBadge label={detail} tone={tone} /> : detail}
+    {href ? (
+      <a class="metric-tile__link" href={href} target="_blank" rel="noreferrer">
+        {detail}<span aria-hidden="true">↗</span>
+      </a>
+    ) : showBadge ? <StatusBadge label={detail} tone={tone} /> : detail}
   </dd>
 </div>

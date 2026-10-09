@@ -1,36 +1,44 @@
 ---
 import NavIcon from "./NavIcon.astro";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
 import { navigationItems } from "../data/navigation";
+import { localizePath, stripLocaleFromPath, type Locale } from "../i18n/config";
+import { ui, type UiKey } from "../i18n/ui";
 
 interface Props {
-  language?: "en" | "es";
+  language?: Locale;
 }
 
 const { language = "en" } = Astro.props;
-const spanishLabels: Record<string, string> = {
-  Home: "Inicio",
-  Documentation: "Documentación",
-  Installation: "Instalación",
+const labelKeys: Partial<Record<string, UiKey>> = {
+  Home: "nav.home",
+  Documentation: "nav.documentation",
+  Development: "nav.development",
+  Installation: "nav.installation",
+  Cluster: "nav.cluster",
 };
 const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 const currentPath = Astro.url.pathname;
-const relativePath = currentPath.startsWith(baseUrl)
-  ? `/${currentPath.slice(baseUrl.length)}`
-  : currentPath;
+const pathWithoutLocale = stripLocaleFromPath(currentPath, baseUrl);
+const relativePath = pathWithoutLocale.startsWith(baseUrl)
+  ? `/${pathWithoutLocale.slice(baseUrl.length)}`
+  : pathWithoutLocale;
 
 const withBase = (href: string) => {
-  if (href === "/") return baseUrl;
-  return `${baseUrl}${href.replace(/^\//, "")}`;
+  return localizePath(href, language, baseUrl);
 };
 
 const isActive = (href: string) =>
   href === "/" ? relativePath === "/" : relativePath.startsWith(href);
-const labelFor = (label: string) => language === "es" ? (spanishLabels[label] ?? label) : label;
-const homeLabel = language === "es" ? "Inicio" : "Home";
-const primaryNavigationLabel = language === "es" ? "Navegación principal" : "Primary navigation";
-const externalLabel = language === "es" ? " (se abre en una pestaña nueva)" : " (opens in a new tab)";
+const labelFor = (label: string) => {
+  const key = labelKeys[label];
+  return key ? ui(language, key) : label;
+};
+const homeLabel = ui(language, "nav.home");
+const primaryNavigationLabel = ui(language, "shell.primaryNavigation");
+const externalLabel = ` (${ui(language, "shell.opensNewTab")})`;
 ---
 
 <div class="sidebar-content">
@@ -66,4 +74,5 @@ const externalLabel = language === "es" ? " (se abre en una pestaña nueva)" : "
       })}
     </ul>
   </nav>
+  <LanguageSwitcher locale={language} />
 </div>

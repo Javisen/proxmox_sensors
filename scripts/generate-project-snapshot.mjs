@@ -36,6 +36,8 @@ function buildFetch() {
       ? "githubRelease"
       : url.includes("/search/issues")
         ? "githubIssues"
+        : url.includes("/contributors?")
+          ? "githubContributors"
         : url === SOURCE_URLS.projectNotices
           ? "projectNotices"
           : url.includes("api.github.com/repos/")

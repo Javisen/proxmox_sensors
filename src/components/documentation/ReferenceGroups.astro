@@ -1,13 +1,16 @@
 ---
 import type { ReferenceGroup } from "../../data/reference";
+import { referenceEntryId } from "../../data/referenceSearch.mjs";
 import ReferenceEntry from "./ReferenceEntry.astro";
 
 interface Props {
   groups: ReferenceGroup[];
+  module: "PVE" | "PBS" | "CLUSTER";
+  sectionId: string;
   headingLevel?: "h3" | "h4";
 }
 
-const { groups, headingLevel = "h3" } = Astro.props;
+const { groups, module, sectionId, headingLevel = "h3" } = Astro.props;
 const Heading = headingLevel;
 ---
 
@@ -16,7 +19,12 @@ const Heading = headingLevel;
     <div class="reference-group" data-reference-group>
       <Heading>{group.title}</Heading>
       <div class="reference-group__entries">
-        {group.entries.map((entry) => <ReferenceEntry entry={entry} />)}
+        {group.entries.map((entry) => (
+          <ReferenceEntry
+            entry={entry}
+            id={referenceEntryId(module, sectionId, group.title, entry.name)}
+          />
+        ))}
       </div>
     </div>
   ))}
