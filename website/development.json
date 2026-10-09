@@ -1,6 +1,6 @@
 {
   "version": "5.2.0",
-  "release_status": "planning",
+  "release_status": "completed",
   "items": [
     {
       "id": "pdm-module",
