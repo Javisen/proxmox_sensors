@@ -4,15 +4,15 @@
       "id": "new-v5.2.0-release",
       "active": true,
       "level": "info",
-      "title": "New V5.2.0 ready for release.",
-      "message": "New Proxmox Datacenter Manager monitoring - PDM Dashboard View - QDevice - VM Disk Usage / Guest Agent Metrics"
+      "title": "Proxmox Extended Sensors V5.2.0 Released!",
+      "message": "V5.2.0 is now available! Introducing Proxmox Datacenter Manager (PDM), a dedicated PDM Dashboard, QDevice monitoring, optional Guest Agent Metrics, and important fixes for PVE device identity and HDD spin-down."
     },
     {
       "id": "v5-2-0-pdm-module",
       "active": true,
       "level": "info",
-      "title": "Proxmox Datacenter Manager monitoring in V5.2.0",
-      "message": "V5.2.0 introduces PDM as a new module alongside PVE, PBS and CLUSTER, providing centralized monitoring of Proxmox infrastructure through a single Datacenter Manager connection."
+      "title": "Discover Proxmox Datacenter Manager Monitoring",
+      "message": "Explore the new PDM module in V5.2.0, featuring centralized infrastructure monitoring, inventory, capacity, updates, and remote status. Full documentation is available at https://proxmox-sensors.es/docs/pdm/."
     }
   ]
 }
