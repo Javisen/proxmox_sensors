@@ -55,10 +55,18 @@ cover/
 *.mo
 *.pot
 
+# Local AI development harness
+AGENTS.md
+PROJECT_STATE.md
+README-HARNESS.md
+.codex/
+.codex/local/
+
 # Website build artifacts
 node_modules/
 dist/
 .astro/
+src/data/projectSnapshot.generated.json
 
 # Django stuff:
 *.log

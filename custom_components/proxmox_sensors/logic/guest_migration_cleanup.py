@@ -4,6 +4,7 @@ This is deliberately independent of selection/exclusion cleanup. Registry
 entries are only read here; the existing platforms remain responsible for claims.
 """
 
+
 from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
@@ -14,6 +15,44 @@ from .guest_selection import (
 )
 from .cluster_scope import ACTIVE_SCOPE, associated_cluster_for_pve, cluster_scope_status, entry_cluster_scope_id
 from .pve_local_identity import node_device_identifier, pve_local_identity_context
+
+
+
+
+
+
+
+
+
+def reconcile_claimed_guest_rows(registry, source_id, destination_id, rows,
+                                 source_entry_id, target_entry_id, states):
+    """Attach already claimed rows to the destination after a complete preflight."""
+    pending = []
+    for entity_id, (unique_id, owner_id) in rows.items():
+        row = registry.async_get(entity_id)
+        expected_owner = target_entry_id if owner_id == source_entry_id else owner_id
+        if (row is None or row.unique_id != unique_id
+                or row.config_entry_id != expected_owner
+                or row.device_id not in (source_id, destination_id)):
+            return False
+        if row.device_id == source_id:
+            if owner_id not in (source_entry_id, target_entry_id):
+                return False
+            state = states.get(entity_id)
+            if row.disabled_by is None and (state is None or "restored" in state.attributes):
+                return False
+            pending.append(entity_id)
+
+    moved = []
+    try:
+        for entity_id in pending:
+            registry.async_update_entity(entity_id, device_id=destination_id)
+            moved.append(entity_id)
+    except Exception:
+        for entity_id in reversed(moved):
+            registry.async_update_entity(entity_id, device_id=source_id)
+        return False
+    return True
 
 
 def setup_guest_migration_cleanup(hass, entry, coordinator):
@@ -36,6 +75,7 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
 
     def runtime(owner):
         return hass.data.get(DOMAIN, {}).get(owner.entry_id, {}).get("coordinator")
+
 
     def location(data, kind, vmid):
         # Conflicting/absent inventory is not evidence of a completed migration.
@@ -112,10 +152,12 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
                     pending.pop(did, None)
                     break
             section = "vms" if kind == "vm" else "cts"
-            if fresh(entry, cluster) and any(
-                str(guest.get("vmid")) == vmid
-                for guest in (coordinator.data or {}).get(section, {}).values()
-            ):
+            if (fresh(entry, cluster)
+                    and location(coordinator.data, kind, vmid) != target_node
+                    and any(
+                        str(guest.get("vmid")) == vmid
+                        for guest in (coordinator.data or {}).get(section, {}).values()
+                    )):
                 pending.pop(did, None)
 
     @callback
@@ -149,11 +191,10 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
                        and str(guest.get("node", "")).lower() == target_node
                        for guest in local.values()):
                 continue
-            # A locally rediscovered guest may already be returning, even if the
-            # cluster snapshot has not caught up. Invalidate instead of retrying.
+            # Retain the handoff while waiting for the source local list to catch
+            # up. A confirmed reversal is handled by invalidate().
             if any(str(guest.get("vmid")) == vmid
                    for guest in (coordinator.data or {}).get(section, {}).values()):
-                pending.pop(did, None)
                 continue
             destination = devices.async_get_device_by_identifier(
                 identifier, config_entry_id=target.entry_id,
@@ -172,6 +213,14 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
             # Include late-registered buttons/Replication in the completion check.
             for row in attached:
                 rows.setdefault(row.entity_id, (row.unique_id, row.config_entry_id))
+            if not reconcile_claimed_guest_rows(
+                registry, did, destination.id, rows, entry.entry_id,
+                target.entry_id, hass.states,
+            ):
+                continue
+            attached = er.async_entries_for_device(
+                registry, did, include_disabled_entities=True,
+            )
             if attached:
                 continue
             complete = True

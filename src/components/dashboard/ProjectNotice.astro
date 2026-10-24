@@ -5,9 +5,11 @@ import type { ProjectNoticeData } from "../../data/projectSnapshot";
 interface Props {
   notice: ProjectNoticeData;
   headingId: string;
+  language: "en" | "es";
 }
 
-const { notice, headingId } = Astro.props;
+const { notice, headingId, language } = Astro.props;
+const copy = language === "es" ? notice.es : notice;
 ---
 
 <article
@@ -25,8 +27,8 @@ const { notice, headingId } = Astro.props;
 
   <div class="project-notice__copy">
     <p class="project-notice__level">{notice.level}</p>
-    <h3 id={headingId}>{notice.title}</h3>
-    <p class="project-notice__message">{notice.message}</p>
+    <h3 id={headingId}>{copy.title}</h3>
+    <p class="project-notice__message">{copy.message}</p>
   </div>
 
   {notice.link && notice.linkLabel && (

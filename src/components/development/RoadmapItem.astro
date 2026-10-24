@@ -10,10 +10,13 @@ interface Props {
     progress: number | null;
     title: string;
     message: string;
+    es: { title: string; message: string };
   };
+  language: "en" | "es";
 }
 
-const { item } = Astro.props;
+const { item, language } = Astro.props;
+const copy = language === "es" ? item.es : item;
 const headingId = `development-${item.id}`;
 ---
 
@@ -21,11 +24,11 @@ const headingId = `development-${item.id}`;
   <header class="roadmap-item__header">
     <div>
       <DevelopmentStatus status={item.status} />
-      <h2 id={headingId}>{item.title}</h2>
+      <h2 id={headingId}>{copy.title}</h2>
     </div>
     <span class="roadmap-item__id">{item.id}</span>
   </header>
-  <p class="roadmap-item__message">{item.message}</p>
+  <p class="roadmap-item__message">{copy.message}</p>
   <RoadmapPath status={item.status} />
   {item.progress !== null && (
     <div class="roadmap-progress">
@@ -36,7 +39,7 @@ const headingId = `development-${item.id}`;
       <div
         class="roadmap-progress__track"
         role="progressbar"
-        aria-label={`Development progress for ${item.title}`}
+        aria-label={`Development progress for ${copy.title}`}
         aria-valuemin="0"
         aria-valuemax="100"
         aria-valuenow={item.progress}

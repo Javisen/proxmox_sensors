@@ -10,6 +10,7 @@ from .cluster_scope import (
     associated_cluster_for_pve,
     cluster_scope_membership,
     cluster_scope_status,
+    entry_cluster_scope_id,
 )
 
 EFFECTIVE_SELECTED_VMS = "_effective_selected_vms"
@@ -216,26 +217,56 @@ def allow_excluded_cluster_guest_cleanup(hass, entry, data, unique_id):
     """Authorize only a known VM/CT identity excluded by current configuration."""
     import re
 
-    if entry.data.get(CONF_PLATFORM_TYPE) != "PVE" or data.get("cluster_resources_ok") is not True:
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id, {}).get("coordinator")
+    resources = data.get("cluster_resources")
+    if (entry.data.get(CONF_PLATFORM_TYPE) != "PVE"
+            or data.get("cluster_resources_ok") is not True
+            or coordinator is None
+            or not coordinator.last_update_success
+            or not isinstance(resources, list)
+            or any(not isinstance(item, dict) for item in resources)):
         return False
     cluster = data.get("cluster_id")
     if not isinstance(cluster, str) or not cluster.strip():
         return False
     cluster = _normalize_cluster_id(cluster)
-    if _entry_cluster_id(hass, entry) != cluster:
-        return False
-    scope = re.escape(cluster.replace(" ", "_"))
-    match = re.fullmatch(
-        rf"pve_cluster_{scope}_proxmox_(vm|ct)_{scope}_([0-9]+)_"
-        r"(status|cpu_usage|memory_used|memory_total|disk_total|disk_used|disk_usage|uptime|network_rx|network_tx)_v1",
-        unique_id or "",
+    scope_id = entry_cluster_scope_id(entry)
+    active_scope = (
+        cluster_scope_status(entry) == ACTIVE_SCOPE
+        and scope_id is not None
+        and associated_cluster_for_pve(
+            entry, hass.config_entries.async_entries(DOMAIN)
+        ) is not None
     )
+    match = None
+    if active_scope:
+        scope = re.escape(scope_id)
+        match = re.fullmatch(
+            rf"pve_cluster_{scope}_proxmox_(vm|ct)_{scope}_([0-9]+)_"
+            r"(status|cpu_usage|memory_used|memory_total|disk_total|disk_used|disk_usage|uptime|network_rx|network_tx)_v1",
+            unique_id or "",
+        )
+    elif _entry_cluster_id(hass, entry) == cluster:
+        scope = re.escape(cluster.replace(" ", "_"))
+        match = re.fullmatch(
+            rf"pve_cluster_{scope}_proxmox_(vm|ct)_{scope}_([0-9]+)_"
+            r"(status|cpu_usage|memory_used|memory_total|disk_total|disk_used|disk_usage|uptime|network_rx|network_tx)_v1",
+            unique_id or "",
+        )
     if not match or (match[1] == "vm" and match[3] == "disk_used"):
         return False
     key = "selected_vms" if match[1] == "vm" else "selected_cts"
     try:
         for sibling in hass.config_entries.async_entries(DOMAIN):
             if sibling.data.get(CONF_PLATFORM_TYPE) != "PVE":
+                continue
+            if active_scope:
+                if cluster_scope_membership(sibling) != (ACTIVE_SCOPE, scope_id):
+                    continue
+                values = get_entry_guest_selection(sibling, key)
+                if values is None:
+                    return False
+                selection_guest_ids(values)
                 continue
             sibling_cluster = _entry_cluster_id(hass, sibling)
             # An unresolved entry could contribute a selection to this cluster.

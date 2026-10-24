@@ -5,14 +5,22 @@
       "active": true,
       "level": "info",
       "title": "Proxmox Extended Sensors V5.2.0 Released!",
-      "message": "V5.2.0 is now available! Introducing Proxmox Datacenter Manager (PDM), a dedicated PDM Dashboard, QDevice monitoring, optional Guest Agent Metrics, and important fixes for PVE device identity and HDD spin-down."
+      "message": "V5.2.0 is now available! Introducing Proxmox Datacenter Manager (PDM), a dedicated PDM Dashboard, QDevice monitoring, optional Guest Agent Metrics, and important fixes for PVE device identity and HDD spin-down.",
+      "es": {
+        "title": "¡Proxmox Extended Sensors V5.2.0 ya disponible!",
+        "message": "¡V5.2.0 ya está disponible! Incorpora Proxmox Datacenter Manager (PDM), un dashboard específico para PDM, monitorización de QDevice, métricas opcionales de Guest Agent y correcciones importantes para la identidad de dispositivos PVE y la suspensión de discos HDD."
+      }
     },
     {
       "id": "v5-2-0-pdm-module",
       "active": true,
       "level": "info",
       "title": "Discover Proxmox Datacenter Manager Monitoring",
-      "message": "Explore the new PDM module in V5.2.0, featuring centralized infrastructure monitoring, inventory, capacity, updates, and remote status. Full documentation is available at https://proxmox-sensors.es/docs/pdm/."
+      "message": "Explore the new PDM module in V5.2.0, featuring centralized infrastructure monitoring, inventory, capacity, updates, and remote status. Full documentation is available at https://proxmox-sensors.es/docs/pdm/.",
+      "es": {
+        "title": "Descubre la monitorización de Proxmox Datacenter Manager",
+        "message": "Explora el nuevo módulo PDM de V5.2.0, con monitorización centralizada de la infraestructura, inventario, capacidad, actualizaciones y estado de los remotos. La documentación completa está disponible en https://proxmox-sensors.es/docs/pdm/."
+      }
     }
   ]
 }

@@ -7,6 +7,8 @@
     "data:refresh": "node scripts/generate-project-snapshot.mjs",
     "data:test": "node --test --test-isolation=none scripts/project-data.test.mjs scripts/project-notices.test.mjs scripts/project-development.test.mjs",
     "development:check": "node --test scripts/project-development.test.mjs",
+    "i18n:test": "astro build && node --test scripts/i18n.test.mjs",
+    "reference:test": "astro build && node --test scripts/reference-search.test.mjs",
     "predev": "npm run data:refresh",
     "dev": "astro dev",
     "dev:notices": "node scripts/dev-notices-preview.mjs",

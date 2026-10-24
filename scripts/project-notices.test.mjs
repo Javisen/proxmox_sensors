@@ -12,7 +12,11 @@ const fixtureDirectory = path.join(
 const controlledNow = new Date("2026-09-27T12:00:00.000Z");
 
 async function fixture(name) {
-  return JSON.parse(await readFile(path.join(fixtureDirectory, `${name}.json`), "utf8"));
+  const document = JSON.parse(await readFile(path.join(fixtureDirectory, `${name}.json`), "utf8"));
+  for (const notice of document.notices) {
+    notice.es = { title: notice.title, message: notice.message };
+  }
+  return document;
 }
 
 test("accepts an empty notices document without rendering notices", async () => {
@@ -45,6 +49,7 @@ test("uses inclusive start and exclusive expiry boundaries", () => {
           level: "info",
           title: "Starts now",
           message: "Visible at the exact start time.",
+          es: { title: "Empieza ahora", message: "Visible al comenzar." },
           startsAt: controlledNow.toISOString(),
         },
         {
@@ -53,6 +58,7 @@ test("uses inclusive start and exclusive expiry boundaries", () => {
           level: "info",
           title: "Expires now",
           message: "Hidden at the exact expiry time.",
+          es: { title: "Termina ahora", message: "Oculto al terminar." },
           expiresAt: controlledNow.toISOString(),
         },
         {
@@ -61,6 +67,7 @@ test("uses inclusive start and exclusive expiry boundaries", () => {
           level: "info",
           title: "Inactive",
           message: "Hidden even inside its time window.",
+          es: { title: "Inactivo", message: "Oculto dentro de su intervalo." },
         },
       ],
     },
@@ -73,6 +80,16 @@ test("uses inclusive start and exclusive expiry boundaries", () => {
 test("preserves multiple visible notices in source order", async () => {
   const result = normalizeNoticesDocument(await fixture("multiple"), { now: controlledNow });
   assert.deepEqual(result.visibleNoticeIds, ["information", "resolved"]);
+});
+
+test("preserves Spanish copy and rejects missing or incomplete translations", async () => {
+  const document = await fixture("warning-active");
+  const result = normalizeNoticesDocument(document, { now: controlledNow });
+  assert.deepEqual(result.notices[0].es, document.notices[0].es);
+  delete document.notices[0].es;
+  assert.throws(() => normalizeNoticesDocument(document), /\.es must be an object/);
+  document.notices[0].es = { title: "Aviso" };
+  assert.throws(() => normalizeNoticesDocument(document), /\.es.message must be a non-empty string/);
 });
 
 test("rejects unsupported levels, invalid dates, and duplicate ids", async () => {

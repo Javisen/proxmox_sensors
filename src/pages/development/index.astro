@@ -9,13 +9,9 @@ import "../../styles/documentation.css";
 import "../../styles/development.css";
 
 const development = normalizeDevelopmentDocument(developmentSource);
-const locale = Astro.currentLocale === "es" ? "es" : "en";
-const activeItems = development.items.filter((item) => item.active).map((item) => ({
-  ...item,
-  title: locale === "es" ? item.es.title : item.title,
-  message: locale === "es" ? item.es.message : item.message,
-}));
-const normalizedReleaseStatus = development.releaseStatus.replaceAll("-", " ");
+const language = Astro.currentLocale === "es" ? "es" : "en";
+const activeItems = development.items.filter((item) => item.active);
+const normalizedReleaseStatus = development.releaseStatus.replaceAll(/[-_]/g, " ");
 const releaseStatusLabel = normalizedReleaseStatus.charAt(0).toUpperCase() + normalizedReleaseStatus.slice(1);
 const featureRequestUrl = "https://github.com/Javisen/proxmox_sensors/issues/new?template=feature_request.yml";
 ---
@@ -47,7 +43,7 @@ const featureRequestUrl = "https://github.com/Javisen/proxmox_sensors/issues/new
 
     <section class="development-roadmap" aria-label={`Version ${development.version} roadmap`}>
       {activeItems.length > 0
-        ? activeItems.map((item) => <RoadmapItem item={item} />)
+        ? activeItems.map((item) => <RoadmapItem item={item} language={language} />)
         : <p class="development-roadmap__empty">No active roadmap items are published for this release.</p>}
     </section>
 

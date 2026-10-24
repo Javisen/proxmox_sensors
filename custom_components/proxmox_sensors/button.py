@@ -13,6 +13,12 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.components import persistent_notification
 
 from .logic.guest_cleanup import cleanup_excluded_guest_devices
+from .logic.guest_deletion_cleanup import (
+    async_cleanup_deleted_guest,
+    cluster_inventory_is_fresh,
+    guest_is_absent,
+    registered_guest_groups,
+)
 from .pbs_actions import run_gc, run_prune, run_verify, run_sync
 from .const import DOMAIN, CONF_NODE, CONF_PLATFORM_TYPE
 from .logic.guest_keys import (
@@ -31,7 +37,15 @@ from .logic.guest_identity import (
     resolve_legacy_guest_identity,
 )
 from .logic.guest_identity_diagnostics import warn_ambiguous_guest
-from .logic.cluster_scope import guest_identity_context, scoped_migration_target
+from .logic.cluster_scope import (
+    ACTIVE_SCOPE,
+    associated_cluster_for_pve,
+    cluster_scope_membership,
+    cluster_scope_status,
+    entry_cluster_scope_id,
+    guest_identity_context,
+    scoped_migration_target,
+)
 from .logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
     local_entity_unique_id,
@@ -41,6 +55,8 @@ from .logic.pve_local_identity import (
 _LOGGER = logging.getLogger(__name__)
 
 GRACE_CYCLES = 3
+
+
 
 
 def _legacy_guest_identity_resolver(hass, entry):
@@ -148,17 +164,42 @@ def _reconcile_pbs_button_unique_ids(ent_reg, entry, server_id: str, datastores)
 
 def _excluded_guest_buttons(hass, entry, data, registry):
     """Return exact registry rows authorized by an explicit cluster exclusion."""
-    if entry.data.get(CONF_PLATFORM_TYPE) != "PVE" or data.get("cluster_resources_ok") is not True:
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id, {}).get("coordinator")
+    resources = data.get("cluster_resources")
+    if (entry.data.get(CONF_PLATFORM_TYPE) != "PVE"
+            or data.get("cluster_resources_ok") is not True
+            or coordinator is None
+            or not coordinator.last_update_success
+            or not isinstance(resources, list)
+            or any(not isinstance(item, dict) for item in resources)):
         return []
     cluster = data.get("cluster_id")
     if not isinstance(cluster, str) or not cluster.strip():
         return []
     cluster = cluster.lower()
-    if _entry_cluster_id(hass, entry) != cluster:
+    scope_id = entry_cluster_scope_id(entry)
+    scoped = (
+        cluster_scope_status(entry) == ACTIVE_SCOPE
+        and scope_id is not None
+        and associated_cluster_for_pve(
+            entry, hass.config_entries.async_entries(DOMAIN)
+        ) is not None
+    )
+    if not scoped and _entry_cluster_id(hass, entry) != cluster:
         return []
     safe = {"vm": True, "ct": True}
     for other in hass.config_entries.async_entries(DOMAIN):
         if other.data.get(CONF_PLATFORM_TYPE) != "PVE":
+            continue
+        if scoped:
+            if cluster_scope_membership(other) != (ACTIVE_SCOPE, scope_id):
+                continue
+            for kind, key in (("vm", "selected_vms"), ("ct", "selected_cts")):
+                try:
+                    values = get_entry_guest_selection(other, key)
+                    safe[kind] &= selection_guest_ids(values) is not None
+                except (ValueError, TypeError):
+                    safe[kind] = False
             continue
         membership = _entry_cluster_id(hass, other)
         if membership is None:
@@ -181,7 +222,8 @@ def _excluded_guest_buttons(hass, entry, data, registry):
                     for kind, values in selections.items()}
     except (ValueError, TypeError):
         return []
-    pattern = re.compile(r"proxmox_(vm|ct)_cluster_" + re.escape(cluster)
+    identity_scope = scope_id if scoped else cluster
+    pattern = re.compile(r"proxmox_(vm|ct)_cluster_" + re.escape(identity_scope)
                          + r"_([0-9]+)_([a-z]+)")
     excluded = []
     for row in er.async_entries_for_config_entry(registry, entry.entry_id):
@@ -584,6 +626,10 @@ def _setup_guest_button_reconciliation(
     live_guest_instances: dict = {}
     missing_everywhere_counter: dict = {}
     deleting_groups: dict = {}
+    deleting_deleted_groups: dict = {}
+    released_groups: set = set()
+
+
     async def _delete_excluded(entities, rows, registry):
         for entity in entities:
             if getattr(entity, "hass", None) is not None:
@@ -598,6 +644,9 @@ def _setup_guest_button_reconciliation(
     @callback
     def _reconcile():
         c_data = coordinator.data or {}
+        for gkey, task in list(deleting_deleted_groups.items()):
+            if task.done():
+                del deleting_deleted_groups[gkey]
         cluster_id = resolve_cluster_id(hass, c_data)
         identity_context = guest_identity_context(entry, cluster_id)
         ent_reg = er.async_get(hass)
@@ -623,16 +672,30 @@ def _setup_guest_button_reconciliation(
             legacy_identity_resolver,
         )
 
+        cluster_resources = c_data.get("cluster_resources", [])
+        if cluster_inventory_is_fresh(coordinator, cluster_resources):
+            for gkey in tuple(released_groups):
+                kind, _scope, vmid = gkey.split(":", 2)
+                if str(find_guest_node_in_resources(cluster_resources, kind, vmid)).lower() == node.lower():
+                    released_groups.remove(gkey)
+
+        for gkey, instances in registered_guest_groups(
+            hass, entry, node, cluster_id, identity_context
+        ).items():
+            if gkey not in released_groups:
+                live_guest_instances.setdefault(gkey, instances)
+
         for gkey, task in list(deleting_groups.items()):
             if task.done() and not task.cancelled() and task.exception() is None:
                 del deleting_groups[gkey]
         excluded = {}
+        button_scope = identity_context.scope if identity_context.use_scoped_identity else cluster_id
         for row in _excluded_guest_buttons(hass, entry, c_data, ent_reg):
             match = re.fullmatch(
-                r"proxmox_(vm|ct)_cluster_" + re.escape(cluster_id.lower())
+                r"proxmox_(vm|ct)_cluster_" + re.escape(button_scope.lower())
                 + r"_([0-9]+)_[a-z]+", row.unique_id
             )
-            gkey = _guest_identity_key(match[1], cluster_id, match[2])
+            gkey = _guest_identity_key(match[1], button_scope, match[2])
             excluded.setdefault(gkey, []).append(row)
         for gkey, rows in excluded.items():
             current_groups.pop(gkey, None)
@@ -680,8 +743,6 @@ def _setup_guest_button_reconciliation(
                 del pending_groups[gkey]
 
         # ---- Step 2: migration / disappearance classification. ----
-        cluster_resources = c_data.get("cluster_resources", [])
-        cluster_resources_ok = c_data.get("cluster_resources_ok", True)
         configured_pve_nodes = {
             (e.data.get(CONF_NODE) or "").lower()
             for e in hass.config_entries.async_entries(DOMAIN)
@@ -689,66 +750,110 @@ def _setup_guest_button_reconciliation(
         }
 
         for gkey in list(live_guest_instances.keys()):
-            if gkey in current_groups:
-                missing_everywhere_counter.pop(gkey, None)
-                continue
-
             kind, _cluster, vmid_str = gkey.split(":", 2)
+            inventory_fresh = cluster_inventory_is_fresh(coordinator, cluster_resources)
             located_node = find_guest_node_in_resources(
                 cluster_resources, kind, vmid_str
-            )
-
-            if (
-                located_node
-                and located_node.lower() != node.lower()
-                and located_node.lower() in configured_pve_nodes
-            ):
-                target_entry = None
-                if identity_context and identity_context.use_scoped_identity:
-                    target_entry = scoped_migration_target(
-                        entry, hass.config_entries.async_entries(DOMAIN), located_node
-                    )
-                    if target_entry is None:
-                        continue
+            ) if inventory_fresh else None
+            if (located_node and located_node.lower() != node.lower()
+                    and located_node.lower() in configured_pve_nodes):
+                if identity_context.use_scoped_identity and scoped_migration_target(
+                    entry, hass.config_entries.async_entries(DOMAIN), located_node
+                ) is None:
+                    continue
                 _LOGGER.info(
                     "Guest buttons %s %s migrated from %s to %s; releasing "
                     "local instances via entity.async_remove(force_remove="
                     "False) - Entity Registry untouched",
-                    kind,
-                    vmid_str,
-                    node,
-                    located_node,
+                    kind, vmid_str, node, located_node,
                 )
                 entities_to_release = live_guest_instances.pop(gkey)
+                released_groups.add(gkey)
                 for entity_obj in entities_to_release:
-                    if getattr(entity_obj, "hass", None) is None:
-                        continue
-                    hass.async_create_task(entity_obj.async_remove(force_remove=False))
+                    if getattr(entity_obj, "hass", None) is not None:
+                        hass.async_create_task(entity_obj.async_remove(force_remove=False))
                 known_unique_ids.difference_update(
                     e._attr_unique_id for e in entities_to_release
                 )
                 missing_everywhere_counter.pop(gkey, None)
                 continue
+            if (gkey not in current_groups
+                    and all(getattr(entity, "hass", None) is None
+                            for entity in live_guest_instances[gkey])
+                    and not any(getattr(entity, "_registry_only", False)
+                                for entity in live_guest_instances[gkey])):
+                known_unique_ids.difference_update(
+                    entity._attr_unique_id for entity in live_guest_instances.pop(gkey)
+                )
+                missing_everywhere_counter.pop(gkey, None)
+                continue
+            if gkey in current_groups:
+                if all(getattr(entity, "_registry_only", False)
+                       for entity in live_guest_instances[gkey]):
+                    live_guest_instances.pop(gkey)
+                missing_everywhere_counter.pop(gkey, None)
+                continue
 
-            if not cluster_resources_ok:
+            if not inventory_fresh:
+                continue
+            if located_node:
+                missing_everywhere_counter.pop(gkey, None)
+
+            if located_node:
                 continue
 
             missing_everywhere_counter[gkey] = (
                 missing_everywhere_counter.get(gkey, 0) + 1
             )
-            if missing_everywhere_counter[gkey] >= GRACE_CYCLES:
+            if (missing_everywhere_counter[gkey] >= GRACE_CYCLES
+                    and gkey not in deleting_deleted_groups
+                    and guest_is_absent(coordinator, cluster_resources, kind, vmid_str)):
                 _LOGGER.info(
                     "Guest buttons %s %s missing for %d consecutive cycles "
-                    "(not found locally or in cluster_resources). No action "
-                    "taken: entity instances and Entity Registry left "
-                    "exactly as-is, per design.",
+                    "in fresh cluster inventory; removing obsolete guest buttons",
                     kind,
                     vmid_str,
                     GRACE_CYCLES,
                 )
+                instances = list(live_guest_instances[gkey])
+
+                async def _remove_deleted_guest(
+                    key=gkey, guest_kind=kind, guest_id=vmid_str,
+                    guest_entities=instances,
+                ):
+                    try:
+                        removed = await async_cleanup_deleted_guest(
+                            hass, entry, coordinator, guest_kind, guest_id,
+                            (coordinator.data or {}).get("cluster_resources"),
+                            guest_entities,
+                        )
+                    except Exception:
+                        _LOGGER.exception(
+                            "Failed cleaning deleted guest buttons %s", key
+                        )
+                        removed = False
+                    if removed:
+                        live_guest_instances.pop(key, None)
+                        known_unique_ids.difference_update(
+                            entity._attr_unique_id for entity in guest_entities
+                        )
+                    else:
+                        missing_everywhere_counter[key] = 0
+
+                deleting_deleted_groups[gkey] = hass.async_create_task(
+                    _remove_deleted_guest()
+                )
 
         def _group_ready_to_claim(ents) -> bool:
             for entity_obj in ents:
+                if any(
+                    getattr(live, "hass", None) is not None
+                    and getattr(live, "domain", "button") == "button"
+                    and getattr(live, "unique_id", None) == entity_obj._attr_unique_id
+                    for platform in async_get_platforms(hass, DOMAIN)
+                    for live in platform.entities.values()
+                ):
+                    return False
                 reg_entity_id = ent_reg.async_get_entity_id(
                     "button", DOMAIN, entity_obj._attr_unique_id
                 )
@@ -773,6 +878,12 @@ def _setup_guest_button_reconciliation(
             if gkey in deleting_groups:
                 continue
             if gkey in live_guest_instances or gkey in pending_groups:
+                continue
+            if not cluster_inventory_is_fresh(coordinator, cluster_resources):
+                continue
+            kind, _scope, vmid = gkey.split(":", 2)
+            located_node = find_guest_node_in_resources(cluster_resources, kind, vmid)
+            if not located_node or located_node.lower() != node.lower():
                 continue
             if not _group_ready_to_claim(ents):
                 continue

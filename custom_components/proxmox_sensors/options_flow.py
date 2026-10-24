@@ -42,6 +42,25 @@ class GuestSelectionError(ValueError):
         super().__init__(translation_key)
 
 
+async def _apply_pve_option_updates(hass, entry, entries, plans, new_data,
+                                    new_options, old_options):
+    """Persist every changed entry before reloading each affected runtime once."""
+    reload_entries = []
+    for target in entries:
+        target_options = new_options if target.entry_id == entry.entry_id else dict(target.options)
+        for key, plan in plans.items():
+            if target.entry_id in plan:
+                target_options[key] = list(plan[target.entry_id])
+        if target.entry_id != entry.entry_id and target_options != dict(target.options):
+            hass.config_entries.async_update_entry(target, options=target_options)
+            reload_entries.append(target.entry_id)
+    if new_data != dict(entry.data) or new_options != dict(old_options):
+        hass.config_entries.async_update_entry(entry, data=new_data, options=new_options)
+        reload_entries.append(entry.entry_id)
+    for entry_id in reload_entries:
+        await hass.config_entries.async_reload(entry_id)
+
+
 class ProxmoxOptionsFlow(config_entries.OptionsFlow):
 
     async def _scope_labels(self):
@@ -413,19 +432,11 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
                     wol_macs.pop(current_node, None)
             if wol_macs or "wol_macs" in options:
                 new_options["wol_macs"] = wol_macs
-            # No await between validation and the sibling writes.
-            for target in guest_selection_entries(self.hass, self.config_entry):
-                target_options = new_options if target.entry_id == self.config_entry.entry_id else dict(target.options)
-                for key, plan in plans.items():
-                    if target.entry_id in plan:
-                        target_options[key] = list(plan[target.entry_id])
-                if target.entry_id != self.config_entry.entry_id and target_options != dict(target.options):
-                    self.hass.config_entries.async_update_entry(target, options=target_options)
-            if new_data != dict(self.config_entry.data) or new_options != dict(options):
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry, data=new_data, options=new_options,
-                )
-                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+            await _apply_pve_option_updates(
+                self.hass, self.config_entry,
+                guest_selection_entries(self.hass, self.config_entry),
+                plans, new_data, new_options, options,
+            )
             return self.async_create_entry(title="", data=new_options)
 
         # Load resources via API

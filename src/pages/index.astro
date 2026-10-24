@@ -18,6 +18,7 @@ const previewNotices = useNoticePreview
 const noticeIds = new Set(previewNotices?.visibleNoticeIds ?? projectSnapshot.visibleNoticeIds);
 const visibleNotices = (previewNotices?.notices ?? projectSnapshot.notices)
   .filter((notice) => noticeIds.has(notice.id));
+const language = Astro.currentLocale === "es" ? "es" : "en";
 const noticeSourceState = useNoticePreview
   ? "preview"
   : projectSnapshot.sources.projectNotices.status;
@@ -47,7 +48,7 @@ const noticeSourceState = useNoticePreview
         </header>
         <div class="project-notices__list">
           {visibleNotices.map((notice, index) => (
-            <ProjectNotice notice={notice} headingId={`project-notice-${index}`} />
+            <ProjectNotice notice={notice} headingId={`project-notice-${index}`} language={language} />
           ))}
         </div>
       </section>

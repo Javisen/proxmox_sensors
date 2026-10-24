@@ -6,11 +6,13 @@ const NOTICE_FIELDS = new Set([
   "level",
   "title",
   "message",
+  "es",
   "link",
   "linkLabel",
   "startsAt",
   "expiresAt",
 ]);
+const TRANSLATION_FIELDS = new Set(["title", "message"]);
 
 function isObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -96,6 +98,13 @@ function normalizeNotice(value, index, warnings) {
   if (!NOTICE_LEVELS.includes(value.level)) {
     throw new Error(`notice "${id}".level must be one of: ${NOTICE_LEVELS.join(", ")}`);
   }
+  if (!isObject(value.es)) {
+    throw new Error(`notice "${id}".es must be an object`);
+  }
+  const unknownTranslations = Object.keys(value.es).filter((field) => !TRANSLATION_FIELDS.has(field));
+  if (unknownTranslations.length > 0) {
+    throw new Error(`notice "${id}".es contains unsupported fields: ${unknownTranslations.join(", ")}`);
+  }
 
   const startsAt = isoDate(value.startsAt, `notice "${id}".startsAt`);
   const expiresAt = isoDate(value.expiresAt, `notice "${id}".expiresAt`);
@@ -115,6 +124,10 @@ function normalizeNotice(value, index, warnings) {
     level: value.level,
     title: requiredString(value.title, `notice "${id}".title`),
     message: requiredString(value.message, `notice "${id}".message`),
+    es: {
+      title: requiredString(value.es.title, `notice "${id}".es.title`),
+      message: requiredString(value.es.message, `notice "${id}".es.message`),
+    },
     link,
     linkLabel: link ? (suppliedLinkLabel ?? "More information") : null,
     startsAt,

@@ -6,6 +6,12 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from ..const import DOMAIN, CONF_PLATFORM_TYPE
 from .guest_selection import _entry_cluster_id, allow_excluded_cluster_guest_cleanup
 from .guest_keys import find_guest_node_in_resources
+from .cluster_scope import (
+    ACTIVE_SCOPE,
+    associated_cluster_for_pve,
+    cluster_scope_status,
+    entry_cluster_scope_id,
+)
 
 
 def cleanup_excluded_guest_devices(hass):
@@ -20,9 +26,22 @@ def cleanup_excluded_guest_devices(hass):
             continue
         data = coordinator.data or {}
         cluster = _entry_cluster_id(hass, owner)
-        if not cluster or data.get("cluster_resources_ok") is not True:
+        scope_id = entry_cluster_scope_id(owner)
+        scoped = (
+            cluster_scope_status(owner) == ACTIVE_SCOPE
+            and scope_id is not None
+            and associated_cluster_for_pve(
+                owner, hass.config_entries.async_entries(DOMAIN)
+            ) is not None
+        )
+        if (not cluster or data.get("cluster_resources_ok") is not True
+                or not isinstance(data.get("cluster_resources"), list)
+                or any(not isinstance(item, dict) for item in data["cluster_resources"])):
             continue
-        pattern = re.compile(r"proxmox_(vm|ct)_cluster_" + re.escape(cluster) + r"_([0-9]+)_v1")
+        identity_scope = scope_id if scoped else cluster
+        pattern = re.compile(
+            r"proxmox_(vm|ct)_cluster_" + re.escape(identity_scope) + r"_([0-9]+)_v1"
+        )
         for device in list(dr.async_entries_for_config_entry(devices, owner.entry_id)):
             if device.connections or len(device.identifiers) != 1:
                 continue
@@ -33,7 +52,7 @@ def cleanup_excluded_guest_devices(hass):
             kind, vmid = match.groups()
             if not find_guest_node_in_resources(data.get("cluster_resources", []), kind, vmid):
                 continue
-            uid = f"pve_cluster_{cluster}_proxmox_{kind}_{cluster}_{vmid}_status_v1".lower().replace(" ", "_")
+            uid = f"pve_cluster_{identity_scope}_proxmox_{kind}_{identity_scope}_{vmid}_status_v1".lower().replace(" ", "_")
             if not allow_excluded_cluster_guest_cleanup(hass, owner, data, uid):
                 continue
             # Include disabled entities and other integrations: never delete their device.

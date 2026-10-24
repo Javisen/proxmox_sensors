@@ -11,6 +11,7 @@ export interface ProjectNoticeData {
   level: ProjectNoticeLevel;
   title: string;
   message: string;
+  es: { title: string; message: string };
   link: string | null;
   linkLabel: string | null;
   startsAt: string | null;

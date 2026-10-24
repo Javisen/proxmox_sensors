@@ -570,8 +570,20 @@ async def create_proxmox_coordinator(hass, entry, client):
                         return_exceptions=True,
                     )
 
-                    cluster_resources_ok = not isinstance(
-                        cluster_results[0], Exception
+                    cluster_resources_ok = (
+                        isinstance(cluster_results[0], list)
+                        and all(
+                            isinstance(resource, dict)
+                            and isinstance(resource.get("type"), str)
+                            and bool(resource["type"])
+                            and (
+                                resource["type"] not in {"qemu", "lxc"}
+                                or (resource.get("vmid") is not None
+                                    and isinstance(resource.get("node"), str)
+                                    and bool(resource["node"]))
+                            )
+                            for resource in cluster_results[0]
+                        )
                     )
 
                     if isinstance(cluster_results[0], Exception):
@@ -581,9 +593,16 @@ async def create_proxmox_coordinator(hass, entry, client):
                         cluster_resources = _last_good_cluster_section(
                             "cluster_resources", []
                         )
-                    elif isinstance(cluster_results[0], list):
+                    elif cluster_resources_ok:
                         cluster_resources = _remember_cluster_section(
                             "cluster_resources", cluster_results[0]
+                        )
+                    else:
+                        _LOGGER.warning(
+                            "PVE: Cluster resources returned an incomplete response"
+                        )
+                        cluster_resources = _last_good_cluster_section(
+                            "cluster_resources", []
                         )
 
                     if isinstance(cluster_results[1], Exception):
