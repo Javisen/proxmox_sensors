@@ -18,7 +18,8 @@ export const RELEASE_STATUSES = Object.freeze([
 ]);
 
 const DOCUMENT_FIELDS = new Set(["version", "release_status", "items"]);
-const ITEM_FIELDS = new Set(["id", "active", "status", "progress", "title", "message"]);
+const ITEM_FIELDS = new Set(["id", "active", "status", "progress", "title", "message", "es"]);
+const TRANSLATION_FIELDS = new Set(["title", "message"]);
 
 function isObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -48,6 +49,17 @@ function normalizeProgress(value, itemId) {
   return value;
 }
 
+function normalizeSpanishTranslation(value, itemId) {
+  if (!isObject(value)) {
+    throw new Error(`development item "${itemId}".es must be an object`);
+  }
+  unsupportedFields(value, TRANSLATION_FIELDS, `development item "${itemId}".es`);
+  return {
+    title: requiredString(value.title, `development item "${itemId}".es.title`),
+    message: requiredString(value.message, `development item "${itemId}".es.message`),
+  };
+}
+
 function normalizeItem(value, index) {
   if (!isObject(value)) {
     throw new Error(`development.items[${index}] must be an object`);
@@ -72,6 +84,7 @@ function normalizeItem(value, index) {
     progress: normalizeProgress(value.progress, id),
     title: requiredString(value.title, `development item "${id}".title`),
     message: requiredString(value.message, `development item "${id}".message`),
+    es: normalizeSpanishTranslation(value.es, id),
   };
 }
 

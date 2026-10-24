@@ -8,7 +8,11 @@
       "status": "completed",
       "progress": null,
       "title": "VM/LXC Migration Reliability",
-      "message": "Fixed guest migration between PVE cluster nodes, ensuring sensors and control buttons follow the guest correctly. Also fixed cleanup of empty source devices after migration. Validated in a real Home Assistant environment."
+      "message": "Fixed guest migration between PVE cluster nodes, ensuring sensors and control buttons follow the guest correctly. Also fixed cleanup of empty source devices after migration. Validated in a real Home Assistant environment.",
+      "es": {
+        "title": "Fiabilidad de la migración de VM/LXC",
+        "message": "Corregida la migración de máquinas virtuales y contenedores entre nodos del clúster PVE para que los sensores y botones de control sigan al sistema migrado. También se corrigió la limpieza de los dispositivos vacíos del nodo de origen tras la migración. Validado en un entorno real de Home Assistant."
+      }
     },
     {
       "id": "amd-cpu-temperature-fix",
@@ -16,7 +20,11 @@
       "status": "testing",
       "progress": null,
       "title": "CPU Temperature Detection",
-      "message": "Fixed CPU temperature detection for k10temp, coretemp and zenpower when standard temperature labels are unavailable. Regression tests passed. Awaiting hardware validation from the reporter of issue #88."
+      "message": "Fixed CPU temperature detection for k10temp, coretemp and zenpower when standard temperature labels are unavailable. Regression tests passed. Awaiting hardware validation from the reporter of issue #88.",
+      "es": {
+        "title": "Detección de la temperatura de la CPU",
+        "message": "Corregida la detección de la temperatura de la CPU para k10temp, coretemp y zenpower cuando no están disponibles las etiquetas de temperatura habituales. Las pruebas de regresión se han superado. Pendiente de validación en el hardware por parte de quien informó de la incidencia #88."
+      }
     },
     {
       "id": "vm-filesystem-selection",
@@ -24,7 +32,11 @@
       "status": "planned",
       "progress": null,
       "title": "Extended VM Filesystem Detection",
-      "message": "Investigating improved VM filesystem selection through QEMU Guest Agent for Windows guests and systems such as Home Assistant OS where the main writable filesystem is not mounted at /. Requested in issue #86."
+      "message": "Investigating improved VM filesystem selection through QEMU Guest Agent for Windows guests and systems such as Home Assistant OS where the main writable filesystem is not mounted at /. Requested in issue #86.",
+      "es": {
+        "title": "Detección ampliada de sistemas de archivos de VM",
+        "message": "Se estudia una mejor selección del sistema de archivos de las máquinas virtuales mediante QEMU Guest Agent para sistemas Windows y otros como Home Assistant OS, cuyo sistema de archivos principal con permisos de escritura no está montado en /. Solicitado en la incidencia #86."
+      }
     },
     {
       "id": "lsi-broadcom-controller-temperature",
@@ -32,7 +44,11 @@
       "status": "planned",
       "progress": null,
       "title": "LSI/Broadcom SAS Controller Temperature",
-      "message": "Evaluating optional temperature monitoring for LSI/Broadcom SAS HBA and RAID controllers using storcli, including compatibility, permissions and safe execution. Requested in issue #87."
+      "message": "Evaluating optional temperature monitoring for LSI/Broadcom SAS HBA and RAID controllers using storcli, including compatibility, permissions and safe execution. Requested in issue #87.",
+      "es": {
+        "title": "Temperatura de controladoras SAS LSI/Broadcom",
+        "message": "Se evalúa la monitorización opcional de la temperatura de controladoras HBA y RAID SAS LSI/Broadcom mediante storcli, incluida la compatibilidad, los permisos y la ejecución segura. Solicitado en la incidencia #87."
+      }
     }
   ]
 }

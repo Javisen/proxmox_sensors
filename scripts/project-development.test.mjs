@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   DEVELOPMENT_STATUSES,
@@ -12,10 +13,17 @@ const item = (overrides = {}) => ({
   progress: null,
   title: "Roadmap item",
   message: "A roadmap description.",
+  es: { title: "Elemento de la hoja de ruta", message: "Descripción de la hoja de ruta." },
   ...overrides,
 });
 
 const document = (items) => ({ version: "5.2.0", release_status: "planning", items });
+
+test("published development data has valid English and Spanish entries", () => {
+  const source = JSON.parse(readFileSync(new URL("../website/development.json", import.meta.url), "utf8"));
+  const result = normalizeDevelopmentDocument(source);
+  assert.equal(result.items.length, source.items.length);
+});
 
 test("accepts every supported development status", () => {
   const result = normalizeDevelopmentDocument(document(
@@ -56,5 +64,20 @@ test("rejects unsupported statuses and duplicate ids", () => {
   assert.throws(
     () => normalizeDevelopmentDocument(document([item(), item()])),
     /id must be unique/,
+  );
+});
+
+test("requires complete Spanish text for every item", () => {
+  assert.throws(
+    () => normalizeDevelopmentDocument(document([item({ es: undefined })])),
+    /\.es must be an object/,
+  );
+  assert.throws(
+    () => normalizeDevelopmentDocument(document([item({ es: { title: "Título", message: " " } })])),
+    /\.es\.message must be a non-empty string/,
+  );
+  assert.throws(
+    () => normalizeDevelopmentDocument(document([item({ es: { title: "Título", message: "Texto", fr: "Texte" } })])),
+    /\.es contains unsupported fields: fr/,
   );
 });

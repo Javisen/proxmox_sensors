@@ -9,7 +9,12 @@ import "../../styles/documentation.css";
 import "../../styles/development.css";
 
 const development = normalizeDevelopmentDocument(developmentSource);
-const activeItems = development.items.filter((item) => item.active);
+const locale = Astro.currentLocale === "es" ? "es" : "en";
+const activeItems = development.items.filter((item) => item.active).map((item) => ({
+  ...item,
+  title: locale === "es" ? item.es.title : item.title,
+  message: locale === "es" ? item.es.message : item.message,
+}));
 const normalizedReleaseStatus = development.releaseStatus.replaceAll("-", " ");
 const releaseStatusLabel = normalizedReleaseStatus.charAt(0).toUpperCase() + normalizedReleaseStatus.slice(1);
 const featureRequestUrl = "https://github.com/Javisen/proxmox_sensors/issues/new?template=feature_request.yml";

@@ -6,11 +6,13 @@
   "scripts": {
     "data:refresh": "node scripts/generate-project-snapshot.mjs",
     "data:test": "node --test --test-isolation=none scripts/project-data.test.mjs scripts/project-notices.test.mjs scripts/project-development.test.mjs",
+    "development:check": "node --test scripts/project-development.test.mjs",
     "predev": "npm run data:refresh",
     "dev": "astro dev",
     "dev:notices": "node scripts/dev-notices-preview.mjs",
-    "prebuild": "npm run data:refresh",
+    "prebuild": "npm run development:check && npm run data:refresh",
     "build": "astro build",
+    "postbuild": "node scripts/check-development-pages.mjs",
     "preview": "astro preview"
   },
   "devDependencies": {
