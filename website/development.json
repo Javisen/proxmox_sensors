@@ -1,6 +1,6 @@
 {
   "version": "5.2.1",
-  "release_status": "in_development",
+  "release_status": "development",
   "items": [
     {
       "id": "guest-migration-fixes",
