@@ -1,25 +1,26 @@
+
 {
   "notices": [
     {
-      "id": "new-v5.2.0-release",
+      "id": "upcoming-v5.2.1",
       "active": true,
       "level": "info",
-      "title": "Proxmox Extended Sensors V5.2.0 Released!",
-      "message": "V5.2.0 is now available! Introducing Proxmox Datacenter Manager (PDM), a dedicated PDM Dashboard, QDevice monitoring, optional Guest Agent Metrics, and important fixes for PVE device identity and HDD spin-down.",
+      "title": "Proxmox Extended Sensors V5.2.1 Coming Soon!",
+      "message": "V5.2.1 is on the way! This maintenance update focuses on bug fixes, improved VM/LXC migration handling, device cleanup, and overall stability and reliability.",
       "es": {
-        "title": "¡Proxmox Extended Sensors V5.2.0 ya disponible!",
-        "message": "¡V5.2.0 ya está disponible! Incorpora Proxmox Datacenter Manager (PDM), un dashboard específico para PDM, monitorización de QDevice, métricas opcionales de Guest Agent y correcciones importantes para la identidad de dispositivos PVE y la suspensión de discos HDD."
+        "title": "¡Proxmox Extended Sensors V5.2.1 próximamente!",
+        "message": "¡La versión 5.2.1 está en camino! Esta actualización de mantenimiento se centra en la corrección de errores, mejoras en las migraciones de VM/LXC, limpieza de dispositivos y mayor estabilidad y fiabilidad general."
       }
     },
     {
-      "id": "v5-2-0-pdm-module",
+      "id": "upcoming-light-dashboard",
       "active": true,
       "level": "info",
-      "title": "Discover Proxmox Datacenter Manager Monitoring",
-      "message": "Explore the new PDM module in V5.2.0, featuring centralized infrastructure monitoring, inventory, capacity, updates, and remote status. Full documentation is available at https://proxmox-sensors.es/docs/pdm/.",
+      "title": "New Dashboard with Light and Dark Theme Support!",
+      "message": "A refreshed dashboard is coming with V5.2.1! Enjoy a new light appearance featuring clean white cards, Proxmox orange accents, and automatic adaptation to your Home Assistant theme, while preserving the original dark design.",
       "es": {
-        "title": "Descubre la monitorización de Proxmox Datacenter Manager",
-        "message": "Explora el nuevo módulo PDM de V5.2.0, con monitorización centralizada de la infraestructura, inventario, capacidad, actualizaciones y estado de los remotos. La documentación completa está disponible en https://proxmox-sensors.es/docs/pdm/."
+        "title": "¡Nuevo dashboard compatible con temas claros y oscuros!",
+        "message": "¡La versión 5.2.1 estrenará un dashboard renovado! Disfruta de un nuevo diseño claro con tarjetas blancas, detalles en naranja Proxmox y adaptación automática al tema de Home Assistant, conservando intacto el diseño oscuro original."
       }
     }
   ]
