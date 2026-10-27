@@ -391,7 +391,7 @@ VM and LXC monitoring includes guest state and resource information exposed by P
 - CT memory percentage
 - CT disk percentage
 - VM memory percentage
-- Optional **Guest Agent Metrics** for VM root filesystem percentage via QEMU Guest Agent
+- Optional **Guest Agent Metrics** for VM disk usage via QEMU Guest Agent (root filesystem; `C:\` on Windows; largest writable filesystem when `/` is a read-only image such as erofs/squashfs)
 - `onboot`, expected state and state/onboot matching information
 - Cluster-aware migration continuity for correctly associated nodes
 
