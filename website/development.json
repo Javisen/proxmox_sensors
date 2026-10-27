@@ -41,7 +41,7 @@
     {
       "id": "lsi-broadcom-controller-temperature",
       "active": true,
-      "status": "development",
+      "status": "testing",
       "progress": null,
       "title": "LSI/Broadcom SAS Controller Temperature",
       "message": "Evaluating optional temperature monitoring for LSI/Broadcom SAS HBA and RAID controllers using storcli, including compatibility, permissions and safe execution. Requested in issue #87.",
