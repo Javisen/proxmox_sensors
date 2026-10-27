@@ -7,6 +7,7 @@ import socket
 from homeassistant.components.button import ButtonEntity
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.entity_platform import async_get_platforms
 from homeassistant.helpers import device_registry as dr
 from .pbs_devices import pbs_device_identifier, pbs_parent_device
 from homeassistant.helpers import entity_registry as er

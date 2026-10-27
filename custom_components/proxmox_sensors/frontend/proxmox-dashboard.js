@@ -9,6 +9,64 @@ const HEALTH_TILES = new Set(["cpu", "memory", "swap", "rootfs", "load", "iowait
 // hui-view-background for the active view, so it cannot leak to app chrome or
 // unrelated dashboards. Card Mod remains responsible for card-level styling.
 const DASHBOARD_BACKGROUND = "#0b1216";
+const LIGHT_COLORS = {
+  "#fff": "#202020", "#10191e": "#ffffff", "#303b42": "#d9dde0",
+  "#b7c2cc": "#555555", "#cbd5df": "#454545", "#151f25": "#f5f5f5",
+  "#dbe3eb": "#202020", "#101a20": "#fafafa", "#1b2931": "#f0f0f0",
+  "#697b88": "#e57000", "#243037": "#e5e5e5", "#253038": "#f3f3f3",
+  "#132d23": "#e8f5eb", "#29513a": "#77bc83", "#351b20": "#fff0ef",
+  "#66333b": "#dfaaa6", "#28343b": "#d9dde0", "#2c373e": "#d9dde0",
+  "#334149": "#d9dde0", "#a6b0b9": "#666666", "#333333": "#d9dde0",
+  "#0000": "#ffffff", "#ef7d00": "#e57000",
+};
+const LIGHT_STYLE = {
+  "--pes-view-bg": "#f5f5f5", "--pes-card-bg": "#ffffff",
+  "--pes-card-fg": "#202020", "--pes-card-border": "2px solid #e57000",
+  "--pes-card-top": "4px solid #e57000", "--pes-card-radius": "13px",
+  "--pes-card-shadow": "0 4px 12px rgba(0,0,0,0.10)",
+  "--pes-card-min-height": "76px", "--pes-secondary": "#555555",
+  "--pes-success": "#19763b", "--pes-warning": "#8a6100",
+  "--pes-error": "#bb3432", "--pes-unknown": "#666666",
+  "--pes-dark-logo": "none", "--pes-light-logo": "inline-block",
+  ...Object.fromEntries(Object.entries(LIGHT_COLORS).map(([dark, light]) =>
+    [`--pes-color-${dark.slice(1)}`, light])),
+};
+let themeObserver;
+let themeHass;
+
+function themeCss(css) {
+  return css.replace(/#[0-9a-f]{3,8}\b/gi, color =>
+    Object.hasOwn(LIGHT_COLORS, color.toLowerCase())
+      ? `var(--pes-color-${color.slice(1).toLowerCase()}, ${color})` : color);
+}
+
+function syncTheme() {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const currentHass = document.querySelector?.("home-assistant")?.hass || themeHass;
+  const light = currentHass?.themes?.darkMode === false;
+  if (root.dataset.proxmoxSensorsLight === String(light)
+    && (!light || root.style.getPropertyValue?.("--pes-card-bg") === "#ffffff")) return;
+  root.dataset.proxmoxSensorsLight = String(light);
+  for (const [name, value] of Object.entries(LIGHT_STYLE)) {
+    if (light) root.style.setProperty(name, value);
+    else root.style.removeProperty(name);
+  }
+}
+
+function watchTheme(hass) {
+  if (typeof document === "undefined") return;
+  themeHass = hass;
+  syncTheme();
+  if (themeObserver || typeof MutationObserver === "undefined") return;
+  themeObserver = new MutationObserver(mutations => {
+    if (mutations.some(({target}) => target === document.documentElement
+      || target === document.body || target.localName?.startsWith("home-assistant"))) syncTheme();
+  });
+  themeObserver.observe(document.documentElement, {
+    attributes: true, attributeFilter: ["style", "class"], subtree: true,
+  });
+}
 
 function options(config) {
   const selected = config.dashboards;
@@ -29,11 +87,21 @@ function label(ref) {
 
 function styled(card, layout, variant = "normal_card") {
   const css = layout.style?.[variant]?.css;
-  return css ? {...card, card_mod: {style: css}} : card;
+  if (!css) return card;
+  const header = variant === "header_card";
+  const lightCard = `ha-card { background: var(--pes-card-bg, ${header ? '#ef7d00' : '#0000'}) !important;
+    color: var(--pes-card-fg, white) !important;
+    border: var(--pes-card-border, 1px solid ${header ? '#ef7d00' : '#333333'}) !important;
+    border-top: var(--pes-card-top, 1px solid ${header ? '#ef7d00' : '#333333'}) !important;
+    ${header ? '' : 'border-left: var(--pes-card-border, 5px solid #ef7d00) !important;'}
+    border-radius: var(--pes-card-radius, var(--ha-card-border-radius, 12px)) !important;
+    box-shadow: var(--pes-card-shadow, var(--ha-card-box-shadow, none)) !important;
+    min-height: var(--pes-card-min-height, auto); }`;
+  return {...card, card_mod: {style: themeCss(css) + lightCard}};
 }
 
 function darkView(view) {
-  return {...view, background: DASHBOARD_BACKGROUND};
+  return {...view, background: `var(--pes-view-bg, ${DASHBOARD_BACKGROUND})`};
 }
 
 function resourceCards(resource, block, layout, opts) {
@@ -106,6 +174,21 @@ const PVE_CSS = `ha-card { background: #10191e; color: #fff; border: 1px solid #
   border-top: 4px solid #ef7d00; border-radius: 15px; box-shadow: none;
   --primary-text-color: #fff; --secondary-text-color: #b7c2cc; }
   ha-markdown { padding: 0 !important; }`;
+const lightCardCss = header => `ha-card { background: var(--pes-card-bg, #10191e) !important;
+  color: var(--pes-card-fg, #fff) !important; border: var(--pes-card-border, 1px solid #303b42) !important;
+  border-top: var(--pes-card-top, ${header ? '1px solid #303b42' : '4px solid #ef7d00'}) !important;
+  border-radius: var(--pes-card-radius, 15px) !important;
+  box-shadow: var(--pes-card-shadow, none) !important;
+  min-height: var(--pes-card-min-height, auto);
+  --primary-text-color: var(--pes-card-fg, #fff);
+  --secondary-text-color: var(--pes-secondary, #b7c2cc); }`;
+const THEME_MARKDOWN_CSS = `
+  header img[src$="logo_small.png"] { display: var(--pes-dark-logo, inline-block); }
+  header img[src$="logo_small2.png"] { display: var(--pes-light-logo, none); }
+  font[color="#4cc653"] { color: var(--pes-success, #4cc653); }
+  font[color="#ffca28"] { color: var(--pes-warning, #ffca28); }
+  font[color="#ef5350"] { color: var(--pes-error, #ef5350); }
+  font[color="#a6b0b9"] { color: var(--pes-unknown, #a6b0b9); }`;
 const PVE_MARKDOWN_CSS = `:host { padding: 0 !important; }
   * { box-sizing: border-box; }
   section { padding: 14px; min-height: 240px; }
@@ -168,6 +251,8 @@ const percent = ref => `{% set n = ${expression(ref)} %}{% if is_number(n) %}{{ 
 // Model text is a Jinja string literal and escaped HTML, not executable markup.
 const text = input => `{{ ${JSON.stringify(String(input))} | e }}`;
 const icon = name => `<ha-icon icon="${name}"></ha-icon>`;
+const logo = '<img src="/proxmox_sensors/dashboard/logo_small.png" alt="Proxmox Extended Sensors" width="56">'
+  + '<img src="/proxmox_sensors/dashboard/logo_small2.png" alt="" width="56">';
 const chevron = icon('mdi:chevron-right');
 const semanticState = ref => `{% set raw = ${ref ? expression(ref) : 'none'} %}{% set s = (raw if raw is not none else '—') | string %}{% set color = '#4cc653' if s | lower in ['online','running','ok','good','healthy','connected'] else '#ffca28' if s | lower in ['warning','degraded','partial'] else '#ef5350' if s | lower in ['error','critical','offline','faulted','failed'] else '#a6b0b9' if s | lower in ['unknown','unavailable'] else '#a6b0b9' %}`;
 const statusDot = '<abbr title="{{ s | e }}"><font color="{{ color }}"><i></i></font></abbr>';
@@ -181,8 +266,9 @@ function pveMarkdown(title, content, refs = [], headingIcon = 'mdi:information-o
   const heading = title ? `<header>${icon(headingIcon)}<h2>${title}</h2>${chevron}</header>` : '';
   return {type: 'markdown', content: title ? `<section>${heading}${content}</section>` : content,
     entity_id: [...new Set(refs.map(ref => ref.entity_id))], grid_options: {columns: 12, rows: 'auto'},
-    card_mod: {style: {'.': title ? PVE_CSS : PVE_CSS.replace('border-top: 4px solid #ef7d00;', ''),
-      'ha-markdown$': PVE_MARKDOWN_CSS + dynamicCSS}}};
+    card_mod: {style: {'.': themeCss(title ? PVE_CSS : PVE_CSS.replace('border-top: 4px solid #ef7d00;', ''))
+      + lightCardCss(!title),
+      'ha-markdown$': themeCss(PVE_MARKDOWN_CSS + dynamicCSS) + THEME_MARKDOWN_CSS}}};
 }
 function rowsCard(title, rows, refs, headingIcon, dynamicCSS = '') {
   return rows.length ? pveMarkdown(title, `<nav>${rows.join('')}</nav>`, refs, headingIcon, dynamicCSS) : null;
@@ -234,7 +320,7 @@ function buildPveNodeHeader(group) {
     if (metric === 'status') display = statusValue(ref, true);
     facts.push(metric === 'status' ? display : `<div><span>${title}</span><strong>${display}</strong></div>`);
   }
-  return {...pveMarkdown(null, `<header><div><img src="/proxmox_sensors/dashboard/logo_small.png" alt="Proxmox Extended Sensors" width="56">${icon('mdi:server')}<strong>${text(group.node || group.entry_id)} · Proxmox VE</strong></div><div><span>Cluster</span><strong>${cluster}</strong></div><aside>${facts.join('')}</aside></header>`, selected, 'mdi:information-outline', PVE_CLUSTER_HEADER_CSS),
+  return {...pveMarkdown(null, `<header><div>${logo}${icon('mdi:server')}<strong>${text(group.node || group.entry_id)} · Proxmox VE</strong></div><div><span>Cluster</span><strong>${cluster}</strong></div><aside>${facts.join('')}</aside></header>`, selected, 'mdi:information-outline', PVE_CLUSTER_HEADER_CSS),
     grid_options: {columns: 'full', rows: 'auto'}};
 }
 // Markdown admits anchors, but strips inline event handlers. Handle only our
@@ -490,7 +576,7 @@ function pdmHeader(group) {
     capacity ? moreInfoRow(capacity, `<div><span>Capacity</span><strong>${percent(capacity)}</strong></div>`) : '',
     status ? moreInfoRow(status, `<div><span>Status</span><strong>${statusValue(status, true)}</strong></div>`) : '',
   ].join('');
-  return {...pveMarkdown(null, `<header><div><img src="/proxmox_sensors/dashboard/logo_small.png" alt="Proxmox Extended Sensors" width="56">${icon('mdi:view-dashboard')}<div><strong>${text(group.title || group.entry_id)} · Proxmox Datacenter Manager</strong><span>${secondary}</span></div></div><aside>${facts}</aside></header>`, [...(status ? [status] : []), ...(capacity ? [capacity] : []), ...remoteRefs], 'mdi:view-dashboard',
+  return {...pveMarkdown(null, `<header><div>${logo}${icon('mdi:view-dashboard')}<div><strong>${text(group.title || group.entry_id)} · Proxmox Datacenter Manager</strong><span>${secondary}</span></div></div><aside>${facts}</aside></header>`, [...(status ? [status] : []), ...(capacity ? [capacity] : []), ...remoteRefs], 'mdi:view-dashboard',
     'header > div > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; } header > div > div > span, aside span { color: #b7c2cc; } aside > a { color: inherit; text-decoration: none; cursor: pointer; } aside > a > div { display: flex; flex-direction: column; gap: 6px; border-left: 1px solid #28343b; padding-left: 16px; } aside > a:first-child > div { border-left: 0; padding-left: 0; }'),
     grid_options: {columns: 'full', rows: 'auto'}};
 }
@@ -623,7 +709,7 @@ function buildPbsHeader(group) {
     selected.push(ref);
     facts.push(`<div><span>${title}</span><strong>${value(ref)}</strong></div>`);
   }
-  return {...pveMarkdown(null, `<header><div><img src="/proxmox_sensors/dashboard/logo_small.png" alt="Proxmox Extended Sensors" width="56">${icon('mdi:backup-restore')}<strong>${text(group.server_id)} · Proxmox Backup Server</strong></div><aside>${facts.join('')}</aside></header>`, selected),
+  return {...pveMarkdown(null, `<header><div>${logo}${icon('mdi:backup-restore')}<strong>${text(group.server_id)} · Proxmox Backup Server</strong></div><aside>${facts.join('')}</aside></header>`, selected),
     grid_options: {columns: 'full', rows: 'auto'}};
 }
 function pbsMetricCard(group, block, title, glyph, fields, extra = []) {
@@ -655,7 +741,8 @@ function buildPbsActions(group, opts) {
     }
   }
   return entities.length ? {type: 'entities', title: 'Actions', show_header_toggle: false, entities,
-    card_mod: {style: PVE_CSS + 'ha-card { --card-mod-icon-color: #ef7d00; }'}} : null;
+    card_mod: {style: themeCss(PVE_CSS) + lightCardCss(false)
+      + 'ha-card { --card-mod-icon-color: var(--pes-color-ef7d00, #ef7d00); }'}} : null;
 }
 function buildPbsSections(group, opts) {
   const sections = [{type: 'grid', column_span: 3, cards: [buildPbsHeader(group)]}];
@@ -683,7 +770,7 @@ function clusterRef(group, block, metric) {
 function buildClusterHeader(group) {
   const ref = clusterRef(group, 'header', 'status');
   const status = ref ? moreInfoRow(ref, `<div><span>Status</span><strong>${value(ref)}</strong></div>`) : '';
-  return {...pveMarkdown(null, `<header><div><img src="/proxmox_sensors/dashboard/logo_small.png" alt="Proxmox Extended Sensors" width="56">${icon('mdi:server-network')}<strong>${text(group.cluster_id)} · Proxmox Cluster</strong></div><aside>${status}</aside></header>`, ref ? [ref] : [], 'mdi:server-network',
+  return {...pveMarkdown(null, `<header><div>${logo}${icon('mdi:server-network')}<strong>${text(group.cluster_id)} · Proxmox Cluster</strong></div><aside>${status}</aside></header>`, ref ? [ref] : [], 'mdi:server-network',
     'aside > a { color: inherit; text-decoration: none; cursor: pointer; } aside > a > div { display: flex; flex-direction: column; gap: 6px; } aside span { color: #b7c2cc; }'),
     grid_options: {columns: 'full', rows: 'auto'}};
 }
@@ -834,6 +921,7 @@ export class ProxmoxDashboardStrategy extends HTMLElement {
   static getCreateSuggestions(_hass) { return {title: "Proxmox Extended Sensors", icon: "mdi:server"}; }
   static async generate(config, hass) {
     options(config); // Reject invalid configuration before requesting a snapshot.
+    watchTheme(hass);
     const payload = await hass.callWS({type: "proxmox_sensors/dashboard_models"});
     return generateDashboard(payload, config, dashboardBasePath(window.location?.pathname || "", hass.panels), hass);
   }
