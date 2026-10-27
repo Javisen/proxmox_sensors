@@ -67,25 +67,65 @@ def _filesystem_metrics(filesystem):
     }
 
 
-def build_vm_disk_usage(filesystems):
-    """Build conservative Linux disk-usage data from ``get-fsinfo``.
+# Read-only image filesystems that always report themselves as full.
+_READ_ONLY_IMAGE_TYPES = frozenset({"erofs", "squashfs"})
+_WINDOWS_SYSTEM_DRIVE = "C:\\"
 
-    The root filesystem is authoritative for the entity state. Other
-    filesystems are included only when QGA supplies a complete structured disk
-    identity and at least one of their backing disks differs from root's.
+
+def _filesystem_type(filesystem):
+    return str(filesystem.get("type") or "").strip().lower()
+
+
+def _primary_filesystem(filesystems):
+    """Return the filesystem that represents the guest's disk usage.
+
+    A writable ``/`` is authoritative. A read-only image root defers to the
+    largest writable filesystem, and a guest with no ``/`` falls back to the
+    Windows system drive.
+    """
+    candidates = [filesystem for filesystem in filesystems if isinstance(filesystem, dict)]
+    roots = [filesystem for filesystem in candidates if filesystem.get("mountpoint") == "/"]
+    if len(roots) > 1:
+        return None
+
+    if roots:
+        root = roots[0]
+        if _filesystem_type(root) not in _READ_ONLY_IMAGE_TYPES:
+            return root
+        writable = [
+            (metrics["total"], filesystem)
+            for filesystem in candidates
+            if filesystem is not root
+            and _filesystem_type(filesystem) not in _READ_ONLY_IMAGE_TYPES
+            and (metrics := _filesystem_metrics(filesystem)) is not None
+        ]
+        if not writable:
+            return root
+        return max(writable, key=lambda item: item[0])[1]
+
+    drives = [
+        filesystem
+        for filesystem in candidates
+        if str(filesystem.get("mountpoint") or "").upper() == _WINDOWS_SYSTEM_DRIVE
+    ]
+    return drives[0] if len(drives) == 1 else None
+
+
+def build_vm_disk_usage(filesystems):
+    """Build conservative disk-usage data from ``get-fsinfo``.
+
+    The primary filesystem (see ``_primary_filesystem``) is authoritative for
+    the entity state. Other filesystems are included only when QGA supplies a
+    complete structured disk identity and at least one of their backing disks
+    differs from the primary's.
     """
     if not isinstance(filesystems, list):
         return None
 
-    roots = [
-        filesystem
-        for filesystem in filesystems
-        if isinstance(filesystem, dict) and filesystem.get("mountpoint") == "/"
-    ]
-    if len(roots) != 1:
+    root = _primary_filesystem(filesystems)
+    if root is None:
         return None
 
-    root = roots[0]
     root_metrics = _filesystem_metrics(root)
     root_disks = _disk_identities(root)
     if root_metrics is None:
