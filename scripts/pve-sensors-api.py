@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
+import copy
 import json
 import os
 import subprocess
 import re
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
 
 CONFIG_PATH = "/etc/proxmox-sensors/sidecar.conf"
+
+# smart scans take 30s+ on big sas arrays, so serve them from a background cache
+SMART_REFRESH_SECONDS = 300
+SMART_SCAN_WORKERS = 4
 
 
 def load_allowed_ips():
@@ -36,6 +44,41 @@ def load_allowed_ips():
 
 
 ALLOWED_IPS = load_allowed_ips()
+
+
+class SmartCache:
+    def __init__(self, collect, refresh_seconds):
+        self._collect = collect
+        self._refresh_seconds = refresh_seconds
+        self._lock = threading.Lock()
+        self._data = None
+        self._updated = 0.0
+
+    def get(self):
+        with self._lock:
+            data = self._data
+            stale = time.monotonic() - self._updated > 2 * self._refresh_seconds
+        if data is None or stale:
+            self.refresh()
+            with self._lock:
+                data = self._data
+        # /smart-extended adds keys to it
+        return copy.deepcopy(data)
+
+    def refresh(self):
+        data = self._collect()
+        with self._lock:
+            if "error" not in data or self._data is None:
+                self._data = data
+                self._updated = time.monotonic()
+
+    def run_forever(self):
+        while True:
+            try:
+                self.refresh()
+            except Exception:
+                pass
+            time.sleep(self._refresh_seconds)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -83,7 +126,7 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_smart(self):
         """Handle SMART data - optimized version."""
         try:
-            smart_data = self._get_smart_data_fast()
+            smart_data = SMART_CACHE.get()
             self._send_json_response(json.dumps(smart_data))
         except Exception as e:
             self._send_error_response(f"Error getting SMART data: {e}")
@@ -326,27 +369,33 @@ class Handler(BaseHTTPRequestHandler):
             if result.returncode == 0 and result.stdout.strip():
                 lines = result.stdout.strip().split("\n")
 
+                devices = []
                 for line in lines:
                     if line and not line.startswith("#"):
                         parts = line.split()
                         if len(parts) >= 3:
-                            device = parts[0]
-                            device_type = parts[2]
-                            device_key = device.replace("/dev/", "")
+                            devices.append((parts[0], parts[2]))
 
-                            disk_info = self._get_disk_info_safe(
-                                device, device_type, timeout=10
-                            )
+                with ThreadPoolExecutor(max_workers=SMART_SCAN_WORKERS) as pool:
+                    infos = list(
+                        pool.map(
+                            lambda dev: self._get_disk_info_safe(dev[0], dev[1], timeout=10),
+                            devices,
+                        )
+                    )
 
-                            if disk_info:
-                                smart_data[device_key] = disk_info
-                            else:
-                                smart_data[device_key] = {
-                                    "model": "Device (no SMART)",
-                                    "smart_available": False,
-                                    "device_type": device_type,
-                                    "path": device,
-                                }
+                for (device, device_type), disk_info in zip(devices, infos):
+                    device_key = device.replace("/dev/", "")
+
+                    if disk_info:
+                        smart_data[device_key] = disk_info
+                    else:
+                        smart_data[device_key] = {
+                            "model": "Device (no SMART)",
+                            "smart_available": False,
+                            "device_type": device_type,
+                            "path": device,
+                        }
 
             if not smart_data:
                 basic_checks = [
@@ -367,7 +416,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_smart_data_extended(self):
         """Get extended SMART data with retry logic."""
-        smart_data = self._get_smart_data_fast()
+        smart_data = SMART_CACHE.get()
 
         for disk_key in list(smart_data.keys()):
             if smart_data[disk_key].get("smart_available"):
@@ -762,7 +811,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_disk_health_summary(self):
         try:
-            smart_data = self._get_smart_data_fast()
+            smart_data = SMART_CACHE.get()
             working = 0
             failed = 0
 
@@ -796,9 +845,16 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+# smart helpers don't touch request state, so a bare instance works for the bg thread
+SMART_CACHE = SmartCache(
+    Handler.__new__(Handler)._get_smart_data_fast, SMART_REFRESH_SECONDS
+)
+
+
 def main():
     port = 9000
-    server = HTTPServer(("0.0.0.0", port), Handler)
+    threading.Thread(target=SMART_CACHE.run_forever, daemon=True).start()
+    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"PVE Sensors API v2 started on port {port}")
     print(f"Allowed client IPs: {', '.join(sorted(ALLOWED_IPS))}")
     print("Endpoints:")
