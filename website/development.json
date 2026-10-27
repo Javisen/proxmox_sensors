@@ -17,7 +17,7 @@
     {
       "id": "amd-cpu-temperature-fix",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "CPU Temperature Detection",
       "message": "Fixed CPU temperature detection for k10temp, coretemp and zenpower when standard temperature labels are unavailable. Regression tests passed. Awaiting hardware validation from the reporter of issue #88.",
@@ -41,7 +41,7 @@
     {
       "id": "lsi-broadcom-controller-temperature",
       "active": true,
-      "status": "planned",
+      "status": "development",
       "progress": null,
       "title": "LSI/Broadcom SAS Controller Temperature",
       "message": "Evaluating optional temperature monitoring for LSI/Broadcom SAS HBA and RAID controllers using storcli, including compatibility, permissions and safe execution. Requested in issue #87.",
