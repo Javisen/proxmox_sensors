@@ -3,6 +3,11 @@ import json
 import os
 import subprocess
 import re
+import hashlib
+import math
+import shutil
+import threading
+import time
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import ipaddress
@@ -36,6 +41,118 @@ def load_allowed_ips():
 
 
 ALLOWED_IPS = load_allowed_ips()
+
+STORCLI_CANDIDATES = (
+    "storcli64", "storcli", "/opt/MegaRAID/storcli/storcli64",
+    "/usr/local/sbin/storcli64",
+)
+_hba_lock = threading.Lock()
+_hba_temps = {}
+_hba_next_refresh = 0.0
+_hba_refreshing = False
+
+
+def _controller_identities(payload):
+    """Return only controllers with a unique, persistent hardware identifier."""
+    controllers = payload.get("Controllers") if isinstance(payload, dict) else None
+    if not isinstance(controllers, list):
+        return {}
+    found = {}
+    used = set()
+    for controller in controllers:
+        if not isinstance(controller, dict):
+            continue
+        status = controller.get("Command Status")
+        data = controller.get("Response Data")
+        if not isinstance(status, dict) or not isinstance(data, dict):
+            continue
+        if status.get("Status") != "Success":
+            continue
+        index = status.get("Controller")
+        basics = data.get("Basics")
+        if isinstance(index, bool) or not isinstance(index, int) or not isinstance(basics, dict):
+            continue
+        identity = next(
+            (f"{field}:{value.strip().casefold()}"
+             for field in ("SAS Address", "Serial Number")
+             if isinstance(value := basics.get(field), str)
+             and value.strip().casefold() not in ("", "n/a", "unknown", "none", "0")
+             and set(value.strip()) != {"0"}),
+            None,
+        )
+        if identity is None or index in found or identity in used:
+            return {}
+        found[index] = identity
+        used.add(identity)
+    return found
+
+
+def _controller_temperatures(output):
+    found = {}
+    controller = None
+    for line in output.splitlines():
+        match = re.match(r"^\s*Controller\s*=\s*(\d+)\s*$", line)
+        if match:
+            controller = int(match.group(1))
+            continue
+        status = re.match(r"^\s*Status\s*=\s*(\S+)", line)
+        if status and status.group(1) != "Success":
+            return {}
+        match = re.search(
+            r"ROC temperature\(Degree Celsius\)\s*(?:=\s*)?(-?\d+(?:\.\d+)?)\b",
+            line,
+        )
+        if match and controller is not None:
+            value = float(match.group(1))
+            if controller in found or not math.isfinite(value) or not 1 < value < 145:
+                return {}
+            found[controller] = value
+    return found
+
+
+def _refresh_hba_temps():
+    global _hba_temps, _hba_next_refresh, _hba_refreshing
+    temperatures = {}
+    try:
+        binary = next((path for candidate in STORCLI_CANDIDATES
+                       if (path := shutil.which(candidate))), None)
+        if binary:
+            metadata = subprocess.run(
+                [binary, "/call", "show", "all", "J"],
+                capture_output=True, text=True, timeout=10, check=False,
+            )
+            readings = subprocess.run(
+                [binary, "/call", "show", "temperature"],
+                capture_output=True, text=True, timeout=10, check=False,
+            )
+            if metadata.returncode == 0 and readings.returncode == 0:
+                identities = _controller_identities(json.loads(metadata.stdout))
+                for index, value in _controller_temperatures(readings.stdout).items():
+                    if identity := identities.get(index):
+                        key = hashlib.sha256(identity.encode()).hexdigest()[:16]
+                        temperatures[f"storcli-hba-{key}"] = {
+                            "Adapter": "LSI/Broadcom HBA",
+                            "ROC temperature": {"temp1_input": value},
+                        }
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        pass
+    finally:
+        with _hba_lock:
+            _hba_temps = temperatures
+            _hba_next_refresh = time.monotonic() + 90
+            _hba_refreshing = False
+
+
+def _cached_hba_temps():
+    global _hba_refreshing
+    with _hba_lock:
+        if not _hba_refreshing and time.monotonic() >= _hba_next_refresh:
+            _hba_refreshing = True
+            try:
+                threading.Thread(target=_refresh_hba_temps, daemon=True).start()
+            except RuntimeError:
+                _hba_refreshing = False
+        return dict(_hba_temps)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -76,6 +193,19 @@ class Handler(BaseHTTPRequestHandler):
         """Handle lm-sensors data."""
         try:
             data = subprocess.check_output(["sensors", "-j"], timeout=5)
+            hba = _cached_hba_temps()
+            if hba:
+                try:
+                    sensors = json.loads(data)
+                    if isinstance(sensors, dict) and not any(
+                        chip.lower().startswith("mpt3sas") for chip in sensors
+                    ):
+                        for chip, values in hba.items():
+                            if chip not in sensors:
+                                sensors[chip] = values
+                        data = json.dumps(sensors).encode()
+                except (ValueError, TypeError):
+                    pass
             self._send_json_response(data)
         except Exception as e:
             self._send_error_response(f"Error getting sensors: {e}")

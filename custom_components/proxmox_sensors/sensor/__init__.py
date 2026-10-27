@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import logging
+import re
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback, async_get_platforms
 from homeassistant.core import HomeAssistant, callback
@@ -615,6 +616,27 @@ def _setup_guest_reconciliation(
         if new_entities:
             async_add_entities(new_entities)
             known_unique_ids.update(e._attr_unique_id for e in new_entities)
+
+    entry.async_on_unload(coordinator.async_add_listener(_reconcile))
+
+
+def _setup_hba_reconciliation(entry, coordinator, async_add_entities, node, entities):
+    known_ids = {
+        entity._attr_unique_id for entity in entities
+        if isinstance(entity, ProxmoxHardwareSensor)
+        and entity._sensor_key.startswith("storcli-hba-")
+    }
+
+    @callback
+    def _reconcile():
+        hardware = (coordinator.data or {}).get("hardware", {})
+        for key in hardware:
+            if not re.fullmatch(r"storcli-hba-[0-9a-f]{16}_roc temperature", key):
+                continue
+            sensor = ProxmoxHardwareSensor(coordinator, key, node)
+            if sensor._attr_unique_id not in known_ids and sensor.is_valid():
+                known_ids.add(sensor._attr_unique_id)
+                async_add_entities([sensor])
 
     entry.async_on_unload(coordinator.async_add_listener(_reconcile))
 
@@ -1466,6 +1488,11 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+    if server_type == "PVE" and enable_lm_sensors:
+        _setup_hba_reconciliation(
+            entry, coordinator, async_add_entities, node, entities
+        )
 
     if server_type == "PVE":
         _setup_storage_reconciliation(
