@@ -21,6 +21,25 @@ def detect_sensor_type(value):
     return "temperature"
 
 
+_HBA_ROC_KEY = re.compile(r"^storcli-hba-([0-9a-f]{16})_roc temperature$")
+
+
+def hba_roc_name(sensor_key, hardware):
+    match = _HBA_ROC_KEY.fullmatch(sensor_key)
+    if not match:
+        return None
+    identity = match.group(1)
+    others = {
+        candidate.group(1)
+        for key in hardware
+        if (candidate := _HBA_ROC_KEY.fullmatch(key)) and key != sensor_key
+    }
+    for length in range(8, 17):
+        if all(identity[:length] != other[:length] for other in others):
+            return f"HBA {identity[:length]} ROC Temperature"
+    return f"HBA {identity} ROC Temperature"
+
+
 class ProxmoxHardwareSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, sensor_key, node):
 
@@ -71,7 +90,8 @@ class ProxmoxHardwareSensor(ProxmoxBaseSensor):
         elif not self._is_chipset:
             self._attr_translation_key = "hardware_temperature"
             self._attr_translation_placeholders = {
-                "name": sensor_key.replace("_", " ").replace("-", " ").title()
+                "name": hba_roc_name(sensor_key, coordinator.data.get("hardware", {}))
+                or sensor_key.replace("_", " ").replace("-", " ").title()
             }
 
         if self._sensor_type == "voltage":

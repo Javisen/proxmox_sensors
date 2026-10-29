@@ -68,11 +68,11 @@ def _filesystem_metrics(filesystem):
 
 
 def build_vm_disk_usage(filesystems):
-    """Build conservative Linux disk-usage data from ``get-fsinfo``.
+    """Build conservative guest disk-usage data from ``get-fsinfo``.
 
-    The root filesystem is authoritative for the entity state. Other
+    The selected filesystem is authoritative for the entity state. Other
     filesystems are included only when QGA supplies a complete structured disk
-    identity and at least one of their backing disks differs from root's.
+    identity and at least one of their backing disks differs from the primary.
     """
     if not isinstance(filesystems, list):
         return None
@@ -82,10 +82,46 @@ def build_vm_disk_usage(filesystems):
         for filesystem in filesystems
         if isinstance(filesystem, dict) and filesystem.get("mountpoint") == "/"
     ]
-    if len(roots) != 1:
+    if len(roots) > 1:
         return None
 
-    root = roots[0]
+    if roots:
+        root = roots[0]
+        if str(root.get("type") or "").casefold() in {"erofs", "squashfs"}:
+            candidates = [
+                filesystem for filesystem in filesystems
+                if isinstance(filesystem, dict)
+                and isinstance(filesystem.get("mountpoint"), str)
+                and filesystem["mountpoint"]
+                and isinstance(filesystem.get("type"), str)
+                and filesystem["type"].casefold() not in {
+                    "erofs", "squashfs", "iso9660", "cramfs", "romfs",
+                    "tmpfs", "ramfs", "devtmpfs", "overlay", "proc", "sysfs",
+                }
+                and _filesystem_metrics(filesystem) is not None
+            ]
+            if not candidates:
+                return None
+            largest = max(_filesystem_metrics(filesystem)["total"] for filesystem in candidates)
+            winners = [
+                filesystem for filesystem in candidates
+                if _filesystem_metrics(filesystem)["total"] == largest
+            ]
+            if len(winners) != 1:
+                return None
+            root = winners[0]
+    else:
+        windows_roots = [
+            filesystem for filesystem in filesystems
+            if isinstance(filesystem, dict)
+            and isinstance(filesystem.get("mountpoint"), str)
+            and filesystem["mountpoint"].upper() == "C:\\"
+        ]
+        if len(windows_roots) != 1:
+            return None
+        root = windows_roots[0]
+
+    is_fallback = not roots or root is not roots[0]
     root_metrics = _filesystem_metrics(root)
     root_disks = _disk_identities(root)
     if root_metrics is None:
@@ -94,7 +130,9 @@ def build_vm_disk_usage(filesystems):
     additional = []
     if root_disks is not None:
         for filesystem in filesystems:
-            if filesystem is root or not isinstance(filesystem, dict):
+            if (filesystem is root or not isinstance(filesystem, dict)
+                    or (is_fallback and str(filesystem.get("type") or "").casefold()
+                        in {"erofs", "squashfs"})):
                 continue
             disks = _disk_identities(filesystem)
             metrics = _filesystem_metrics(filesystem)

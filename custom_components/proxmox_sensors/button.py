@@ -471,7 +471,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             registry.async_remove(row.entity_id)
         cleanup_excluded_guest_devices(hass)
 
-    _LOGGER.info("Total button entities created: %d", len(entities))
+    _LOGGER.debug("Total button entities created: %d", len(entities))
     async_add_entities(entities)
 
     if server_type == "PVE":
@@ -724,7 +724,7 @@ def _setup_guest_button_reconciliation(
                 live_guest_instances[gkey] = ents
                 known_unique_ids.update(e._attr_unique_id for e in ents)
                 del pending_groups[gkey]
-                _LOGGER.info(
+                _LOGGER.debug(
                     "Guest buttons %s confirmed claimed by this entry (%s)",
                     gkey,
                     node,
@@ -735,7 +735,7 @@ def _setup_guest_button_reconciliation(
                 getattr(e, "registry_entry", None) is None for e in ents
             )
             if was_rejected:
-                _LOGGER.info(
+                _LOGGER.debug(
                     "Guest buttons %s lost the claim race last cycle; "
                     "discarding rejected instances so they can be retried "
                     "this cycle",

@@ -94,7 +94,7 @@ from .cluster import (
 )
 
 # Hardware Sensors (lm-sensors)
-from .hardware import ProxmoxHardwareSensor, detect_sensor_type
+from .hardware import ProxmoxHardwareSensor, detect_sensor_type, hba_roc_name
 
 # Physical Disks
 from .disks import ProxmoxDiskSensor
@@ -448,7 +448,7 @@ def _setup_guest_reconciliation(
                     live_guest_instances[gkey] = ents
                     known_unique_ids.update(e._attr_unique_id for e in ents)
                     del pending_groups[gkey]
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "Guest %s confirmed claimed by this entry (%s)",
                         gkey,
                         node,
@@ -459,7 +459,7 @@ def _setup_guest_reconciliation(
                     getattr(e, "registry_entry", None) is None for e in ents
                 )
                 if was_rejected:
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "Guest %s lost the claim race last cycle; discarding "
                         "rejected instances so it can be retried this cycle",
                         gkey,
@@ -621,8 +621,8 @@ def _setup_guest_reconciliation(
 
 
 def _setup_hba_reconciliation(entry, coordinator, async_add_entities, node, entities):
-    known_ids = {
-        entity._attr_unique_id for entity in entities
+    hba_entities = {
+        entity._attr_unique_id: entity for entity in entities
         if isinstance(entity, ProxmoxHardwareSensor)
         and entity._sensor_key.startswith("storcli-hba-")
     }
@@ -631,12 +631,18 @@ def _setup_hba_reconciliation(entry, coordinator, async_add_entities, node, enti
     def _reconcile():
         hardware = (coordinator.data or {}).get("hardware", {})
         for key in hardware:
-            if not re.fullmatch(r"storcli-hba-[0-9a-f]{16}_roc temperature", key):
+            if hba_roc_name(key, hardware) is None:
                 continue
             sensor = ProxmoxHardwareSensor(coordinator, key, node)
-            if sensor._attr_unique_id not in known_ids and sensor.is_valid():
-                known_ids.add(sensor._attr_unique_id)
+            if sensor._attr_unique_id not in hba_entities and sensor.is_valid():
+                hba_entities[sensor._attr_unique_id] = sensor
                 async_add_entities([sensor])
+        for entity in hba_entities.values():
+            name = hba_roc_name(entity._sensor_key, hardware)
+            if name and entity._attr_translation_placeholders["name"] != name:
+                entity._attr_translation_placeholders = {"name": name}
+                if getattr(entity, "hass", None) is not None:
+                    entity.async_write_ha_state()
 
     entry.async_on_unload(coordinator.async_add_listener(_reconcile))
 
@@ -1462,7 +1468,7 @@ async def async_setup_entry(
 
         if (cleanup_section and not excluded_guest
                 and not cleanup_confirmed.get(cleanup_section, False)):
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Skipping cleanup for %s because %s data is not confirmed fresh",
                 entity_entry.entity_id,
                 cleanup_section,
