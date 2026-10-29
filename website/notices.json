@@ -1,26 +1,25 @@
-
 {
   "notices": [
     {
-      "id": "upcoming-v5.2.1",
+      "id": "release-v5.2.1",
       "active": true,
       "level": "info",
-      "title": "Proxmox Extended Sensors V5.2.1 Coming Soon!",
-      "message": "V5.2.1 is on the way! This maintenance update focuses on bug fixes, improved VM/LXC migration handling, device cleanup, and overall stability and reliability.",
+      "title": "Proxmox Extended Sensors V5.2.1",
+      "message": "Version 5.2.1 brings LSI/Broadcom HBA temperature monitoring, improved VM disk usage detection, VM/LXC migration fixes, and enhanced stability.",
       "es": {
-        "title": "¡Proxmox Extended Sensors V5.2.1 próximamente!",
-        "message": "¡La versión 5.2.1 está en camino! Esta actualización de mantenimiento se centra en la corrección de errores, mejoras en las migraciones de VM/LXC, limpieza de dispositivos y mayor estabilidad y fiabilidad general."
+        "title": "¡Proxmox Extended Sensors V5.2.1!",
+        "message": "La versión 5.2.1 incorpora monitorización de temperaturas LSI/Broadcom HBA, mejoras en la detección del uso de disco de las VM, correcciones en las migraciones VM/LXC y mayor estabilidad."
       }
     },
     {
-      "id": "upcoming-light-dashboard",
+      "id": "release-light-dashboard",
       "active": true,
       "level": "info",
       "title": "New Dashboard with Light and Dark Theme Support!",
-      "message": "A refreshed dashboard is coming with V5.2.1! Enjoy a new light appearance featuring clean white cards, Proxmox orange accents, and automatic adaptation to your Home Assistant theme, while preserving the original dark design.",
+      "message": "Version 5.2.1 introduces a revamped dashboard! Enjoy a fresh light design with white cards, Proxmox orange accents, and automatic adaptation to your Home Assistant theme, while keeping the original dark design completely intact.",
       "es": {
         "title": "¡Nuevo dashboard compatible con temas claros y oscuros!",
-        "message": "¡La versión 5.2.1 estrenará un dashboard renovado! Disfruta de un nuevo diseño claro con tarjetas blancas, detalles en naranja Proxmox y adaptación automática al tema de Home Assistant, conservando intacto el diseño oscuro original."
+        "message": "¡La versión 5.2.1 estrena un dashboard renovado! Disfruta de un nuevo diseño claro con tarjetas blancas, detalles en naranja Proxmox y adaptación automática al tema de Home Assistant, conservando intacto el diseño oscuro original."
       }
     }
   ]
