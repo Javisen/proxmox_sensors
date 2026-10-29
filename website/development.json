@@ -29,7 +29,7 @@
     {
       "id": "vm-filesystem-selection",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "Extended VM Filesystem Detection",
       "message": "Investigating improved VM filesystem selection through QEMU Guest Agent for Windows guests and systems such as Home Assistant OS where the main writable filesystem is not mounted at /. Requested in issue #86.",
