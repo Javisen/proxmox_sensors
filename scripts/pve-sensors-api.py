@@ -600,14 +600,14 @@ class Handler(BaseHTTPRequestHandler):
                 if data_units_read:
                     parsed["data_units_read"] = data_units_read
                     parsed["data_units_read_tb"] = round(
-                        data_units_read * 512 / (1000**4), 1
+                        data_units_read * 512000 / (1000**4), 1
                     )
 
                 data_units_written = nvme_smart.get("data_units_written")
                 if data_units_written:
                     parsed["data_units_written"] = data_units_written
                     parsed["data_units_written_tb"] = round(
-                        data_units_written * 512 / (1000**4), 1
+                        data_units_written * 512000 / (1000**4), 1
                     )
 
                 parsed["host_read_commands"] = nvme_smart.get("host_read_commands")
@@ -774,7 +774,7 @@ class Handler(BaseHTTPRequestHandler):
                                 val = int(match.group(1).replace(",", ""))
                                 detailed["data_units_read"] = val
                                 detailed["data_units_read_tb"] = round(
-                                    val * 512 / (1000**4), 1
+                                    val * 512000 / (1000**4), 1
                                 )
 
                         elif "Data Units Written:" in line:
@@ -783,7 +783,7 @@ class Handler(BaseHTTPRequestHandler):
                                 val = int(match.group(1).replace(",", ""))
                                 detailed["data_units_written"] = val
                                 detailed["data_units_written_tb"] = round(
-                                    val * 512 / (1000**4), 1
+                                    val * 512000 / (1000**4), 1
                                 )
 
                         elif "Host Read Commands" in line:
