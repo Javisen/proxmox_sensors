@@ -1,53 +1,42 @@
+
 {
-  "version": "5.2.1",
+  "version": "5.2.2",
   "release_status": "development",
   "items": [
     {
-      "id": "guest-migration-fixes",
+      "id": "smart-dashboard-improvements",
       "active": true,
-      "status": "completed",
+      "status": "development",
       "progress": null,
-      "title": "VM/LXC Migration Reliability",
-      "message": "Fixed guest migration between PVE cluster nodes, ensuring sensors and control buttons follow the guest correctly. Also fixed cleanup of empty source devices after migration. Validated in a real Home Assistant environment.",
+      "title": "Enhanced SMART Dashboard",
+      "message": "Improving the Proxmox dashboard with more detailed SMART disk information, including health status, temperature, wear indicators and available disk metrics. The goal is to provide clearer storage monitoring directly from Home Assistant.",
       "es": {
-        "title": "Fiabilidad de la migración de VM/LXC",
-        "message": "Corregida la migración de máquinas virtuales y contenedores entre nodos del clúster PVE para que los sensores y botones de control sigan al sistema migrado. También se corrigió la limpieza de los dispositivos vacíos del nodo de origen tras la migración. Validado en un entorno real de Home Assistant."
+        "title": "Mejoras del dashboard SMART",
+        "message": "Se está ampliando el dashboard de Proxmox con información SMART más detallada de los discos, incluyendo estado de salud, temperatura, indicadores de desgaste y métricas disponibles. El objetivo es ofrecer una monitorización del almacenamiento más completa y clara desde Home Assistant."
       }
     },
     {
-      "id": "amd-cpu-temperature-fix",
+      "id": "sidecar-smart-optimization",
       "active": true,
-      "status": "completed",
+      "status": "development",
       "progress": null,
-      "title": "CPU Temperature Detection",
-      "message": "Fixed CPU temperature detection for k10temp, coretemp and zenpower when standard temperature labels are unavailable. Regression tests passed. Awaiting hardware validation from the reporter of issue #88.",
+      "title": "Sidecar SMART Performance Optimization",
+      "message": "Optimizing SMART data collection in the Proxmox sidecar to reduce unnecessary smartctl executions and avoid blocking other sensor requests. Evaluating caching and more efficient collection while preserving existing sensor compatibility.",
       "es": {
-        "title": "Detección de la temperatura de la CPU",
-        "message": "Corregida la detección de la temperatura de la CPU para k10temp, coretemp y zenpower cuando no están disponibles las etiquetas de temperatura habituales. Las pruebas de regresión se han superado. Pendiente de validación en el hardware por parte de quien informó de la incidencia #88."
+        "title": "Optimización SMART del sidecar",
+        "message": "Se está optimizando la recopilación de datos SMART en el sidecar de Proxmox para reducir ejecuciones innecesarias de smartctl y evitar bloqueos de otras consultas. Se estudia el uso de caché y una recopilación más eficiente, manteniendo la compatibilidad con los sensores existentes."
       }
     },
     {
-      "id": "vm-filesystem-selection",
+      "id": "smart-refresh-interval",
       "active": true,
-      "status": "completed",
+      "status": "development",
       "progress": null,
-      "title": "Extended VM Filesystem Detection",
-      "message": "Investigating improved VM filesystem selection through QEMU Guest Agent for Windows guests and systems such as Home Assistant OS where the main writable filesystem is not mounted at /. Requested in issue #86.",
+      "title": "Configurable SMART Refresh Interval",
+      "message": "Adding a configurable SMART polling interval to the PVE integration options, independent of the general Proxmox refresh cycle. Planned intervals range from 1 to 60 minutes, allowing users to reduce unnecessary disk queries while keeping other monitoring data updated normally.",
       "es": {
-        "title": "Detección ampliada de sistemas de archivos de VM",
-        "message": "Se estudia una mejor selección del sistema de archivos de las máquinas virtuales mediante QEMU Guest Agent para sistemas Windows y otros como Home Assistant OS, cuyo sistema de archivos principal con permisos de escritura no está montado en /. Solicitado en la incidencia #86."
-      }
-    },
-    {
-      "id": "lsi-broadcom-controller-temperature",
-      "active": true,
-      "status": "completed",
-      "progress": null,
-      "title": "LSI/Broadcom SAS Controller Temperature",
-      "message": "Evaluating optional temperature monitoring for LSI/Broadcom SAS HBA and RAID controllers using storcli, including compatibility, permissions and safe execution. Requested in issue #87.",
-      "es": {
-        "title": "Temperatura de controladoras SAS LSI/Broadcom",
-        "message": "Se evalúa la monitorización opcional de la temperatura de controladoras HBA y RAID SAS LSI/Broadcom mediante storcli, incluida la compatibilidad, los permisos y la ejecución segura. Solicitado en la incidencia #87."
+        "title": "Intervalo de actualización SMART configurable",
+        "message": "Se está incorporando un selector de frecuencia de consulta SMART en las opciones de la integración PVE, independiente de la actualización general de Proxmox. Se contemplan intervalos de 1 a 60 minutos para reducir consultas innecesarias a los discos sin afectar al resto de la monitorización."
       }
     }
   ]
