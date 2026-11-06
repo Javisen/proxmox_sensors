@@ -1,25 +1,37 @@
+
 {
   "notices": [
+    {
+      "id": "development-v5.2.2",
+      "active": true,
+      "level": "info",
+      "title": "V5.2.2 in Development: Enhanced SMART Monitoring",
+      "message": "We're working on version 5.2.2! Planned improvements include a configurable SMART refresh interval in the PVE integration options, optimized sidecar data collection to reduce unnecessary disk queries, and an enhanced dashboard with more detailed SMART information. These features are currently in development and are not yet available in a stable release.",
+      "es": {
+        "title": "V5.2.2 en desarrollo: monitorización SMART mejorada",
+        "message": "¡Estamos trabajando en la versión 5.2.2! Entre las mejoras previstas se incluyen un intervalo de actualización SMART configurable desde las opciones de la integración PVE, optimización del sidecar para reducir consultas innecesarias a los discos y un dashboard ampliado con información SMART más detallada. Estas funciones siguen en desarrollo y todavía no están disponibles en una versión estable."
+      }
+    },
     {
       "id": "release-v5.2.1",
       "active": true,
       "level": "info",
-      "title": "Proxmox Extended Sensors V5.2.1",
-      "message": "Version 5.2.1 brings LSI/Broadcom HBA temperature monitoring, improved VM disk usage detection, VM/LXC migration fixes, and enhanced stability.",
+      "title": "Proxmox Extended Sensors V5.2.1 Released!",
+      "message": "Version 5.2.1 is available! This release includes LSI/Broadcom SAS HBA temperature monitoring, improved VM disk usage detection for Windows and read-only root filesystems, VM/LXC migration fixes, and enhanced stability.",
       "es": {
-        "title": "¡Proxmox Extended Sensors V5.2.1!",
-        "message": "La versión 5.2.1 incorpora monitorización de temperaturas LSI/Broadcom HBA, mejoras en la detección del uso de disco de las VM, correcciones en las migraciones VM/LXC y mayor estabilidad."
+        "title": "¡Proxmox Extended Sensors V5.2.1 disponible!",
+        "message": "¡La versión 5.2.1 ya está disponible! Incorpora monitorización de temperatura de controladoras SAS LSI/Broadcom, mejoras en la detección del uso de disco de las VM Windows y sistemas con raíz de solo lectura, correcciones en las migraciones VM/LXC y mayor estabilidad."
       }
     },
     {
       "id": "release-light-dashboard",
       "active": true,
       "level": "info",
-      "title": "New Dashboard with Light and Dark Theme Support!",
-      "message": "Version 5.2.1 introduces a revamped dashboard! Enjoy a fresh light design with white cards, Proxmox orange accents, and automatic adaptation to your Home Assistant theme, while keeping the original dark design completely intact.",
+      "title": "Dashboard with Light and Dark Theme Support!",
+      "message": "Version 5.2.1 introduced a revamped dashboard with a fresh light design, white cards, Proxmox orange accents, and automatic adaptation to your Home Assistant theme, while preserving the original dark design.",
       "es": {
-        "title": "¡Nuevo dashboard compatible con temas claros y oscuros!",
-        "message": "¡La versión 5.2.1 estrena un dashboard renovado! Disfruta de un nuevo diseño claro con tarjetas blancas, detalles en naranja Proxmox y adaptación automática al tema de Home Assistant, conservando intacto el diseño oscuro original."
+        "title": "¡Dashboard compatible con temas claros y oscuros!",
+        "message": "La versión 5.2.1 incorporó un dashboard renovado con diseño claro, tarjetas blancas, detalles en naranja Proxmox y adaptación automática al tema de Home Assistant, conservando el diseño oscuro original."
       }
     }
   ]
