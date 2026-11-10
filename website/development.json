@@ -8,11 +8,23 @@
       "active": true,
       "status": "testing",
       "progress": null,
-      "title": "Enhanced SMART Dashboard",
-      "message": "Improving the Proxmox dashboard with more detailed SMART disk information, including health status, temperature, wear indicators and available disk metrics. The goal is to provide clearer storage monitoring directly from Home Assistant.",
+      "title": "Enhanced Physical Disks & SMART Dashboard",
+      "message": "Major improvements to physical disk monitoring in Home Assistant. Each disk now has its own device with detailed SMART metrics, health status, temperature, wear indicators and disk-specific controls. The dashboard includes clearer disk identification, improved temperature displays and enhanced storage diagnostics.",
       "es": {
-        "title": "Mejoras del dashboard SMART",
-        "message": "Se está ampliando el dashboard de Proxmox con información SMART más detallada de los discos, incluyendo estado de salud, temperatura, indicadores de desgaste y métricas disponibles. El objetivo es ofrecer una monitorización del almacenamiento más completa y clara desde Home Assistant."
+        "title": "Mejoras de discos físicos y dashboard SMART",
+        "message": "Importante renovación de la monitorización de discos físicos en Home Assistant. Cada disco dispone ahora de su propio dispositivo, con métricas SMART detalladas, estado de salud, temperatura, indicadores de desgaste y controles individuales. El dashboard incorpora una identificación más clara de los discos, mejoras en las temperaturas y diagnósticos de almacenamiento."
+      }
+    },
+    {
+      "id": "individual-smart-control",
+      "active": true,
+      "status": "testing",
+      "progress": null,
+      "title": "Individual SMART Monitoring & Disk Controls",
+      "message": "Introducing independent SMART monitoring controls for each physical disk, including enable/disable switches, configurable polling intervals, HDD standby protection and automatic or manual HDD/SSD/NVMe classification. Disk settings are preserved independently, allowing users to optimize monitoring without unnecessary disk activity.",
+      "es": {
+        "title": "Control SMART individual por disco",
+        "message": "Se incorporan controles independientes de monitorización SMART para cada disco físico, incluyendo activación y desactivación, intervalos de consulta configurables, protección del reposo de los HDD y clasificación automática o manual como HDD, SSD o NVMe. La configuración se conserva individualmente, permitiendo optimizar la monitorización y evitar actividad innecesaria en los discos."
       }
     },
     {
@@ -21,10 +33,10 @@
       "status": "completed",
       "progress": null,
       "title": "Sidecar SMART Performance Optimization",
-      "message": "Optimizing SMART data collection in the Proxmox sidecar to reduce unnecessary smartctl executions and avoid blocking other sensor requests. Evaluating caching and more efficient collection while preserving existing sensor compatibility.",
+      "message": "Improved SMART data collection in the Proxmox sidecar with individual disk queries, more efficient polling and HDD standby protection. Enhanced SMART attribute parsing and NVMe compatibility while preserving existing monitoring functionality.",
       "es": {
         "title": "Optimización SMART del sidecar",
-        "message": "Se está optimizando la recopilación de datos SMART en el sidecar de Proxmox para reducir ejecuciones innecesarias de smartctl y evitar bloqueos de otras consultas. Se estudia el uso de caché y una recopilación más eficiente, manteniendo la compatibilidad con los sensores existentes."
+        "message": "Mejorada la recopilación SMART del sidecar de Proxmox mediante consultas individuales por disco, una monitorización más eficiente y protección del reposo de los HDD. Se ha perfeccionado la interpretación de atributos SMART y la compatibilidad con NVMe, manteniendo las funcionalidades de monitorización existentes."
       }
     },
     {
@@ -32,11 +44,11 @@
       "active": true,
       "status": "completed",
       "progress": null,
-      "title": "Configurable SMART Refresh Interval",
-      "message": "Adding a configurable SMART polling interval to the PVE integration options, independent of the general Proxmox refresh cycle. Planned intervals range from 1 to 60 minutes, allowing users to reduce unnecessary disk queries while keeping other monitoring data updated normally.",
+      "title": "Configurable SMART Refresh Intervals",
+      "message": "SMART polling intervals can now be configured independently of the general Proxmox refresh cycle, with per-disk settings and the option to inherit the global interval. This reduces unnecessary disk queries without affecting other monitoring data.",
       "es": {
-        "title": "Intervalo de actualización SMART configurable",
-        "message": "Se está incorporando un selector de frecuencia de consulta SMART en las opciones de la integración PVE, independiente de la actualización general de Proxmox. Se contemplan intervalos de 1 a 60 minutos para reducir consultas innecesarias a los discos sin afectar al resto de la monitorización."
+        "title": "Intervalos de actualización SMART configurables",
+        "message": "Los intervalos de consulta SMART pueden configurarse independientemente del ciclo general de actualización de Proxmox, con ajustes individuales por disco y opción de heredar el intervalo global. Esto reduce las consultas innecesarias sin afectar al resto de los datos de monitorización."
       }
     }
   ]
