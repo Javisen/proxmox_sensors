@@ -20,7 +20,7 @@
       "active": true,
       "status": "testing",
       "progress": null,
-      "title": "Individual SMART Monitoring & Disk Controls",
+      "title": "Individual SMART Monitoring and Disk Controls",
       "message": "Introducing independent SMART monitoring controls for each physical disk, including enable/disable switches, configurable polling intervals, HDD standby protection and automatic or manual HDD/SSD/NVMe classification. Disk settings are preserved independently, allowing users to optimize monitoring without unnecessary disk activity.",
       "es": {
         "title": "Control SMART individual por disco",
