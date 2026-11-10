@@ -158,6 +158,7 @@
           "enable_lm_sensors": "Activar sensores de hardware y temperaturas",
           "enable_physical_disks": "Activar monitorización de discos físicos",
           "enable_smart_monitoring": "Activar monitorización de salud SMART y NVMe",
+          "smart_refresh_interval": "Intervalo de actualización SMART (minutos)",
           "enable_node_controls": "Activar controles de energía del nodo",
           "enable_guest_agent_metrics": "Activar métricas del Guest Agent",
           "enable_backup_progress": "Activar sensor de progreso de copias de seguridad",
@@ -599,8 +600,18 @@
         "name": "Temp. del Chipset"
       },
       "disk_size": {
-        "name": "Tamaño {model}"
+        "name": "Capacidad"
       },
+      "disk_smart_status": {"name": "Salud SMART"},
+      "disk_smart_poll_status": {"name": "Estado de consulta SMART"},
+      "disk_temperature_c": {"name": "Temperatura"},
+      "disk_power_on_hours": {"name": "Horas de funcionamiento"},
+      "disk_percentage_used": {"name": "Desgaste"},
+      "disk_available_spare": {"name": "Reserva disponible"},
+      "disk_reallocated_sectors": {"name": "Sectores reasignados"},
+      "disk_pending_sectors": {"name": "Sectores pendientes"},
+      "disk_media_errors": {"name": "Errores del medio"},
+      "disk_seek_error_rate": {"name": "Tasa de errores de búsqueda"},
       "zfs_health": {
         "name": "Salud ZFS {pool}"
       },
@@ -728,6 +739,12 @@
       "node_stressed": {
         "name": "Estresado"
       }
+    },
+    "select": {"smart_disk_interval": {"name": "Intervalo SMART"},
+      "physical_disk_type": {"name": "Tipo de disco", "state": {"automatic": "Automático", "hdd": "HDD", "ssd": "SSD", "nvme": "NVMe"}}},
+    "switch": {
+      "smart_disk_monitoring": {"name": "Monitorización SMART"},
+      "smart_disk_standby": {"name": "Proteger reposo del HDD"}
     }
   },
   "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Clúster Proxmox", "pdm": "Proxmox Datacenter Manager"}}, "cluster_scope_action": {"options": {"keep": "Mantener asociado al clúster", "independent": "Independiente — sin migración de entidades VM/LXC entre nodos"}}},

@@ -20,6 +20,10 @@ from .logic.guest_selection import (
     set_effective_guest_selections,
 )
 from .logic.pdm import build_pdm_remotes, merge_pdm_sections, merge_pdm_updates
+from .logic.smart_cache import SmartCache
+from .logic.disk_smart import DiskSmartSchedule, preferences as disk_smart_preferences
+from .logic.physical_disks import BINDINGS_KEY, DiskIdentityError, hardware_value, plan_disks
+from .logic.physical_disk_type import apply_inventory_types
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -136,10 +140,20 @@ async def create_proxmox_coordinator(hass, entry, client):
     selected_cts = get_entry_guest_selection(entry, "selected_cts", [])
     selected_storage = data.get("selected_storage", [])
 
-    enable_physical_disks = data.get("enable_physical_disks", True)
+    enable_physical_disks = entry.options.get(
+        "enable_physical_disks", data.get("enable_physical_disks", True)
+    )
     enable_lm_sensors = data.get("enable_lm_sensors", True)
     enable_pbs_tasks = data.get("enable_pbs_tasks", True)
-    enable_smart_monitoring = data.get("enable_smart_monitoring", True)
+    enable_smart_monitoring = entry.options.get(
+        "enable_smart_monitoring", data.get("enable_smart_monitoring", True)
+    )
+    smart_refresh_interval = entry.options.get(
+        "smart_refresh_interval", data.get("smart_refresh_interval", 1)
+    )
+    smart_cache = SmartCache(smart_refresh_interval)
+    disk_smart_schedule = DiskSmartSchedule()
+    disk_smart_cursor = {"offset": 0}
     enable_guest_agent_metrics = entry.options.get(
         "enable_guest_agent_metrics",
         entry.data.get("enable_guest_agent_metrics", False),
@@ -160,6 +174,7 @@ async def create_proxmox_coordinator(hass, entry, client):
     sidecar_endpoints = {
         client.get_lm_sensors_http: "sensors",
         client.get_smart_data_http: "smart",
+        client.get_smart_disk_http: "smart",
         client.get_memory_http: "memory",
         client.get_ksm_http: "ksm",
         client.get_mounts: "mounts",
@@ -719,7 +734,10 @@ async def create_proxmox_coordinator(hass, entry, client):
 
                     tasks.append((client.get_mounts, hass, node, True))
 
-                    if enable_smart_monitoring:
+                    refresh_smart = not enable_physical_disks and smart_cache.should_refresh(
+                        enable_smart_monitoring, asyncio.get_running_loop().time()
+                    )
+                    if refresh_smart:
                         tasks.append((client.get_smart_data_http, hass, node, True))
 
                     if enable_memory_monitoring:
@@ -973,27 +991,100 @@ async def create_proxmox_coordinator(hass, entry, client):
                             },
                         )
 
+                    # Physical disk SMART is requested by disk identity, never
+                    # through the global scan while this inventory is enabled.
+                    result["physical_disk_ids"] = {}
+                    result["physical_smart"] = {}
+                    if enable_physical_disks:
+                        try:
+                            scope = (
+                                entry.data.get("pve_identity_id") or entry.entry_id
+                            )
+                            identities, _ = plan_disks(
+                                scope, result["disks"], entry.data.get(BINDINGS_KEY, {})
+                            )
+                            result["physical_disk_ids"] = identities
+                            result["disks"] = apply_inventory_types(
+                                result["disks"], identities, entry.options,
+                            )
+                        except DiskIdentityError as err:
+                            _LOGGER.warning("Physical disk identity is ambiguous: %s", err)
+                            identities = {}
+                        now = asyncio.get_running_loop().time()
+                        requests = []
+                        if result.get("_cleanup_confirmed", {}).get("node_disks"):
+                            for path, identifier in identities.items():
+                                settings = disk_smart_preferences(
+                                    entry.options, identifier, smart_refresh_interval,
+                                    enable_smart_monitoring,
+                                )
+                                if disk_smart_schedule.due(
+                                    identifier, now, settings["minutes"], settings["enabled"]
+                                ):
+                                    disk_type = str(result["disks"][path].get("type", "")).lower()
+                                    protect = settings["protect_standby"] and disk_type not in ("ssd", "nvme")
+                                    requests.append((
+                                        path, identifier, protect,
+                                        disk_smart_schedule.generation.get(identifier, 0),
+                                    ))
+                        if requests:
+                            if len(requests) > 10:
+                                offset = disk_smart_cursor["offset"] % len(requests)
+                                requests = (requests[offset:] + requests[:offset])[:10]
+                                disk_smart_cursor["offset"] = offset + 10
+                            responses = await asyncio.gather(*(
+                                sidecar_task(
+                                    "smart", client.get_smart_disk_http,
+                                    hass, node, path, protect, True,
+                                ) for path, _, protect, _ in requests
+                            ), return_exceptions=True)
+                            for (path, identifier, _, generation), response in zip(requests, responses):
+                                if (generation != disk_smart_schedule.generation.get(identifier, 0)
+                                        or not disk_smart_preferences(
+                                            entry.options, identifier, smart_refresh_interval,
+                                            enable_smart_monitoring,
+                                        )["enabled"]):
+                                    continue
+                                if isinstance(response, dict) and response.get("status") == "ok":
+                                    expected = hardware_value(result["disks"][path].get("serial"))
+                                    observed = hardware_value((response.get("data") or {}).get("serial"))
+                                    if (not expected or not observed
+                                            or expected.casefold() != observed.casefold()):
+                                        response = {"status": "error"}
+                                disk_smart_schedule.accept_if_current(
+                                    identifier,
+                                    {"status": "error"} if isinstance(response, Exception) else response,
+                                    asyncio.get_running_loop().time(),
+                                    datetime.now(timezone.utc).timestamp(),
+                                    generation, True,
+                                )
+                        wall_now = datetime.now(timezone.utc).timestamp()
+                        for identifier in identities.values():
+                            settings = disk_smart_preferences(
+                                entry.options, identifier, smart_refresh_interval,
+                                enable_smart_monitoring,
+                            )
+                            result["physical_smart"][identifier] = disk_smart_schedule.snapshot(
+                                identifier, wall_now, settings["enabled"]
+                            )
+
                     # -------- SMART --------
 
                     result["smart"] = {}
-                    if enable_smart_monitoring:
+                    if enable_physical_disks:
+                        result["smart"] = {node: {
+                            path.removeprefix("/dev/"): result["physical_smart"][identifier]["data"]
+                            for path, identifier in result["physical_disk_ids"].items()
+                            if result["physical_smart"].get(identifier, {}).get("data")
+                        }}
+                    elif refresh_smart:
                         smart_data = results[idx]
                         idx += 1
-                        if isinstance(smart_data, Exception):
-                            result["smart"] = _last_good_non_guest_section(
-                                "smart", {node: {}}
-                            )
-                        else:
-                            result["smart"] = _remember_non_guest_section(
-                                "smart",
-                                {
-                                    node: (
-                                        smart_data
-                                        if isinstance(smart_data, dict)
-                                        else {}
-                                    )
-                                },
-                            )
+                        if not isinstance(smart_data, Exception):
+                            smart_cache.accept(smart_data, asyncio.get_running_loop().time())
+                        result["smart"] = smart_cache.snapshot(node)
+                    elif enable_smart_monitoring:
+                        result["smart"] = smart_cache.snapshot(node)
 
                     # -------- Memory --------
 
@@ -1118,6 +1209,7 @@ async def create_proxmox_coordinator(hass, entry, client):
 
     coordinator.client = client
     coordinator.api = client
+    coordinator.disk_smart_schedule = disk_smart_schedule
 
     return coordinator
 

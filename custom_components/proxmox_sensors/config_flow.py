@@ -1005,6 +1005,7 @@ class ProxmoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return await self.async_step_join_cluster({"cluster": choice})
                 self._config[CLUSTER_SCOPE_ID] = self._membership_scope
             self._config["server_id"] = self._config[CONF_NODE]
+            self._config["smart_refresh_interval"] = 10
             self._config[CLUSTER_SCOPE_STATE] = ACTIVE_SCOPE
             if PVE_LOCAL_IDENTITY_VERSION not in self._config:
                 self._config[PVE_LOCAL_IDENTITY_VERSION] = LOCAL_IDENTITY_VERSION

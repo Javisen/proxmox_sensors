@@ -158,6 +158,7 @@
           "enable_lm_sensors": "启用硬件传感器与温度监控",
           "enable_physical_disks": "启用物理磁盘监控",
           "enable_smart_monitoring": "启用 SMART 与 NVMe 健康监控",
+          "smart_refresh_interval": "SMART 刷新间隔（分钟）",
           "enable_node_controls": "启用节点电源控制",
           "enable_guest_agent_metrics": "启用 Guest Agent 指标",
           "enable_backup_progress": "启用备份进度传感器",
@@ -599,8 +600,18 @@
         "name": "芯片组温度"
       },
       "disk_size": {
-        "name": "{model} 容量"
+        "name": "容量"
       },
+      "disk_smart_status": {"name": "SMART health"},
+      "disk_smart_poll_status": {"name": "SMART Poll Status"},
+      "disk_temperature_c": {"name": "Temperature"},
+      "disk_power_on_hours": {"name": "Power-on hours"},
+      "disk_percentage_used": {"name": "Percentage used"},
+      "disk_available_spare": {"name": "Available spare"},
+      "disk_reallocated_sectors": {"name": "Reallocated sectors"},
+      "disk_pending_sectors": {"name": "Pending sectors"},
+      "disk_media_errors": {"name": "Media errors"},
+      "disk_seek_error_rate": {"name": "Seek error rate"},
       "zfs_health": {
         "name": "ZFS {pool}"
       },
@@ -728,6 +739,12 @@
       "node_stressed": {
         "name": "节点压力"
       }
+    },
+    "select": {"smart_disk_interval": {"name": "SMART interval"},
+      "physical_disk_type": {"name": "Disk type", "state": {"automatic": "Automatic", "hdd": "HDD", "ssd": "SSD", "nvme": "NVMe"}}},
+    "switch": {
+      "smart_disk_monitoring": {"name": "SMART monitoring"},
+      "smart_disk_standby": {"name": "Protect HDD standby"}
     }
   },
   "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Proxmox 集群", "pdm": "Proxmox Datacenter Manager"}}, "cluster_scope_action": {"options": {"keep": "保持与集群关联", "independent": "独立运行 — 不在节点间迁移 VM/LXC 实体"}}},

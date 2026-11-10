@@ -58,9 +58,9 @@ def build_pve_dashboard_model(inventory, layout=None):
             if resource.get("guest_id") is not None:
                 item["guest_id"] = resource["guest_id"]
             ref = {"entity_id": entity["entity_id"], "metric": metric}
-            if block == "temperatures":
+            if block == "temperatures" or (block == "diagnostics" and metric == "hardware"):
                 # Preserve per-sensor display metadata, not technical device titles.
-                for field in ("translation_key", "name"):
+                for field in ("translation_key", "name", "original_name", "device_class", "unit"):
                     if isinstance(entity.get(field), str) and entity[field]:
                         ref[field] = entity[field]
             if attribute is not None:
@@ -134,11 +134,15 @@ def build_pve_dashboard_model(inventory, layout=None):
                     add("tasks", resource, entity, key)
                 elif sidecar and family == "sidecar":
                     add("diagnostics", resource, entity, "sidecar")
-                elif kind in ("smart", "zfs", "disks"):
+                elif kind == "disks":
+                    if (key == "disk_size" or uid.endswith("_capacity")
+                            or ("_proxmox_disk_" in uid and uid.endswith("_v1"))):
+                        add("diagnostics", resource, entity, "disks")
+                elif kind in ("smart", "zfs"):
                     add("diagnostics", resource, entity, kind)
                 elif key == "node_mounted_disks":
                     add("diagnostics", resource, entity, "mounted_disks")
-                elif kind == "hardware" and (key == "dimm_capacity" or entity.get("device_class") in ("voltage", "power")):
+                elif kind == "hardware":
                     add("diagnostics", resource, entity, "hardware")
                 elif key in ("node_cpu_info", "node_kernel_version"):
                     add("diagnostics", resource, entity, "system")

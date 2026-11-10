@@ -66,6 +66,16 @@ def classify_entity(row, entry, identifiers):
                                                   cluster or entry["entry_id"], kind, vmid),
                 "label": f"{'VM' if kind == 'vm' else 'LXC'} {vmid}", "guest": guest}
 
+    if entry["platform_type"] == "PVE":
+        scope = entry.get("pve_identity_id") or entry["entry_id"]
+        prefix = f"proxmox_physical_disk_v2_{scope}_"
+        disks = [identifier for identifier in identifiers
+                 if re.fullmatch(re.escape(prefix) + r"[0-9a-f]{32}", identifier)]
+        if len(disks) == 1:
+            return {"family": "disks", "kind": "disks", "physical_disk": True,
+                    "key": resource_id(entry["entry_id"], "physical_disk", disks[0]),
+                    "label": "Physical disk"}
+
     family = "pbs" if entry["platform_type"] == "PBS" else "cluster" if entry["platform_type"] == "CLUSTER" else "node"
     if "_replication_" in uid:
         family = "replication"

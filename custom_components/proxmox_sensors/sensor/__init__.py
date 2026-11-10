@@ -97,7 +97,11 @@ from .cluster import (
 from .hardware import ProxmoxHardwareSensor, detect_sensor_type, hba_roc_name
 
 # Physical Disks
-from .disks import ProxmoxDiskSensor
+from .disks import ProxmoxDiskSensor, ProxmoxDiskSmartSensor
+from ..logic.physical_registry import reconcile_physical_registry
+from ..logic.physical_disk_metrics import (
+    owned_percentage_row, percentage_used_available, percentage_used_obsolete,
+)
 
 # Storage
 from .storage import ProxmoxStorageSensor, ProxmoxStorageAttributeSensor
@@ -958,6 +962,8 @@ async def async_setup_entry(
     server_type = hass.data[DOMAIN][entry.entry_id].get("server_type", "PVE")
 
     entities = []
+    physical_disk_ids = {}
+    protected_physical_devices = set()
     storage_entity_groups = {}
     c_data = coordinator.data
 
@@ -1000,6 +1006,14 @@ async def async_setup_entry(
         node_device = device_registry.async_get_device_by_identifier(
             (DOMAIN, node_identifier), config_entry_id=entry.entry_id
         )
+        physical_disk_ids, protected_physical_devices = reconcile_physical_registry(
+            hass, entry, coordinator, node, enable_physical_disks
+        )
+        hass.data[DOMAIN][entry.entry_id]["physical_disk_ids"] = physical_disk_ids
+        for sync_controls in hass.data[DOMAIN][entry.entry_id].get(
+            "physical_disk_control_sync", []
+        ):
+            sync_controls()
         if node_device is not None:
             entities.append(ProxmoxSidecarStatusSensor(coordinator, node, node_device))
 
@@ -1059,8 +1073,6 @@ async def async_setup_entry(
                     other_sensors.append(key)
 
             # Second: Group NVMe by device
-            import re
-
             nvme_devices = set()
 
             for key in nvme_sensors:
@@ -1173,13 +1185,33 @@ async def async_setup_entry(
         # Physical Disks
         if enable_physical_disks:
             for d_id, d_info in c_data.get("disks", {}).items():
-                d_model = str(d_info.get("model", "")).lower()
-                if d_model and "boot" not in d_model:
+                physical_id = physical_disk_ids.get(d_id)
+                if physical_id:
                     entities.append(
                         ProxmoxDiskSensor(
-                            coordinator, d_id, node, d_info.get("model") or d_id
+                            coordinator, d_id, node, d_info.get("model") or d_id,
+                            physical_id,
                         )
                     )
+                    kind = str(d_info.get("type") or "").lower()
+                    metrics = ["smart_status", "temperature_c", "power_on_hours"]
+                    if kind == "nvme":
+                        metrics += ["smart_poll_status", "available_spare", "media_errors"]
+                    elif kind == "hdd":
+                        metrics += ["reallocated_sectors", "pending_sectors"]
+                        model = str(d_info.get("model") or "").strip()
+                        vendor = str(d_info.get("vendor") or "")
+                        if ("seagate" in vendor.casefold()
+                                or "seagate" in model.casefold()
+                                or re.match(r"^ST[0-9]{3,}", model, re.IGNORECASE)):
+                            metrics.append("seek_error_rate")
+                    elif kind == "ssd":
+                        metrics += ["reallocated_sectors"]
+                    for metric in metrics:
+                        entities.append(ProxmoxDiskSmartSensor(
+                            coordinator, d_id, node, d_info.get("model") or d_id,
+                            physical_id, metric,
+                        ))
 
         # Storage pools
         storage_map = c_data.get("storage", {})
@@ -1404,6 +1436,23 @@ async def async_setup_entry(
     new_unique_ids = {getattr(entity, "_attr_unique_id", None) for entity in entities}
     cleanup_confirmed = c_data.get("_cleanup_confirmed", {})
     dev_reg = dr.async_get(hass)
+    if server_type == "PVE" and cleanup_confirmed.get("node_disks") is True:
+        for path, identifier in physical_disk_ids.items():
+            disk = c_data.get("disks", {}).get(path, {})
+            kind = str(disk.get("type") or "").lower()
+            snapshot = c_data.get("physical_smart", {}).get(identifier, {})
+            if not percentage_used_obsolete(kind, snapshot):
+                continue
+            device = dev_reg.async_get_device_by_identifier(
+                (DOMAIN, identifier), config_entry_id=entry.entry_id,
+            )
+            if device is None:
+                continue
+            for row in existing_entries:
+                if owned_percentage_row(
+                    row, entry.entry_id, identifier, device.id, DOMAIN,
+                ):
+                    ent_reg.async_remove(row.entity_id)
     present_storage_device_ids = set()
     if server_type == "PVE" and cleanup_confirmed.get("storage") is True:
         context = coordinator_pve_local_identity_context(coordinator)
@@ -1433,6 +1482,13 @@ async def async_setup_entry(
             continue
 
         if entity_entry.unique_id in new_unique_ids:
+            continue
+
+        if server_type == "PVE" and (
+            "proxmox_disk_" in (entity_entry.unique_id or "")
+            or (entity_entry.unique_id or "").startswith("proxmox_physical_disk_v2_")
+        ):
+            # Physical Disk Registry lifecycle is handled by its own preflight.
             continue
 
         if entity_entry.unique_id in legacy_pbs_last_action_ids:
@@ -1483,6 +1539,8 @@ async def async_setup_entry(
 
     devices = dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
     for device in devices:
+        if device.id in protected_physical_devices:
+            continue
         if server_type == "PBS" and not coordinator.last_update_success:
             continue
         if any(domain == DOMAIN and identifier.startswith(("proxmox_vm_", "proxmox_ct_"))
@@ -1494,6 +1552,34 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+    if server_type == "PVE" and enable_physical_disks:
+        added_percentage = set()
+
+        @callback
+        def sync_percentage_used():
+            current = coordinator.data or {}
+            for path, identifier in physical_disk_ids.items():
+                if identifier in added_percentage:
+                    continue
+                disk = current.get("disks", {}).get(path, {})
+                if not percentage_used_available(
+                    str(disk.get("type") or "").lower(),
+                    current.get("physical_smart", {}).get(identifier, {}),
+                ):
+                    continue
+                uid = f"{identifier}_percentage_used"
+                row_id = ent_reg.async_get_entity_id("sensor", DOMAIN, uid)
+                if row_id and ent_reg.async_get(row_id).config_entry_id != entry.entry_id:
+                    continue
+                added_percentage.add(identifier)
+                async_add_entities([ProxmoxDiskSmartSensor(
+                    coordinator, path, node, disk.get("model") or path,
+                    identifier, "percentage_used",
+                )])
+
+        sync_percentage_used()
+        entry.async_on_unload(coordinator.async_add_listener(sync_percentage_used))
 
     if server_type == "PVE" and enable_lm_sensors:
         _setup_hba_reconciliation(

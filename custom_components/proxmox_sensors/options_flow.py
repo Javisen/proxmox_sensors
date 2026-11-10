@@ -423,6 +423,8 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
             if "storage" in user_input:
                 new_data["selected_storage"] = user_input["storage"]
             new_options = dict(options)
+            if "smart_refresh_interval" in user_input:
+                new_options["smart_refresh_interval"] = user_input["smart_refresh_interval"]
             wol_macs = dict(wol_mac_map)
             if "wol_mac" in user_input:
                 value = user_input["wol_mac"]
@@ -545,6 +547,10 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
                             default=conf.get("enable_smart_monitoring", True),
                         ): bool,
                         vol.Optional(
+                            "smart_refresh_interval",
+                            default=options.get("smart_refresh_interval", conf.get("smart_refresh_interval", 1)),
+                        ): vol.In([1, 5, 10, 15, 30, 60]),
+                        vol.Optional(
                             "enable_node_controls",
                             default=conf.get("enable_node_controls", False),
                         ): bool,
@@ -582,6 +588,10 @@ class ProxmoxOptionsFlow(config_entries.OptionsFlow):
                             "enable_smart_monitoring",
                             default=conf.get("enable_smart_monitoring", True),
                         ): bool,
+                        vol.Optional(
+                            "smart_refresh_interval",
+                            default=options.get("smart_refresh_interval", conf.get("smart_refresh_interval", 1)),
+                        ): vol.In([1, 5, 10, 15, 30, 60]),
                         vol.Optional(
                             "enable_node_controls",
                             default=conf.get("enable_node_controls", False),

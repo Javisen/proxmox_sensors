@@ -158,6 +158,7 @@
           "enable_lm_sensors": "Activer les capteurs matériels et températures",
           "enable_physical_disks": "Activer la surveillance des disques physiques",
           "enable_smart_monitoring": "Activer la surveillance de santé SMART et NVMe",
+          "smart_refresh_interval": "Intervalle d’actualisation SMART (minutes)",
           "enable_node_controls": "Activer les contrôles d'alimentation du nœud",
           "enable_guest_agent_metrics": "Activer les métriques Guest Agent",
           "enable_backup_progress": "Activer le capteur de progression des sauvegardes",
@@ -599,8 +600,18 @@
         "name": "Température chipset"
       },
       "disk_size": {
-        "name": "Taille {model}"
+        "name": "Capacité"
       },
+      "disk_smart_status": {"name": "SMART health"},
+      "disk_smart_poll_status": {"name": "SMART Poll Status"},
+      "disk_temperature_c": {"name": "Temperature"},
+      "disk_power_on_hours": {"name": "Power-on hours"},
+      "disk_percentage_used": {"name": "Percentage used"},
+      "disk_available_spare": {"name": "Available spare"},
+      "disk_reallocated_sectors": {"name": "Reallocated sectors"},
+      "disk_pending_sectors": {"name": "Pending sectors"},
+      "disk_media_errors": {"name": "Media errors"},
+      "disk_seek_error_rate": {"name": "Seek error rate"},
       "zfs_health": {
         "name": "Santé ZFS {pool}"
       },
@@ -728,6 +739,12 @@
       "node_stressed": {
         "name": "Stressé"
       }
+    },
+    "select": {"smart_disk_interval": {"name": "SMART interval"},
+      "physical_disk_type": {"name": "Disk type", "state": {"automatic": "Automatic", "hdd": "HDD", "ssd": "SSD", "nvme": "NVMe"}}},
+    "switch": {
+      "smart_disk_monitoring": {"name": "SMART monitoring"},
+      "smart_disk_standby": {"name": "Protect HDD standby"}
     }
   },
   "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Cluster Proxmox", "pdm": "Proxmox Datacenter Manager"}}, "cluster_scope_action": {"options": {"keep": "Rester associé au cluster", "independent": "Indépendant — aucune migration des entités VM/LXC entre les nœuds"}}},

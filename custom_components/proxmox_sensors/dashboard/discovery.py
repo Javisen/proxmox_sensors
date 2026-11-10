@@ -108,7 +108,8 @@ def build_inventory(entries, rows, devices, states, selections=None):
             "resource_id": info["key"], "kind": info["kind"],
             "title": (getattr(device_for_name, "name_by_user", None)
                       or getattr(device_for_name, "name", None) or info["label"])
-                     if info["kind"] in ("vm", "ct", "datastore", "pdm_remote") else info["label"],
+                     if info["kind"] in ("vm", "ct", "datastore", "pdm_remote")
+                     or info.get("physical_disk") else info["label"],
             "entry_id": display_owner["entry_id"], "cluster_id": display_owner.get("cluster_id"),
             "node": display_owner.get("node"), "server_id": display_owner.get("server_id"),
             "guest_id": info["guest"][2] if info.get("guest") else None,
@@ -128,6 +129,7 @@ def build_inventory(entries, rows, devices, states, selections=None):
             "config_entry_id": row.config_entry_id, "device_id": row.device_id,
             "domain": row.entity_id.split(".", 1)[0], "family": info["family"],
             "name": getattr(row, "name", None) or getattr(row, "original_name", None) or row.entity_id,
+            "original_name": getattr(row, "original_name", None),
             "state": value, "availability": "missing" if state is None else
                 "restored" if "restored" in attrs else value if value in ("unknown", "unavailable") else "available",
             "translation_key": translation_key,

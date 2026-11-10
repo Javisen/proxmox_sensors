@@ -1,16 +1,20 @@
 """Physical disk sensors for Proxmox Extended Sensors."""
 
 import logging
+import math
 
+from homeassistant.const import EntityCategory
 from homeassistant.helpers import device_registry as dr
 
 from .base import ProxmoxBaseSensor, node_section
 from ..const import DOMAIN
+from ..logic.disk_smart import preferences as disk_smart_preferences
 from ..logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
     disks_group_identifier,
     node_device_identifier,
 )
+from ..logic.physical_disks import capacity_unique_id, hardware_value
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,18 +29,25 @@ def _format_gb(value):
 
 
 class ProxmoxDiskSensor(ProxmoxBaseSensor):
-    def __init__(self, coordinator, disk_id, node, label):
+    _attr_has_entity_name = False
+
+    def __init__(self, coordinator, disk_id, node, label, physical_identifier=None):
         disks = coordinator.data.get("disks", {})
         disk_info = disks.get(disk_id, {})
         self._model = disk_info.get("model", label or "Unknown")
         self._serial = disk_info.get("serial", "")
         unique_id = f"proxmox_disk_{node}_{disk_id}_v1"
 
-        super().__init__(coordinator, disk_id, None, "GB", unique_id, node)
+        super().__init__(
+            coordinator, disk_id, None, "GB", unique_id, node,
+            full_unique_id=capacity_unique_id(physical_identifier)
+            if physical_identifier else None,
+        )
         self._attr_translation_key = "disk_size"
-        self._attr_translation_placeholders = {"model": str(self._model)}
+        self._attr_name = "Capacity"
 
         self._disk_id = disk_id
+        self._physical_identifier = physical_identifier
         self._attr_icon = "mdi:harddisk"
         self._attr_state_class = "measurement"
         self._attr_device_class = "data_size"
@@ -45,14 +56,25 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
     def device_info(self):
         node_id = self._node.lower()
         context = coordinator_pve_local_identity_context(self.coordinator)
+        disk = self._current_disk(self.coordinator.data.get("disks", {})) or {}
+        size = disk.get("size")
+        size_tb = round(size / (1024**4), 1) if isinstance(size, (int, float)) else None
+        kind = str(disk.get("type") or "Disk").upper()
         info = {
             "identifiers": {(
-                DOMAIN, disks_group_identifier(context, node_id)
+                DOMAIN, self._physical_identifier or disks_group_identifier(context, node_id)
             )},
-            "name": f"2. Disks: {self._node.capitalize()}",
-            "manufacturer": "Proxmox",
-            "model": "Physical Disks Storage",
+            "name": (
+                f"2. {kind} {self._model} {size_tb:g} TB" if self._physical_identifier and size_tb
+                else f"2. {kind} {self._model}" if self._physical_identifier
+                else f"2. Disks: {self._node.capitalize()}"
+            ),
+            "manufacturer": str(disk.get("vendor") or "Proxmox")
+            if self._physical_identifier else "Proxmox",
+            "model": str(self._model) if self._physical_identifier else "Physical Disks Storage",
         }
+        if self._physical_identifier and (serial := hardware_value(disk.get("serial"))):
+            info["serial_number"] = serial
 
         try:
             info["via_device_id"] = dr.async_get_device_id_by_identifier(
@@ -70,14 +92,29 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
 
     def _get_value(self):
         disks = self.coordinator.data.get("disks", {})
-        disk = disks.get(self._disk_id)
+        disk = self._current_disk(disks)
         if not disk:
             return None
         size = disk.get("size")
         return _format_gb(size) if size is not None else None
 
+    def _current_disk(self, disks):
+        if self._physical_identifier:
+            ids = self.coordinator.data.get("physical_disk_ids", {})
+            paths = [path for path, identifier in ids.items()
+                     if identifier == self._physical_identifier]
+            return disks.get(paths[0]) if len(paths) == 1 else None
+        return disks.get(self._disk_id)
+
     def _find_smart_data_by_serial(self):
         """Search SMART data by serial number."""
+        if self._physical_identifier:
+            if not self._smart_monitoring_enabled():
+                return None
+            snapshot = self.coordinator.data.get("physical_smart", {}).get(
+                self._physical_identifier, {}
+            )
+            return snapshot.get("data") if isinstance(snapshot, dict) else None
         smart_data = {
             disk_id: disk_smart
             for disk_id, disk_smart in node_section(
@@ -89,33 +126,25 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
         if not smart_data or not self._serial:
             return None
 
-        # By exact serial number
-        for disk_id, disk_smart in smart_data.items():
-            if disk_smart.get("serial") == self._serial:
-                return disk_smart
+        matching = [disk_smart for disk_smart in smart_data.values()
+                    if disk_smart.get("serial") == self._serial]
+        return matching[0] if len(matching) == 1 else None
 
-        # Try by disk ID
-        if self._disk_id in smart_data:
-            return smart_data[self._disk_id]
-
-        # Search by model
-        clean_model = self._model.replace(" ", "_").replace("-", "_").lower()
-        for disk_id, disk_smart in smart_data.items():
-            smart_model = (
-                disk_smart.get("model", "").replace(" ", "_").replace("-", "_").lower()
-            )
-            if smart_model and (
-                clean_model in smart_model or smart_model in clean_model
-            ):
-                return disk_smart
-
-        return None
+    def _smart_monitoring_enabled(self):
+        entry = getattr(self.coordinator, "config_entry", None)
+        if entry is None or not self._physical_identifier:
+            return True
+        return disk_smart_preferences(
+            entry.options, self._physical_identifier, 1,
+            entry.options.get("enable_smart_monitoring",
+                              entry.data.get("enable_smart_monitoring", True)),
+        )["enabled"]
 
     @property
     def extra_state_attributes(self):
         """Add all disk attributes including SMART."""
         disks = self.coordinator.data.get("disks", {})
-        disk = disks.get(self._disk_id)
+        disk = self._current_disk(disks)
 
         if not disk:
             return {}
@@ -130,6 +159,15 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
 
         # Search for SMART data
         disk_smart = self._find_smart_data_by_serial()
+        if self._physical_identifier:
+            snapshot = self.coordinator.data.get("physical_smart", {}).get(
+                self._physical_identifier, {}
+            )
+            if not self._smart_monitoring_enabled():
+                snapshot = {"status": "disabled"}
+            attributes["SMART Poll Status"] = snapshot.get("status", "pending")
+            attributes["SMART Last Read"] = snapshot.get("last_read")
+            attributes["SMART Data Age (s)"] = snapshot.get("age_seconds")
 
         if disk_smart:
             # Basic information
@@ -213,8 +251,14 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
                 else:
                     attributes["Spin Retry Count"] = spin_retry
 
-            # Seek Error Rate (HDD)
-            if disk_smart.get("seek_error_rate") is not None:
+            # Seagate SMART 7 RAW is vendor-encoded; show its normalized value.
+            if (disk_smart.get("seek_error_rate_normalized") is not None
+                    or disk_smart.get("seek_error_rate_raw") is not None):
+                attributes["Seek Error Rate"] = disk_smart.get("seek_error_rate_normalized")
+                attributes["Seek Error Rate RAW"] = disk_smart["seek_error_rate_raw"]
+                attributes["Seek Error Rate WORST"] = disk_smart.get("seek_error_rate_worst")
+                attributes["Seek Error Rate THRESH"] = disk_smart.get("seek_error_rate_threshold")
+            elif disk_smart.get("seek_error_rate") is not None:
                 seek_err = disk_smart.get("seek_error_rate")
                 if seek_err > 0:
                     attributes["Seek Error Rate"] = f"⚠️ {seek_err}"
@@ -369,3 +413,79 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
             return "🟡 CAUTION"
         else:
             return "🟢 HEALTHY"
+
+
+SMART_METRICS = {
+    "smart_status": ("SMART health", None, None),
+    "smart_poll_status": ("SMART Poll Status", None, None),
+    "temperature_c": ("Temperature", "°C", "temperature"),
+    "power_on_hours": ("Power-on hours", "h", "duration"),
+    "percentage_used": ("Percentage used", "%", None),
+    "available_spare": ("Available spare", "%", None),
+    "reallocated_sectors": ("Reallocated sectors", None, None),
+    "pending_sectors": ("Pending sectors", None, None),
+    "media_errors": ("Media errors", None, None),
+    "seek_error_rate": ("Seek error rate", None, None),
+}
+
+
+class ProxmoxDiskSmartSensor(ProxmoxDiskSensor):
+    """One measured SMART value from the verified per-disk sidecar result."""
+
+    def __init__(self, coordinator, disk_id, node, label, physical_identifier, metric):
+        super().__init__(coordinator, disk_id, node, label, physical_identifier)
+        name, unit, device_class = SMART_METRICS[metric]
+        self._metric = metric
+        self._attr_unique_id = f"{physical_identifier}_{metric}"
+        self._attr_translation_key = f"disk_{metric}"
+        self._attr_name = name
+        self._attr_native_unit_of_measurement = unit
+        self._attr_device_class = device_class
+        if metric == "smart_poll_status":
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_state_class = (
+            "measurement" if metric not in ("smart_status", "smart_poll_status", "seek_error_rate") else None
+        )
+
+    def _get_value(self):
+        if self._metric == "smart_poll_status":
+            if not self._smart_monitoring_enabled():
+                return "disabled"
+            snapshot = self.coordinator.data.get("physical_smart", {}).get(
+                self._physical_identifier, {}
+            )
+            status = snapshot.get("status")
+            return status if status in {
+                "ok", "pending", "standby", "unsupported", "error", "disabled",
+            } else None
+        data = self._find_smart_data_by_serial()
+        if not isinstance(data, dict):
+            return None
+        if self._metric == "smart_status":
+            passed = data.get("smart_passed")
+            return "Healthy" if passed is True else "Failed" if passed is False else None
+        value = data.get(
+            "seek_error_rate_normalized" if self._metric == "seek_error_rate" else self._metric
+        )
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        return value if math.isfinite(value) else None
+
+    @property
+    def extra_state_attributes(self):
+        snapshot = self.coordinator.data.get("physical_smart", {}).get(
+            self._physical_identifier, {}
+        )
+        if not self._smart_monitoring_enabled():
+            snapshot = {"status": "disabled"}
+        attributes = {
+            "SMART Poll Status": snapshot.get("status", "pending"),
+            "SMART Last Read": snapshot.get("last_read"),
+            "SMART Data Age (s)": snapshot.get("age_seconds"),
+        }
+        if self._metric == "seek_error_rate":
+            data = snapshot.get("data") or {}
+            attributes["RAW"] = data.get("seek_error_rate_raw")
+            attributes["WORST"] = data.get("seek_error_rate_worst")
+            attributes["THRESH"] = data.get("seek_error_rate_threshold")
+        return attributes

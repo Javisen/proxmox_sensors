@@ -9,8 +9,10 @@ import shutil
 import threading
 import time
 from pathlib import Path
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
+import stat
+from urllib.parse import parse_qs, urlsplit
 
 CONFIG_PATH = "/etc/proxmox-sensors/sidecar.conf"
 
@@ -175,6 +177,8 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_sensors()
         elif self.path == "/smart":
             self._handle_smart()
+        elif self.path.startswith("/smart-disk?"):
+            self._handle_smart_disk()
         elif self.path == "/smart-extended":
             self._handle_smart_extended()
         elif self.path == "/memory":
@@ -217,6 +221,42 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json_response(json.dumps(smart_data))
         except Exception as e:
             self._send_error_response(f"Error getting SMART data: {e}")
+
+    def _handle_smart_disk(self):
+        """Query one inventory-selected block device, without a global scan."""
+        query = parse_qs(urlsplit(self.path).query)
+        paths = query.get("path", [])
+        protect = query.get("protect", [])
+        if len(paths) != 1 or protect not in (["0"], ["1"]):
+            self._send_error_response("Invalid SMART disk request")
+            return
+        path = paths[0]
+        if not re.fullmatch(r"/dev/[A-Za-z0-9_./-]+", path) or ".." in path.split("/"):
+            self._send_error_response("Invalid block device path")
+            return
+        try:
+            if not stat.S_ISBLK(os.stat(path).st_mode):
+                self._send_error_response("Path is not a block device")
+                return
+            command = ["smartctl"]
+            if protect == ["1"]:
+                command.extend(("-n", "standby,3,5"))
+            command.extend(("-a", "-j", path))
+            result = subprocess.run(command, capture_output=True, text=True, timeout=7)
+            if protect == ["1"] and result.returncode in (3, 5):
+                status = "standby" if result.returncode == 3 else "unsupported"
+                self._send_json_response(json.dumps({"status": status}))
+                return
+            raw = json.loads(result.stdout)
+            if (not isinstance(raw, dict)
+                    or not isinstance(raw.get("smart_status"), dict)
+                    or type(raw["smart_status"].get("passed")) is not bool):
+                self._send_json_response(json.dumps({"status": "error"}))
+                return
+            parsed = self._parse_smart_info(raw, result.returncode)
+            self._send_json_response(json.dumps({"status": "ok", "data": parsed}))
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            self._send_json_response(json.dumps({"status": "error"}))
 
     def _handle_smart_extended(self):
         """Extended SMART data with more details."""
@@ -589,6 +629,13 @@ class Handler(BaseHTTPRequestHandler):
         if "nvme" in device_type:
             nvme_smart = disk_info.get("nvme_smart_health_information_log", {})
             if nvme_smart:
+                def nvme_value(*keys):
+                    for key in keys:
+                        value = nvme_smart.get(key)
+                        if value is not None:
+                            return value
+                    return None
+
                 parsed["temperature_c"] = nvme_smart.get("temperature")
                 parsed["available_spare"] = nvme_smart.get("available_spare")
                 parsed["available_spare_threshold"] = nvme_smart.get(
@@ -597,35 +644,39 @@ class Handler(BaseHTTPRequestHandler):
                 parsed["percentage_used"] = nvme_smart.get("percentage_used")
 
                 data_units_read = nvme_smart.get("data_units_read")
-                if data_units_read:
+                if data_units_read is not None:
                     parsed["data_units_read"] = data_units_read
                     parsed["data_units_read_tb"] = round(
                         data_units_read * 512000 / (1000**4), 1
                     )
 
                 data_units_written = nvme_smart.get("data_units_written")
-                if data_units_written:
+                if data_units_written is not None:
                     parsed["data_units_written"] = data_units_written
                     parsed["data_units_written_tb"] = round(
                         data_units_written * 512000 / (1000**4), 1
                     )
 
-                parsed["host_read_commands"] = nvme_smart.get("host_read_commands")
-                parsed["host_write_commands"] = nvme_smart.get("host_write_commands")
+                parsed["host_read_commands"] = nvme_value(
+                    "host_reads", "host_read_commands",
+                )
+                parsed["host_write_commands"] = nvme_value(
+                    "host_writes", "host_write_commands",
+                )
                 parsed["controller_busy_time"] = nvme_smart.get("controller_busy_time")
                 parsed["power_cycles"] = nvme_smart.get("power_cycles")
                 parsed["unsafe_shutdowns"] = nvme_smart.get("unsafe_shutdowns")
-                parsed["media_errors"] = nvme_smart.get(
-                    "media_and_data_integrity_errors"
+                parsed["media_errors"] = nvme_value(
+                    "media_errors", "media_and_data_integrity_errors",
                 )
-                parsed["error_info_log_entries"] = nvme_smart.get(
-                    "error_information_log_entries"
+                parsed["error_info_log_entries"] = nvme_value(
+                    "num_err_log_entries", "error_information_log_entries",
                 )
-                parsed["warning_temp_time"] = nvme_smart.get(
-                    "warning_composite_temperature_time"
+                parsed["warning_temp_time"] = nvme_value(
+                    "warning_temp_time", "warning_composite_temperature_time",
                 )
-                parsed["critical_temp_time"] = nvme_smart.get(
-                    "critical_composite_temperature_time"
+                parsed["critical_temp_time"] = nvme_value(
+                    "critical_comp_time", "critical_composite_temperature_time",
                 )
                 parsed["critical_warning"] = nvme_smart.get("critical_warning")
                 parsed["power_on_hours"] = nvme_smart.get("power_on_hours")
@@ -634,6 +685,19 @@ class Handler(BaseHTTPRequestHandler):
                 parsed["pending_sectors"] = None
 
         else:
+            model_name = str(disk_info.get("model_name") or "").strip()
+            seagate = (
+                any("seagate" in str(disk_info.get(key) or "").casefold()
+                    for key in ("vendor", "model_family", "model_name"))
+                or re.match(r"^ST[0-9]{3,}", model_name, re.IGNORECASE) is not None
+            )
+            if seagate:
+                parsed.update({
+                    "seek_error_rate_normalized": None,
+                    "seek_error_rate_raw": None,
+                    "seek_error_rate_worst": None,
+                    "seek_error_rate_threshold": None,
+                })
             temp = disk_info.get("temperature", {})
             if temp:
                 parsed["temperature_c"] = temp.get("current", temp.get("value"))
@@ -690,6 +754,20 @@ class Handler(BaseHTTPRequestHandler):
                         parsed["spin_retry_count"] = raw_value
                     elif attr_id == 7:
                         parsed["seek_error_rate"] = raw_value
+
+                if seagate and (attr_id == 7 or "seekerrorrate" in normalized_name):
+                    raw = attr.get("raw")
+                    parsed["seek_error_rate_raw"] = (
+                        raw.get("value") if isinstance(raw, dict) else None
+                    )
+                    for field, source in (
+                        ("seek_error_rate_normalized", "value"),
+                        ("seek_error_rate_worst", "worst"),
+                        ("seek_error_rate_threshold", "thresh"),
+                    ):
+                        value = attr.get(source)
+                        if type(value) is int and 0 <= value <= 255:
+                            parsed[field] = value
 
         return parsed
 
@@ -928,12 +1006,13 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     port = 9000
-    server = HTTPServer(("0.0.0.0", port), Handler)
+    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"PVE Sensors API v2 started on port {port}")
     print(f"Allowed client IPs: {', '.join(sorted(ALLOWED_IPS))}")
     print("Endpoints:")
     print(f"  GET /sensors         - lm-sensors data")
     print(f"  GET /smart           - Basic SMART data (fast)")
+    print(f"  GET /smart-disk      - One disk with optional standby protection")
     print(f"  GET /smart-extended  - Extended SMART data")
     print(f"  GET /memory          - Memory module information")
     print(f"  GET /health          - System health status")

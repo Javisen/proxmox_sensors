@@ -339,13 +339,20 @@ class ProxmoxClient:
         # skipsmart=1: without it PVE runs `smartctl -H` on every disk for each
         # call, which wakes spun down HDDs on every poll. The health/wearout
         # fields it adds are not used; SMART comes from get_smart_data_http.
-        return (
-            await self.get(
-                hass, f"nodes/{node}/disks/list?skipsmart=1",
-                raise_errors=raise_errors,
-            )
-            or []
+        disks = await self.get(
+            hass, f"nodes/{node}/disks/list?skipsmart=1",
+            raise_errors=raise_errors,
         )
+        if (not isinstance(disks, list)
+                or any(not isinstance(disk, dict)
+                       or not isinstance(disk.get("devpath"), str)
+                       or not disk["devpath"].startswith("/dev/")
+                       for disk in disks)
+                or len({disk["devpath"] for disk in disks}) != len(disks)):
+            if raise_errors:
+                raise ValueError("PVE disk inventory is malformed")
+            return []
+        return disks
 
     async def control_vm(self, hass, node: str, vmid: str, command: str):
         valid_vm_commands = [
@@ -454,6 +461,29 @@ class ProxmoxClient:
                 if raise_errors:
                     raise
                 return {}
+
+        return await hass.async_add_executor_job(_fetch)
+
+    async def get_smart_disk_http(
+        self, hass, node: str, path: str, protect: bool, raise_errors: bool = False
+    ):
+        query = urlencode({"path": path, "protect": int(protect)})
+        url = f"http://{self._host}:9000/smart-disk?{query}"
+
+        def _fetch():
+            try:
+                response = requests.get(url, timeout=9)
+                response.raise_for_status()
+                payload = response.json()
+                if not isinstance(payload, dict) or payload.get("status") not in (
+                    "ok", "standby", "unsupported", "error"
+                ):
+                    raise ValueError("Invalid per-disk SMART response")
+                return payload
+            except Exception:
+                if raise_errors:
+                    raise
+                return {"status": "error"}
 
         return await hass.async_add_executor_job(_fetch)
 

@@ -158,6 +158,7 @@
           "enable_lm_sensors": "Hardware-Sensoren und Temperaturen aktivieren",
           "enable_physical_disks": "Überwachung physischer Festplatten aktivieren",
           "enable_smart_monitoring": "SMART- und NVMe-Gesundheitsüberwachung aktivieren",
+          "smart_refresh_interval": "SMART-Aktualisierungsintervall (Minuten)",
           "enable_node_controls": "Knoten-Energiesteuerung aktivieren",
           "enable_guest_agent_metrics": "Guest-Agent-Metriken aktivieren",
           "enable_backup_progress": "Backup-Fortschrittssensor aktivieren",
@@ -599,8 +600,18 @@
         "name": "Chipsatz-Temperatur"
       },
       "disk_size": {
-        "name": "{model} Größe"
+        "name": "Kapazität"
       },
+      "disk_smart_status": {"name": "SMART health"},
+      "disk_smart_poll_status": {"name": "SMART Poll Status"},
+      "disk_temperature_c": {"name": "Temperature"},
+      "disk_power_on_hours": {"name": "Power-on hours"},
+      "disk_percentage_used": {"name": "Percentage used"},
+      "disk_available_spare": {"name": "Available spare"},
+      "disk_reallocated_sectors": {"name": "Reallocated sectors"},
+      "disk_pending_sectors": {"name": "Pending sectors"},
+      "disk_media_errors": {"name": "Media errors"},
+      "disk_seek_error_rate": {"name": "Seek error rate"},
       "zfs_health": {
         "name": "ZFS {pool} Zustand"
       },
@@ -728,6 +739,12 @@
       "node_stressed": {
         "name": "Gestresst"
       }
+    },
+    "select": {"smart_disk_interval": {"name": "SMART interval"},
+      "physical_disk_type": {"name": "Disk type", "state": {"automatic": "Automatic", "hdd": "HDD", "ssd": "SSD", "nvme": "NVMe"}}},
+    "switch": {
+      "smart_disk_monitoring": {"name": "SMART monitoring"},
+      "smart_disk_standby": {"name": "Protect HDD standby"}
     }
   },
   "selector": {"platform_type": {"options": {"pve": "Proxmox VE", "pbs": "Proxmox Backup Server", "cluster": "Proxmox-Cluster", "pdm": "Proxmox Datacenter Manager"}}, "cluster_scope_action": {"options": {"keep": "Mit dem Cluster verbunden bleiben", "independent": "Unabhängig — keine Migration von VM/LXC-Entitäten zwischen Knoten"}}},

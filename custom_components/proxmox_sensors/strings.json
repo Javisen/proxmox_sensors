@@ -163,6 +163,7 @@
           "enable_lm_sensors": "Enable hardware sensors & temperatures",
           "enable_physical_disks": "Enable physical disk monitoring",
           "enable_smart_monitoring": "Enable SMART & NVMe health monitoring",
+          "smart_refresh_interval": "SMART refresh interval (minutes)",
           "enable_node_controls": "Enable node power controls",
           "enable_guest_agent_metrics": "Enable Guest Agent Metrics",
           "enable_backup_progress": "Enable backup progress sensor",
@@ -610,8 +611,18 @@
         "name": "Chipset Temp"
       },
       "disk_size": {
-        "name": "{model} Size"
+        "name": "Capacity"
       },
+      "disk_smart_status": {"name": "SMART health"},
+      "disk_smart_poll_status": {"name": "SMART Poll Status"},
+      "disk_temperature_c": {"name": "Temperature"},
+      "disk_power_on_hours": {"name": "Power-on hours"},
+      "disk_percentage_used": {"name": "Percentage used"},
+      "disk_available_spare": {"name": "Available spare"},
+      "disk_reallocated_sectors": {"name": "Reallocated sectors"},
+      "disk_pending_sectors": {"name": "Pending sectors"},
+      "disk_media_errors": {"name": "Media errors"},
+      "disk_seek_error_rate": {"name": "Seek error rate"},
       "zfs_health": {
         "name": "ZFS {pool}"
       },
@@ -751,6 +762,12 @@
       "node_stressed": {
         "name": "Stressed"
       }
+    },
+    "select": {"smart_disk_interval": {"name": "SMART interval"},
+      "physical_disk_type": {"name": "Disk type", "state": {"automatic": "Automatic", "hdd": "HDD", "ssd": "SSD", "nvme": "NVMe"}}},
+    "switch": {
+      "smart_disk_monitoring": {"name": "SMART monitoring"},
+      "smart_disk_standby": {"name": "Protect HDD standby"}
     }
   },
   "selector": {

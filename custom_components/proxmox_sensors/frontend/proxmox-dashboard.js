@@ -285,6 +285,25 @@ function logicalName(resource, kind, fallback) {
   } catch { /* Optional display name; navigation validates its own identity. */ }
   return readableTitle(resource, fallback);
 }
+function diskDisplayName(resource, detail = false) {
+  try {
+    const parts = JSON.parse(resource.resource_id);
+    if (parts.length === 3 && parts[1] === 'physical_disk') {
+      return readableTitle(resource, 'Disk').replace(/^2\.\s+/, '');
+    }
+  } catch { /* Legacy disk resources use their existing path label. */ }
+  const name = logicalName(resource, 'disks', 'Disk');
+  return detail && !name.startsWith('/dev/') ? `/dev/${name}` : name;
+}
+function diagnosticsDiskName(resource) {
+  try {
+    const parts = JSON.parse(resource.resource_id);
+    if (parts.length === 3 && parts[1] === 'physical_disk') {
+      return readableTitle(resource, 'Disk').replace(/\s+\d+(?:[.,]\d+)?\s+(?:TB|TiB|GB|GiB)\s*$/i, '');
+    }
+  } catch { /* Legacy disk resources keep their current display name. */ }
+  return diskDisplayName(resource);
+}
 function guestName(resource) {
   const title = readableTitle(resource, '—');
   const type = resource.kind === 'ct' ? 'CT' : 'VM';
@@ -378,9 +397,71 @@ function buildNodeHealthBlock(group) {
     + 'dl { grid-template-columns: repeat(5, minmax(0, 1fr)); } @media (max-width: 600px) { dl { grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); } }'
     + css.join('')) : null;
 }
-function buildTemperatureBlock(group) {
+function physicalDiskTemperatureName(group, resource, ref, hass) {
+  if (ref.translation_key !== 'disk_temperature_c' || resource.kind !== 'disks') return null;
+  try {
+    const parts = JSON.parse(resource.resource_id);
+    if (parts.length !== 3 || parts[1] !== 'physical_disk') return null;
+  } catch { return null; }
+  const capacity = (group.blocks.diagnostics || []).find(item => item.resource_id === resource.resource_id)
+    ?.references.find(item => item.metric === 'disks');
+  const attrs = hass.states?.[capacity?.entity_id]?.attributes || {};
+  const generated = String(resource.title || '').match(/^2\.\s+(HDD|SSD|NVME|DISK)\b/i);
+  const kind = String(attrs.Type || generated?.[1] || 'Disk').toLowerCase();
+  const type = {hdd: 'HDD', ssd: 'SSD', nvme: 'NVMe', disk: 'Disk'}[kind] || 'Disk';
+  const bytes = attrs['Raw Capacity (Bytes)'];
+  const titleSize = generated ? String(resource.title).match(/\s+(\d+(?:[.,]\d+)?)\s+TB\s*$/i) : null;
+  const tebibytes = typeof bytes === 'number' && Number.isFinite(bytes) && bytes > 0
+    ? bytes / 1024 ** 4 : titleSize ? Number(titleSize[1].replace(',', '.')) : null;
+  if (tebibytes === null) return type;
+  const locale = hass.locale?.language || hass.language || 'en';
+  const digits = tebibytes >= 0.1 ? 1 : 0;
+  const size = tebibytes >= 0.1 ? tebibytes : tebibytes * 1024;
+  return `${type} ${new Intl.NumberFormat(locale, {minimumFractionDigits: digits,
+    maximumFractionDigits: digits}).format(size)}${tebibytes >= 0.1 ? 'T' : 'G'}`;
+}
+function nvmeTemperaturePairs(group, items, hass) {
+  const nodeByName = new Map(), diskByName = new Map();
+  const add = (map, name, ref) => map.set(name, [...(map.get(name) || []), ref]);
+  for (const {ref} of items) {
+    if (ref.translation_key !== 'hw_nvme_temperature') continue;
+    const name = String(ref.original_name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+    if (name) add(nodeByName, name, ref);
+  }
+  for (const resource of group.blocks.diagnostics || []) {
+    if (resource.kind !== 'disks') continue;
+    try {
+      const parts = JSON.parse(resource.resource_id);
+      if (parts.length !== 3 || parts[1] !== 'physical_disk') continue;
+    } catch { continue; }
+    const capacity = resource.references.find(item => item.metric === 'disks');
+    const attrs = hass.states?.[capacity?.entity_id]?.attributes || {};
+    if (String(attrs.Type || '').toLowerCase() !== 'nvme') continue;
+    const model = String(attrs['SMART Model'] || attrs.Model || '').trim().replace(/\s+/g, ' ');
+    const bytes = Number(attrs['Raw Capacity (Bytes)']);
+    if (!model || !Number.isFinite(bytes) || bytes <= 0) continue;
+    const gib = Math.trunc(Math.round(bytes / 1024 ** 3 * 10) / 10);
+    const temperature = items.find(item => item.resource.resource_id === resource.resource_id
+      && item.ref.translation_key === 'disk_temperature_c')?.ref;
+    add(diskByName, `${model} ${gib}GB`.toLowerCase(), temperature || null);
+  }
+  const nodeToSmart = new Map(), smartToNode = new Map();
+  for (const [name, nodes] of nodeByName) {
+    const disks = diskByName.get(name) || [];
+    if (nodes.length !== 1 || disks.length !== 1 || !disks[0]) continue;
+    nodeToSmart.set(nodes[0].entity_id, disks[0].entity_id);
+    smartToNode.set(disks[0].entity_id, nodes[0].entity_id);
+  }
+  return {nodeToSmart, smartToNode};
+}
+function buildTemperatureBlock(group, hass) {
   const items = blockRefs(group, 'temperatures');
-  return items.length ? pveMarkdown('Temperatures', `<dl>${items.map(({ref}) => {
+  const {nodeToSmart, smartToNode} = nvmeTemperaturePairs(group, items, hass);
+  const names = items.map(({resource, ref}) => physicalDiskTemperatureName(group, resource, ref, hass));
+  const totals = new Map();
+  for (const name of names) if (name) totals.set(name, (totals.get(name) || 0) + 1);
+  const seen = new Map();
+  return items.length ? pveMarkdown('Temperatures', `<dl>${items.map(({ref}, index) => {
     // Integration-owned translation keys identify the measured device, never
     // resource titles, localized names, entity IDs or enumeration order.
     const presentation = new Map([
@@ -388,9 +469,17 @@ function buildTemperatureBlock(group) {
       ['chipset_temp', ['Chipset', 'mdi:chip']],
       ['hw_nvme_temperature', ['NVMe', 'mdi:harddisk']],
     ]).get(ref.translation_key);
-    const [name, deviceIcon] = presentation || [
-      readableTitle({title: ref.name === ref.entity_id ? null : ref.name}, 'Temperature'), 'mdi:thermometer'];
-    return `<div><dt>${text(name)}</dt><dd>${icon(deviceIcon)}<strong>${withUnit(ref)}</strong>${miniPanelLink(ref)}</dd></div>`;
+    const diskName = names[index];
+    const number = diskName ? (seen.get(diskName) || 0) + 1 : 0;
+    if (diskName) seen.set(diskName, number);
+    const [name, deviceIcon] = diskName
+      ? [totals.get(diskName) > 1 ? `${diskName} · ${number}` : diskName, 'mdi:thermometer']
+      : presentation || [readableTitle({title: ref.name === ref.entity_id ? null : ref.name}, 'Temperature'), 'mdi:thermometer'];
+    const row = `<div><dt>${text(name)}</dt><dd>${icon(deviceIcon)}<strong>${withUnit(ref)}</strong>${miniPanelLink(ref)}</dd></div>`;
+    const smart = nodeToSmart.get(ref.entity_id) || (smartToNode.has(ref.entity_id) ? ref.entity_id : null);
+    if (!smart) return row;
+    const valid = `is_number(states(${JSON.stringify(smart)})) and state_attr(${JSON.stringify(smart)}, "SMART Poll Status") == "ok"`;
+    return `{% if ${nodeToSmart.has(ref.entity_id) ? `not (${valid})` : valid} %}${row}{% endif %}`;
   }).join('')}</dl>`, items.map(item => item.ref), 'mdi:thermometer',
     MINI_PANEL_CSS + PVE_TOP_CARD_CSS + PVE_CENTERED_TOP_CARD_CSS) : null;
 }
@@ -461,7 +550,7 @@ function buildNodeInfoBlock(group) {
 }
 const MORE_INFO_ROW_CSS = 'nav > a[title="PVE more-info"] { cursor: pointer; } nav > a[title="PVE more-info"] > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }';
 const moreInfoRow = miniPanelLink;
-function buildDiagnosticsBlock(group) {
+function buildDiagnosticsBlock(group, basePath, diskPaths, sidecarPath) {
   const temperatures = new Set(blockRefs(group, 'temperatures').map(({ref}) => ref.entity_id)), seen = new Set();
   const items = blockRefs(group, 'diagnostics').filter(({resource, ref}) => {
     if (!['sidecar', 'zfs', 'disks'].includes(ref.metric) || temperatures.has(ref.entity_id)) return false;
@@ -471,11 +560,17 @@ function buildDiagnosticsBlock(group) {
     return true;
   });
   return rowsCard('Diagnostics', items.map(({resource, ref}) => {
-    const title = ref.metric === 'sidecar' ? 'Sidecar' : ref.metric === 'zfs' ? `ZFS · ${logicalName(resource, 'zfs', 'Pool')}` : logicalName(resource, 'disks', 'Disk');
-    return moreInfoRow(ref, `${icon(ref.metric === 'disks' ? 'mdi:harddisk' : ref.metric === 'zfs' ? 'mdi:database-check' : 'mdi:connection')}<span>${text(title)}</span><span>${ref.metric === 'disks' ? withUnit(ref) : statusValue(ref)}</span>`);
-  }), items.map(item => item.ref), 'mdi:tools', MORE_INFO_ROW_CSS);
+    const title = ref.metric === 'sidecar' ? 'Sidecar' : ref.metric === 'zfs' ? `ZFS · ${logicalName(resource, 'zfs', 'Pool')}` : diagnosticsDiskName(resource);
+    const content = `${icon(ref.metric === 'disks' ? 'mdi:harddisk' : ref.metric === 'zfs' ? 'mdi:database-check' : 'mdi:connection')}<span>${text(title)}</span><span>${ref.metric === 'disks' ? withUnit(ref) : statusValue(ref)}</span>`;
+    return ref.metric === 'sidecar' && sidecarPath
+      ? `<a title="Sidecar" href="${basePath}/${sidecarPath}">${content}${chevron}</a>`
+      : ref.metric === 'disks' && diskPaths?.has(resource.resource_id)
+      ? `<a title="Disk" href="${basePath}/${diskPaths.get(resource.resource_id)}">${content}${chevron}</a>`
+      : moreInfoRow(ref, content);
+  }), items.map(item => item.ref), 'mdi:tools', MORE_INFO_ROW_CSS
+    + 'nav > a[title="Disk"], nav > a[title="Sidecar"] { grid-template-columns: 24px minmax(0, 1fr) auto 16px; }');
 }
-function buildPveNodeView(group, opts, basePath) {
+function buildPveNodeView(group, opts, basePath, diskPaths, sidecarPath, hass) {
 
   const sections = [
     {
@@ -487,13 +582,13 @@ function buildPveNodeView(group, opts, basePath) {
 
   const topCards = [
     buildNodeHealthBlock(group),
-    buildTemperatureBlock(group),
+    buildTemperatureBlock(group, hass),
     buildNodeInfoBlock(group),
   ];
   const lowerSections = [
     [
       buildStorageSummaryBlock(group, basePath),
-      opts.show_diagnostics ? buildDiagnosticsBlock(group) : null,
+      opts.show_diagnostics ? buildDiagnosticsBlock(group, basePath, diskPaths, sidecarPath) : null,
       buildReplicationBlock(group, basePath),
     ],
     [
@@ -519,6 +614,142 @@ function buildPveNodeView(group, opts, basePath) {
     max_columns: 3,
     sections
   });
+}
+
+function sidecarSubviewPath(group) {
+  return `pve-sidecar-${encodePathPart(group.entry_id)}`;
+}
+
+function hardwareCategory(ref, hass) {
+  const attrs = hass.states?.[ref.entity_id]?.attributes || {};
+  const deviceClass = String(attrs.device_class || ref.device_class || '').toLowerCase();
+  const unit = String(attrs.unit_of_measurement || ref.unit || '').toLowerCase();
+  if (deviceClass === 'temperature' || ['°c', '°f'].includes(unit)) return 'Temperatures';
+  if (unit === 'rpm' || deviceClass === 'fan') return 'Fans';
+  if (deviceClass === 'voltage' || ['v', 'mv'].includes(unit)) return 'Voltages';
+  if (['power', 'energy'].includes(deviceClass) || ['w', 'kw', 'wh', 'kwh'].includes(unit)) return 'Power and consumption';
+  return 'Other hardware';
+}
+
+function hardwareName(resource, ref, group, hass) {
+  const friendly = hass.states?.[ref.entity_id]?.attributes?.friendly_name;
+  const candidate = typeof friendly === 'string' && friendly.trim() ? friendly
+    : ref.name && ref.name !== ref.entity_id ? ref.name : readableTitle(resource, ref.entity_id);
+  const node = String(group.node || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const nodePrefix = node ? new RegExp(`^(?:\\d+\\.\\s*)?Node:\\s*${node}(?=\\s|[·:|-]|$)\\s*[·:|-]?\\s*`, 'i') : /^$/;
+  const bareNode = node ? new RegExp(`^${node}(?=\\s|[·:|-]|$)\\s*[·:|-]?\\s*`, 'i') : /^$/;
+  return candidate.replace(/^Proxmox Extended Sensors\s*[·:|-]?\s*/i, '')
+    .replace(nodePrefix, '')
+    .replace(/^\d+\.\s*(?:Hardware|Sensors):\s*/i, '')
+    .replace(bareNode, '').trim() || candidate.trim();
+}
+
+function sidecarDetailCard(group, hass) {
+  const sidecar = blockRefs(group, 'diagnostics').find(({ref}) => ref.metric === 'sidecar')?.ref;
+  const seen = new Set();
+  const hardware = [...blockRefs(group, 'temperatures'), ...blockRefs(group, 'diagnostics')]
+    .filter(({ref}) => ref.metric === 'temperature' || ref.metric === 'hardware')
+    .filter(({ref}) => !seen.has(ref.entity_id) && seen.add(ref.entity_id));
+  const names = hardware.map(({resource, ref}) => hardwareName(resource, ref, group, hass));
+  const nameCounts = new Map();
+  for (const name of names) nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+  const categories = ['Temperatures', 'Fans', 'Voltages', 'Power and consumption', 'Other hardware'];
+  const groups = new Map(categories.map(category => [category, []]));
+  for (let index = 0; index < hardware.length; index++) {
+    const item = hardware[index];
+    const name = names[index];
+    groups.get(hardwareCategory(item.ref, hass)).push({...item,
+      name: nameCounts.get(name) > 1 ? `${name} · ${item.ref.entity_id}` : name});
+  }
+  const available = ref => `(states(${JSON.stringify(ref.entity_id)}) | lower) not in ['unknown', 'unavailable', 'none', '']`;
+  const sections = categories.map(category => {
+    const items = groups.get(category);
+    if (!items.length) return '';
+    const rows = items.map(({name, ref}) => {
+      const id = JSON.stringify(ref.entity_id);
+      return `{% if ${available(ref)} %}<article>${icon('mdi:chevron-right')}<span>${text(name)}</span><span>{{ states(${id}) | e }}{% set unit = state_attr(${id}, 'unit_of_measurement') %}{% if unit %} {{ unit | e }}{% endif %}</span></article>{% endif %}`;
+    }).join('');
+    return `{% if ${items.map(({ref}) => available(ref)).join(' or ')} %}<h3>${category}</h3><nav>${rows}</nav>{% endif %}`;
+  }).join('');
+  const status = sidecar ? `<h3>Sidecar</h3><nav><article>${icon('mdi:connection')}<span>Status</span><span>${statusValue(sidecar)}</span></article></nav>` : '';
+  return pveMarkdown('Hardware Monitoring', `<p><strong>Node ${text(group.node || group.entry_id)}</strong></p>${status}${sections}`,
+    [...(sidecar ? [sidecar] : []), ...hardware.map(({ref}) => ref)], 'mdi:chip',
+    `section { min-height: 0; } section > p { color: #b7c2cc; margin: 0 0 18px; overflow-wrap: anywhere; }
+      section > h3 { color: #fff; font-size: 1.1em; margin: 20px 0 10px; }
+      section > nav > article { grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1fr); }
+      section > nav > article > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+      @media (max-width: 600px) { section > nav > article { grid-template-columns: 20px minmax(0, 1fr); }
+        section > nav > article > span:last-child { grid-column: 2; text-align: left; } }`);
+}
+
+function diskSerial(ref, hass) {
+  const attrs = hass.states?.[ref.entity_id]?.attributes || {};
+  const serial = [attrs.Serial, attrs['SMART Serial']].find(value =>
+    typeof value === 'string' && value.trim() && !['n/a', 'unknown', 'none'].includes(value.trim().toLowerCase()));
+  return serial?.trim() || null;
+}
+
+function diskSubviewPaths(group, hass) {
+  const disks = blockRefs(group, 'diagnostics').filter(({ref}) => ref.metric === 'disks');
+  const serials = disks.map(({ref}) => diskSerial(ref, hass));
+  const counts = new Map();
+  for (const serial of serials) if (serial) counts.set(serial, (counts.get(serial) || 0) + 1);
+  const paths = new Map();
+  for (const {resource, ref} of disks) {
+    const serial = diskSerial(ref, hass);
+    const identity = serial && counts.get(serial) === 1 ? `serial-${serial}` : `resource-${resource.resource_id}`;
+    paths.set(resource.resource_id, `pve-disk-${encodePathPart(group.entry_id)}-${encodePathPart(identity)}`);
+  }
+  return paths;
+}
+
+function diskDetailCard(group, resource, ref) {
+  const id = JSON.stringify(ref.entity_id);
+  const attr = key => `state_attr(${id}, ${JSON.stringify(key)})`;
+  const present = value => `(${value} is not none and (${value} | string | trim | lower) not in ['', 'n/a', 'unknown', 'unavailable', 'none'])`;
+  const preferred = (first, second) => `(${attr(first)} if ${present(attr(first))} else ${attr(second)})`;
+  const capacity = `(${attr('Capacity')} if ${present(attr('Capacity'))} else (states(${id}) ~ ' ' ~ ${attr('unit_of_measurement')} if is_number(states(${id})) and states(${id}) | float > 0 and ${present(attr('unit_of_measurement'))} else none))`;
+  const groups = [
+    ['Identification', [
+      ['Model', preferred('SMART Model', 'Model')], ['Capacity', capacity],
+      ['Serial', preferred('SMART Serial', 'Serial')], ['Firmware', attr('Firmware')],
+      ['Type', attr('Type')], ['Device Type', attr('Device Type')],
+    ]],
+    ['Health', [
+      ['Health Status', attr('Health Status')], ['Disk Health', attr('Disk Health')],
+      ['Health Score', attr('Health Score')], ['Temperature', attr('Temperature')],
+      ['Percentage Used (%)', attr('Percentage Used (%)')],
+      ['Available Spare (%)', attr('Available Spare (%)')],
+      ['Available Spare Threshold (%)', attr('Available Spare Threshold (%)')],
+      ['Critical Warning', attr('Critical Warning')],
+    ]],
+    ['Activity and lifetime', [
+      ['Data Read (TB)', attr('Data Read (TB)')], ['Data Written (TB)', attr('Data Written (TB)')],
+      ['Power On Hours', attr('Power On Hours')], ['Controller Busy Time (min)', attr('Controller Busy Time (min)')],
+      ['Age', attr('Age')],
+    ]],
+    ['Other SMART data', [
+      ['Media Errors', attr('Media Errors')], ['Reallocated Sectors', attr('Reallocated Sectors')],
+      ['Pending Sectors', attr('Pending Sectors')], ['Uncorrectable Errors', attr('Uncorrectable Errors')],
+      ['Spin Retry Count', attr('Spin Retry Count')], ['Seek Error Rate', attr('Seek Error Rate')],
+      ['Error Log Entries', attr('Error Log Entries')], ['Host Read Commands', attr('Host Read Commands')],
+      ['Host Write Commands', attr('Host Write Commands')], ['Data Units Read', attr('Data Units Read')],
+      ['Data Units Written', attr('Data Units Written')], ['Warning Temp Time', attr('Warning Temp Time')],
+      ['Critical Temp Time', attr('Critical Temp Time')],
+    ]],
+  ];
+  const content = groups.map(([title, fields]) => {
+    const rows = fields.map(([label, value]) => `{% set disk_value = ${value} %}{% if ${present('disk_value')} %}<article>${icon('mdi:chevron-right')}<span>${label}</span><span>{{ disk_value | e }}</span></article>{% endif %}`).join('');
+    return `{% if ${fields.map(([, value]) => present(value)).join(' or ')} %}<h3>${title}</h3><nav>${rows}</nav>{% endif %}`;
+  }).join('');
+  const name = diskDisplayName(resource, true);
+  return pveMarkdown('SMART', `<p><strong>${text(name)}</strong> · Node ${text(group.node || group.entry_id)}</p>${content}`,
+    [ref], 'mdi:harddisk', `section { min-height: 0; } section > p { color: #b7c2cc; margin: 0 0 18px; overflow-wrap: anywhere; }
+      section > h3 { color: #fff; font-size: 1.1em; margin: 20px 0 10px; }
+      section > nav > article { grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1fr); }
+      section > nav > article > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+      @media (max-width: 600px) { section > nav > article { grid-template-columns: 20px minmax(0, 1fr); }
+        section > nav > article > span:last-child { grid-column: 2; text-align: left; } }`);
 }
 
 function guestDetailCards(resource, block, layout, opts, hass) {
@@ -551,7 +782,7 @@ const pdmMapNumber = (ref, key, unit = '', digits = 2) =>
   `{% set data = ${expression(ref)} %}{% set n = data.get(${JSON.stringify(key)}) if data is mapping else none %}{% if is_number(n) %}{{ n | float | round(${digits}) }}${unit}{% else %}—{% endif %}`;
 const pdmMapPercent = ref => pdmMapNumber(ref, 'used_percent', ' %');
 const pdmMapFill = (ref, key = 'used_percent') =>
-  `{% set data = ${expression(ref)} %}{% set n = data.get(${JSON.stringify(key)}) if data is mapping else none %}{{ ([0, [100, n | float] | min] | max) * 2.7 if is_number(n) else 0 }}`;
+  `{% set data = ${expression(ref)} %}{% set n = data.get(${JSON.stringify(key)}) if data is mapping else none %}{{ ([0, [100, n | float] | min] | max) if is_number(n) else 0 }}`;
 const PDM_COMPACT_CSS = `section { min-height: 0; }
   section > header { margin-bottom: 12px; }
   dl > div { gap: 8px; padding: 10px 6px; }
@@ -907,7 +1138,24 @@ export function generateDashboard(payload, config = {}, basePath = null, hass = 
           styled({type: "heading", heading: `${groupTitle} · ${block.title}`, icon: block.icon,
             heading_style: "title"}, layout, "header_card"), ...cards]});
       }
-      if (family === "pve") views.push(buildPveNodeView(group, opts, basePath));
+      if (family === "pve") {
+        const diskPaths = opts.show_diagnostics ? diskSubviewPaths(group, hass) : new Map();
+        const sidecar = opts.show_diagnostics && blockRefs(group, 'diagnostics').some(({ref}) => ref.metric === 'sidecar');
+        const sidecarPath = sidecar ? sidecarSubviewPath(group) : null;
+        if ((diskPaths.size || sidecarPath) && !basePath) throw new Error("Open this strategy in its Lovelace dashboard to resolve subview navigation");
+        if (sidecarPath) subviews.set(sidecarPath, darkView({title: `${group.node || group.entry_id} · Hardware Monitoring`,
+          path: sidecarPath, type: 'sections', subview: true, back_path: `${basePath}/${mainPath}`, max_columns: 3,
+          sections: [{type: 'grid', cards: [sidecarDetailCard(group, hass)]}]}));
+        for (const {resource, ref} of blockRefs(group, 'diagnostics')) {
+          if (ref.metric !== 'disks') continue;
+          const path = diskPaths.get(resource.resource_id);
+          if (!path || subviews.has(path)) continue;
+          subviews.set(path, darkView({title: diskDisplayName(resource, true),
+            path, type: 'sections', subview: true, back_path: `${basePath}/${mainPath}`, max_columns: 3,
+            sections: [{type: 'grid', cards: [diskDetailCard(group, resource, ref)]}]}));
+        }
+        views.push(buildPveNodeView(group, opts, basePath, diskPaths, sidecarPath, hass));
+      }
     }
   }
   // A valid native empty view provides feedback without inventing resource data.
