@@ -8,7 +8,7 @@
       "active": true,
       "status": "testing",
       "progress": null,
-      "title": "Enhanced Physical Disks & SMART Dashboard",
+      "title": "Enhanced Physical Disks and SMART Dashboard",
       "message": "Major improvements to physical disk monitoring in Home Assistant. Each disk now has its own device with detailed SMART metrics, health status, temperature, wear indicators and disk-specific controls. The dashboard includes clearer disk identification, improved temperature displays and enhanced storage diagnostics.",
       "es": {
         "title": "Mejoras de discos físicos y dashboard SMART",
