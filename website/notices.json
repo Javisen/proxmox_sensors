@@ -1,37 +1,38 @@
 
+
 {
   "notices": [
     {
       "id": "development-v5.2.2",
       "active": true,
       "level": "info",
-      "title": "V5.2.2 in Development: Enhanced SMART Monitoring",
-      "message": "We're working on version 5.2.2! Planned improvements include a configurable SMART refresh interval in the PVE integration options, optimized sidecar data collection to reduce unnecessary disk queries, and an enhanced dashboard with more detailed SMART information. These features are currently in development and are not yet available in a stable release.",
+      "title": "V5.2.2 in Development: Major Physical Disks Upgrade",
+      "message": "Proxmox Extended Sensors V5.2.2 is nearing completion! This update brings a major redesign of physical disk monitoring, with independent Home Assistant devices for each disk, detailed SMART metrics, improved NVMe support, individual monitoring controls and enhanced disk diagnostics. Final testing is underway before the stable release.",
       "es": {
-        "title": "V5.2.2 en desarrollo: monitorización SMART mejorada",
-        "message": "¡Estamos trabajando en la versión 5.2.2! Entre las mejoras previstas se incluyen un intervalo de actualización SMART configurable desde las opciones de la integración PVE, optimización del sidecar para reducir consultas innecesarias a los discos y un dashboard ampliado con información SMART más detallada. Estas funciones siguen en desarrollo y todavía no están disponibles en una versión estable."
+        "title": "V5.2.2 en desarrollo: gran renovación de discos físicos",
+        "message": "¡Proxmox Extended Sensors V5.2.2 está cerca de completarse! Esta actualización incorpora una importante renovación de la monitorización de discos físicos, con dispositivos independientes en Home Assistant, métricas SMART detalladas, mejoras en el soporte NVMe, controles individuales y diagnósticos más completos. Estamos realizando las últimas pruebas antes de publicar la versión estable."
       }
     },
     {
-      "id": "release-v5.2.1",
+      "id": "v5.2.2-individual-smart",
       "active": true,
       "level": "info",
-      "title": "Proxmox Extended Sensors V5.2.1 Released!",
-      "message": "Version 5.2.1 is available! This release includes LSI/Broadcom SAS HBA temperature monitoring, improved VM disk usage detection for Windows and read-only root filesystems, VM/LXC migration fixes, and enhanced stability.",
+      "title": "New: Individual SMART Monitoring for Every Disk",
+      "message": "Each physical disk now has its own SMART monitoring controls. Enable or disable monitoring individually, configure polling intervals, protect HDD standby and automatically detect or manually select HDD, SSD or NVMe disk types. The optimized Proxmox sidecar provides more efficient disk queries and improved SMART data handling.",
       "es": {
-        "title": "¡Proxmox Extended Sensors V5.2.1 disponible!",
-        "message": "¡La versión 5.2.1 ya está disponible! Incorpora monitorización de temperatura de controladoras SAS LSI/Broadcom, mejoras en la detección del uso de disco de las VM Windows y sistemas con raíz de solo lectura, correcciones en las migraciones VM/LXC y mayor estabilidad."
+        "title": "Novedad: monitorización SMART individual por disco",
+        "message": "Cada disco físico dispone ahora de sus propios controles SMART. Es posible activar o desactivar su monitorización individualmente, configurar intervalos de consulta, proteger el reposo de los HDD y detectar automáticamente o seleccionar manualmente el tipo HDD, SSD o NVMe. El sidecar de Proxmox se ha optimizado para realizar consultas más eficientes y mejorar el tratamiento de los datos SMART."
       }
     },
     {
-      "id": "release-light-dashboard",
+      "id": "v5.2.2-dashboard-improvements",
       "active": true,
       "level": "info",
-      "title": "Dashboard with Light and Dark Theme Support!",
-      "message": "Version 5.2.1 introduced a revamped dashboard with a fresh light design, white cards, Proxmox orange accents, and automatic adaptation to your Home Assistant theme, while preserving the original dark design.",
+      "title": "V5.2.2: Enhanced Dashboard and Storage Diagnostics",
+      "message": "The dashboard receives further improvements with clearer physical disk identification, detailed SMART information, better temperature displays, NVMe temperature deduplication and corrected Proxmox Datacenter Manager storage usage bars. These refinements make monitoring more intuitive while preserving light and dark theme compatibility.",
       "es": {
-        "title": "¡Dashboard compatible con temas claros y oscuros!",
-        "message": "La versión 5.2.1 incorporó un dashboard renovado con diseño claro, tarjetas blancas, detalles en naranja Proxmox y adaptación automática al tema de Home Assistant, conservando el diseño oscuro original."
+        "title": "V5.2.2: mejoras del dashboard y diagnósticos de almacenamiento",
+        "message": "El dashboard incorpora nuevas mejoras en la identificación de discos físicos, información SMART detallada, presentación de temperaturas, eliminación de temperaturas NVMe duplicadas y corrección de las barras de uso de almacenamiento de Proxmox Datacenter Manager. Estos ajustes facilitan la monitorización y mantienen la compatibilidad con los temas claros y oscuros."
       }
     }
   ]
