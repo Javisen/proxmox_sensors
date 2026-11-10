@@ -6,7 +6,7 @@
     {
       "id": "smart-dashboard-improvements",
       "active": true,
-      "status": "development",
+      "status": "testing",
       "progress": null,
       "title": "Enhanced SMART Dashboard",
       "message": "Improving the Proxmox dashboard with more detailed SMART disk information, including health status, temperature, wear indicators and available disk metrics. The goal is to provide clearer storage monitoring directly from Home Assistant.",
