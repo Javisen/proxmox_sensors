@@ -18,7 +18,7 @@
     {
       "id": "sidecar-smart-optimization",
       "active": true,
-      "status": "development",
+      "status": "completed",
       "progress": null,
       "title": "Sidecar SMART Performance Optimization",
       "message": "Optimizing SMART data collection in the Proxmox sidecar to reduce unnecessary smartctl executions and avoid blocking other sensor requests. Evaluating caching and more efficient collection while preserving existing sensor compatibility.",
@@ -30,7 +30,7 @@
     {
       "id": "smart-refresh-interval",
       "active": true,
-      "status": "development",
+      "status": "completed",
       "progress": null,
       "title": "Configurable SMART Refresh Interval",
       "message": "Adding a configurable SMART polling interval to the PVE integration options, independent of the general Proxmox refresh cycle. Planned intervals range from 1 to 60 minutes, allowing users to reduce unnecessary disk queries while keeping other monitoring data updated normally.",
