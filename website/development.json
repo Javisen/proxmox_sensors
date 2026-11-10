@@ -6,7 +6,7 @@
     {
       "id": "smart-dashboard-improvements",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "Enhanced Physical Disks and SMART Dashboard",
       "message": "Major improvements to physical disk monitoring in Home Assistant. Each disk now has its own device with detailed SMART metrics, health status, temperature, wear indicators and disk-specific controls. The dashboard includes clearer disk identification, improved temperature displays and enhanced storage diagnostics.",
@@ -18,7 +18,7 @@
     {
       "id": "individual-smart-control",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "Individual SMART Monitoring and Disk Controls",
       "message": "Introducing independent SMART monitoring controls for each physical disk, including enable/disable switches, configurable polling intervals, HDD standby protection and automatic or manual HDD/SSD/NVMe classification. Disk settings are preserved independently, allowing users to optimize monitoring without unnecessary disk activity.",
