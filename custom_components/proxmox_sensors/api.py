@@ -354,6 +354,97 @@ class ProxmoxClient:
             return []
         return disks
 
+    async def get_sidecar_disks_http(
+        self, hass, node: str, raise_errors: bool = False
+    ):
+        url = f"http://{self._host}:9000/disks"
+
+        def _fetch():
+            try:
+                response = requests.get(url, timeout=9)
+                if getattr(response, "status_code", None) == 404:
+                    return None
+                response.raise_for_status()
+                disks = response.json()
+                if not isinstance(disks, list):
+                    raise ValueError("sidecar disk inventory is malformed")
+                paths = []
+                identities = {"wwn": [], "serial": []}
+                for disk in disks:
+                    if not isinstance(disk, dict):
+                        raise ValueError("sidecar disk inventory is malformed")
+                    disk_path = disk.get("devpath")
+                    identity_keys = {}
+                    for kind in ("wwn", "serial"):
+                        raw_identity = disk.get(kind)
+                        if not isinstance(raw_identity, str):
+                            identity_keys[kind] = None
+                            continue
+                        cleaned_identity = raw_identity.strip()
+                        alphanumeric_identity = "".join(
+                            char for char in cleaned_identity.casefold().removeprefix("0x")
+                            if char.isalnum()
+                        )
+                        key = (
+                            alphanumeric_identity
+                            if kind == "wwn" else cleaned_identity.casefold()
+                        )
+                        identity_keys[kind] = (
+                            key
+                            if alphanumeric_identity not in (
+                                "", "unknown", "none", "null", "na", "notavailable",
+                                "notspecified", "tobefilledbyoem", "serialnumber",
+                                "123456789", "0",
+                            )
+                            and key and not all(char == "0" for char in alphanumeric_identity)
+                            else None
+                        )
+                    size = disk.get("size")
+                    suffix = (
+                        disk_path.removeprefix("/dev/ssacli-")
+                        if isinstance(disk_path, str) else ""
+                    )
+                    selector_parts = (
+                        suffix.removeprefix("slot-").split("-pd-", 1)
+                        if suffix.startswith("slot-") else []
+                    )
+                    valid_selector = (
+                        len(selector_parts) == 2
+                        and all(part and not part.startswith("-")
+                                and not part.endswith("-") for part in selector_parts)
+                        and "--" not in suffix
+                        and all(char.isascii()
+                                and (char.islower() or char.isdigit() or char == "-")
+                                for char in suffix)
+                    )
+                    valid_identity = any(identity_keys.values())
+                    valid_schema = (
+                        disk.get("device_type") == "ssacli"
+                        and disk.get("health_source") == "ssacli"
+                        and isinstance(disk.get("status"), str)
+                        and type(disk.get("controller_health_passed")) is bool
+                        and disk.get("exposed_to_os") is False
+                    )
+                    if (not valid_selector or not valid_identity or not valid_schema
+                            or isinstance(size, bool)
+                            or not isinstance(size, (int, float))
+                            or not 0 < size < 10**18):
+                        raise ValueError("sidecar disk inventory is malformed")
+                    paths.append(disk_path)
+                    for kind, key in identity_keys.items():
+                        if key:
+                            identities[kind].append(key)
+                if (len(set(paths)) != len(paths)
+                        or any(len(values) != len(set(values)) for values in identities.values())):
+                    raise ValueError("sidecar disk inventory is malformed")
+                return disks
+            except Exception:
+                if raise_errors:
+                    raise
+                return []
+
+        return await hass.async_add_executor_job(_fetch)
+
     async def control_vm(self, hass, node: str, vmid: str, command: str):
         valid_vm_commands = [
             "start",
@@ -478,6 +569,8 @@ class ProxmoxClient:
                 if not isinstance(payload, dict) or payload.get("status") not in (
                     "ok", "standby", "unsupported", "error"
                 ):
+                    raise ValueError("Invalid per-disk SMART response")
+                if payload["status"] == "ok" and not isinstance(payload.get("data"), dict):
                     raise ValueError("Invalid per-disk SMART response")
                 return payload
             except Exception:

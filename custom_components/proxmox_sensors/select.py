@@ -1,4 +1,4 @@
-"""Per-physical-disk SMART interval controls."""
+"""Per-physical-disk monitoring interval controls."""
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
@@ -6,6 +6,7 @@ from homeassistant.const import EntityCategory
 from .const import DOMAIN
 from .logic.disk_smart import INTERVALS, preferences, with_preference
 from .logic.physical_disk_type import TYPE_OPTIONS, selected_type, with_type
+from .logic.physical_disk_metrics import controller_health_source
 
 
 class PhysicalDiskSmartIntervalSelect(SelectEntity):
@@ -15,11 +16,14 @@ class PhysicalDiskSmartIntervalSelect(SelectEntity):
     _attr_translation_key = "smart_disk_interval"
     _attr_options = ["inherit", *(str(minutes) for minutes in INTERVALS)]
 
-    def __init__(self, hass, entry, coordinator, identifier):
+    def __init__(self, hass, entry, coordinator, identifier, controller_reported=False):
         self.hass = hass
         self.entry = entry
         self.coordinator = coordinator
         self.identifier = identifier
+        if controller_reported:
+            self._attr_name = "Controller polling interval"
+            self._attr_translation_key = None
         self._attr_unique_id = f"{identifier}_smart_interval"
         self._attr_device_info = {"identifiers": {(DOMAIN, identifier)}}
 
@@ -33,7 +37,7 @@ class PhysicalDiskSmartIntervalSelect(SelectEntity):
     async def async_select_option(self, option):
         value = "inherit" if option == "inherit" else int(option)
         if option not in self.options:
-            raise ValueError("Invalid SMART interval")
+            raise ValueError("Invalid monitoring interval")
         self.hass.config_entries.async_update_entry(
             self.entry,
             options=with_preference(self.entry.options, self.identifier, "interval", value),
@@ -80,11 +84,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
     added = set()
 
     def sync():
-        for identifier in runtime.get("physical_disk_ids", {}).values():
+        for path, identifier in runtime.get("physical_disk_ids", {}).items():
             if identifier not in added:
                 added.add(identifier)
+                disk = coordinator.data.get("disks", {}).get(path, {})
                 async_add_entities([
-                    PhysicalDiskSmartIntervalSelect(hass, entry, coordinator, identifier),
+                    PhysicalDiskSmartIntervalSelect(
+                        hass, entry, coordinator, identifier,
+                        controller_reported=controller_health_source(disk),
+                    ),
                     PhysicalDiskTypeSelect(hass, entry, identifier),
                 ])
 
