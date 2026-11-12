@@ -247,7 +247,27 @@ class Handler(BaseHTTPRequestHandler):
                 status = "standby" if result.returncode == 3 else "unsupported"
                 self._send_json_response(json.dumps({"status": status}))
                 return
-            raw = json.loads(result.stdout)
+            try:
+                raw = json.loads(result.stdout)
+            except ValueError:
+                raw = None
+            smartctl_info = raw.get("smartctl") if isinstance(raw, dict) else None
+            messages = smartctl_info.get("messages") if isinstance(smartctl_info, dict) else None
+            unknown_usb_bridge = "Unknown USB bridge" in (result.stderr or "") or any(
+                isinstance(message, dict) and isinstance(message.get("string"), str)
+                and "Unknown USB bridge" in message["string"]
+                for message in (messages if isinstance(messages, list) else [])
+            )
+            if result.returncode and unknown_usb_bridge and not (
+                isinstance(raw, dict) and isinstance(raw.get("smart_status"), dict)
+            ):
+                sat_command = command[:-3] + ["-d", "sat"] + command[-3:]
+                result = subprocess.run(sat_command, capture_output=True, text=True, timeout=7)
+                if protect == ["1"] and result.returncode in (3, 5):
+                    status = "standby" if result.returncode == 3 else "unsupported"
+                    self._send_json_response(json.dumps({"status": status}))
+                    return
+                raw = json.loads(result.stdout)
             if (not isinstance(raw, dict)
                     or not isinstance(raw.get("smart_status"), dict)
                     or type(raw["smart_status"].get("passed")) is not bool):
