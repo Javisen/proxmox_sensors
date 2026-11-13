@@ -1,6 +1,5 @@
 """Sensors PBS for Proxmox Extended Sensors."""
 
-from datetime import datetime, timezone
 import math
 import time
 
@@ -24,7 +23,8 @@ def extract_store_from_task(task):
 
 
 def _format_utc_timestamp(ts):
-    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m/%Y %H:%M:%S")
+    """Convert UTC PBS timestamps into Home Assistant local time."""
+    return dt_util.as_local(dt_util.utc_from_timestamp(ts)).strftime("%d/%m/%Y %H:%M:%S")
 
 
 def _pbs_node_status(coordinator):
