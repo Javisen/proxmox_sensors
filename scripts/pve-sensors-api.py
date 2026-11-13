@@ -235,12 +235,29 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_response("Invalid block device path")
             return
         try:
-            if not stat.S_ISBLK(os.stat(path).st_mode):
+            device_stat = os.stat(path)
+            if not stat.S_ISBLK(device_stat.st_mode):
                 self._send_error_response("Path is not a block device")
                 return
+            use_sat = False
+            try:
+                sysfs_device = Path(
+                    f"/sys/dev/block/{os.major(device_stat.st_rdev)}:{os.minor(device_stat.st_rdev)}"
+                ).resolve(strict=True)
+                for parent in (sysfs_device, *sysfs_device.parents):
+                    vendor = parent / "idVendor"
+                    product = parent / "idProduct"
+                    if vendor.is_file() and product.is_file():
+                        use_sat = (vendor.read_text(encoding="ascii").strip().lower() == "0bda"
+                                   and product.read_text(encoding="ascii").strip().lower() == "9201")
+                        break
+            except (OSError, RuntimeError):
+                pass
             command = ["smartctl"]
             if protect == ["1"]:
                 command.extend(("-n", "standby,3,5"))
+            if use_sat:
+                command.extend(("-d", "sat"))
             command.extend(("-a", "-j", path))
             result = subprocess.run(command, capture_output=True, text=True, timeout=7)
             if protect == ["1"] and result.returncode in (3, 5):
@@ -258,7 +275,7 @@ class Handler(BaseHTTPRequestHandler):
                 and "Unknown USB bridge" in message["string"]
                 for message in (messages if isinstance(messages, list) else [])
             )
-            if result.returncode and unknown_usb_bridge and not (
+            if not use_sat and result.returncode and unknown_usb_bridge and not (
                 isinstance(raw, dict) and isinstance(raw.get("smart_status"), dict)
             ):
                 sat_command = command[:-3] + ["-d", "sat"] + command[-3:]
