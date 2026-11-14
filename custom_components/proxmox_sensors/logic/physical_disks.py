@@ -11,6 +11,10 @@ INVALID = {
     "", "unknown", "none", "null", "n/a", "na", "not available",
     "not specified", "to be filled by o.e.m.", "serialnumber", "123456789",
 }
+INVALID_CANONICAL = {
+    "", "unknown", "none", "null", "na", "notavailable", "notspecified",
+    "tobefilledbyoem", "serialnumber", "123456789",
+}
 
 
 class DiskIdentityError(ValueError):
@@ -22,11 +26,74 @@ def hardware_value(value):
         return None
     cleaned = value.strip()
     candidate = cleaned.removeprefix("0x").removeprefix("0X")
-    if (cleaned.casefold() in INVALID or not candidate
-            or re.fullmatch(r"0+", candidate)
-            or not any(c.isalnum() for c in candidate)):
+    normalized = re.sub(r"[^a-z0-9]", "", candidate.casefold())
+    if (cleaned.casefold() in INVALID or normalized in INVALID_CANONICAL
+            or not normalized
+            or re.fullmatch(r"0+", normalized)
+            or not any(c.isalnum() for c in normalized)):
         return None
     return cleaned
+
+
+def _hardware_key(kind, value):
+    value = hardware_value(value)
+    if value is None:
+        return None
+    if kind == "wwn":
+        return re.sub(r"[^a-z0-9]", "", value.casefold().removeprefix("0x"))
+    return value.casefold()
+
+
+def matching_hardware_identity(expected, observed):
+    """Require one matching shared identifier and reject any shared conflict."""
+    if not isinstance(expected, dict) or not isinstance(observed, dict):
+        return False
+    matched = False
+    for kind in ("wwn", "serial"):
+        left = _hardware_key(kind, expected.get(kind))
+        right = _hardware_key(kind, observed.get(kind))
+        if left is None or right is None:
+            continue
+        if left != right:
+            return False
+        matched = True
+    return matched
+
+
+def merge_disk_inventories(pve_disks, sidecar_disks):
+    """Combine validated PVE and controller-backed disk inventories."""
+    if not isinstance(pve_disks, list) or not isinstance(sidecar_disks, list):
+        raise DiskIdentityError("Invalid disk inventory")
+    if any(not isinstance(disk, dict) for disk in (*pve_disks, *sidecar_disks)):
+        raise DiskIdentityError("Invalid disk inventory record")
+    merged = [dict(disk) for disk in (*pve_disks, *sidecar_disks)]
+    paths = [disk.get("devpath") for disk in merged]
+    identities = [
+        {kind: _hardware_key(kind, disk.get(kind)) for kind in ("wwn", "serial")}
+        for disk in merged
+    ]
+    if (any(not isinstance(path, str) or not path.startswith("/dev/") for path in paths)
+            or any(not any(identity.values()) for identity in identities)
+            or len(set(paths)) != len(paths)
+            or any(
+                len(values) != len(set(values))
+                for kind in ("wwn", "serial")
+                if (values := [identity[kind] for identity in identities if identity[kind]])
+            )):
+        raise DiskIdentityError("Disk inventories overlap or lack identity")
+    return merged
+
+
+def reconcile_disk_inventories(pve_result, sidecar_result, previous):
+    """Merge two confirmed sources or preserve the last-good snapshot."""
+    if (not isinstance(pve_result, list)
+            or not (isinstance(sidecar_result, list) or sidecar_result is None)):
+        return [dict(disk) for disk in previous], False
+    try:
+        merged = merge_disk_inventories(pve_result, sidecar_result or [])
+    except DiskIdentityError:
+        return [dict(disk) for disk in previous], False
+    return merged, True
 
 
 def _key(value):
@@ -61,25 +128,26 @@ def plan_disks(scope, disks, bindings):
             raise DiskIdentityError("Disk lacks a reliable WWN or serial")
         for kind, value in values.items():
             if value:
-                key = _key(value)
+                key = _hardware_key(kind, value)
                 if key in seen[kind]:
                     raise DiskIdentityError(f"Duplicate disk {kind}")
                 seen[kind].add(key)
         matches = [identifier for identifier, old in proposed.items()
-                   if any(value and _key(old.get(kind)) == _key(value)
+                   if any(value and _hardware_key(kind, old.get(kind)) == _hardware_key(kind, value)
                           for kind, value in values.items())]
         if len(matches) > 1:
             raise DiskIdentityError("Conflicting persisted disk identities")
         if matches:
             identifier = matches[0]
             old = proposed[identifier]
-            if any(value and old.get(kind) and _key(old[kind]) != _key(value)
+            if any(value and old.get(kind)
+                   and _hardware_key(kind, old[kind]) != _hardware_key(kind, value)
                    for kind, value in values.items()):
                 raise DiskIdentityError("Contradictory disk identity")
             old.update({kind: value for kind, value in values.items() if value})
         else:
             kind = "wwn" if values["wwn"] else "serial"
-            identifier = disk_identifier(scope, kind, values[kind])
+            identifier = disk_identifier(scope, kind, _hardware_key(kind, values[kind]))
             if identifier in proposed:
                 raise DiskIdentityError("Disk identity hash collision")
             proposed[identifier] = {kind: value for kind, value in values.items() if value}

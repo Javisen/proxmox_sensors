@@ -48,6 +48,373 @@ STORCLI_CANDIDATES = (
     "storcli64", "storcli", "/opt/MegaRAID/storcli/storcli64",
     "/usr/local/sbin/storcli64",
 )
+SSACLI_CANDIDATES = (
+    "/usr/sbin/ssacli",
+    "/usr/sbin/hpssacli",
+    "/opt/smartstorageadmin/ssacli/bin/ssacli",
+)
+SSACLI_DEVICE_PREFIX = "/dev/ssacli-"
+
+
+class SsacliSnapshotError(RuntimeError):
+    """The controller inventory could not be refreshed safely."""
+
+
+def _parse_ssacli_size(value):
+    """Convert an SSA capacity such as '1 TB' to decimal bytes."""
+    match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*([KMGTPE]?B)\s*", value or "", re.I)
+    if not match:
+        return None
+    powers = {unit: exponent for exponent, unit in enumerate(("B", "KB", "MB", "GB", "TB", "PB", "EB"))}
+    try:
+        amount = float(match.group(1))
+        size = int(amount * (1000 ** powers[match.group(2).upper()]))
+    except (OverflowError, ValueError):
+        return None
+    return size if math.isfinite(amount) and 0 < size < 10**18 else None
+
+
+def _ssacli_component(value):
+    return re.sub(r"[^a-z0-9]+", "-", value.casefold()).strip("-")
+
+
+def _ssacli_identity_value(value):
+    if not isinstance(value, str):
+        return None
+    cleaned = value.strip()
+    candidate = re.sub(r"[^a-z0-9]", "", cleaned.casefold().removeprefix("0x"))
+    invalid = {
+        "", "unknown", "none", "null", "na", "notavailable", "notspecified",
+        "tobefilledbyoem", "serialnumber", "123456789",
+    }
+    if candidate in invalid or not candidate or re.fullmatch(r"0+", candidate):
+        return None
+    return cleaned
+
+
+def _ssacli_identity_key(kind, value):
+    value = _ssacli_identity_value(value)
+    if value is None:
+        return None
+    if kind == "wwn":
+        return re.sub(r"[^a-z0-9]", "", value.casefold().removeprefix("0x"))
+    return value.casefold()
+
+
+def _parse_ssacli_records(output):
+    """Parse fixed `ssacli ctrl all show config detail` output."""
+    records = []
+    controller = None
+    slot = None
+    current = None
+    invalid = False
+    controllers_seen = set()
+    summary_locations = set()
+    detail_locations = set()
+
+    def finish():
+        nonlocal current, invalid
+        if not current:
+            return
+        serial = _ssacli_identity_value(current.get("serial"))
+        wwn = _ssacli_identity_value(current.get("wwn"))
+        size = _parse_ssacli_size(current.get("size_text"))
+        location = current.get("location")
+        exposure = current.get("exposed_to_os")
+        status = current.get("status")
+        authentication = current.get("authentication_status")
+        if (not location or not slot or not (serial or wwn) or size is None
+                or not isinstance(exposure, str)
+                or exposure.casefold() not in ("true", "false")
+                or not isinstance(status, str) or not status.strip()
+                or not isinstance(authentication, str) or not authentication.strip()):
+            invalid = True
+            current = None
+            return
+        slot_component = _ssacli_component(slot)
+        location_component = _ssacli_component(location)
+        if not slot_component or not location_component:
+            invalid = True
+            current = None
+            return
+        path = (
+            f"{SSACLI_DEVICE_PREFIX}slot-{slot_component}-"
+            f"pd-{location_component}"
+        )
+        rotational = current.get("rotational_speed")
+        if isinstance(rotational, (int, float)) and rotational > 0:
+            disk_type = "hdd"
+        elif rotational == 0:
+            disk_type = "ssd"
+        else:
+            disk_type = "unknown"
+        model = re.sub(r"\s+", " ", current.get("model", "Unknown")).strip()
+        controller_health_passed = (
+            status.casefold() == "ok"
+            and authentication.casefold() in ("ok", "not applicable", "n/a")
+        )
+        exposed_to_os = exposure.casefold() == "true"
+        record = {
+            "devpath": path,
+            "path": path,
+            "controller": controller,
+            "controller_slot": slot,
+            "location": location,
+            "vendor": "HPE",
+            "model": model,
+            "serial": serial or "",
+            "wwn": wwn or "",
+            "firmware": current.get("firmware", "Unknown"),
+            "size": size,
+            "capacity_gb": round(size / (1024**3), 1),
+            "type": disk_type,
+            "device_type": "ssacli",
+            "exposed_to_os": exposed_to_os,
+            "status": status,
+            "health_source": "ssacli",
+            "controller_health_passed": controller_health_passed,
+            "smart_available": False,
+            "temperature_c": current.get("temperature_c"),
+            "max_temperature_c": current.get("max_temperature_c"),
+            "power_on_hours": current.get("power_on_hours"),
+            "returncode": 0,
+            "reallocated_sectors": None,
+            "pending_sectors": None,
+            "uncorrectable_errors": None,
+            "media_errors": None,
+            "spin_retry_count": None,
+            "seek_error_rate": None,
+        }
+        records.append(record)
+        current = None
+
+    field_map = {
+        "status": "status",
+        "interface type": "interface_type",
+        "size": "size_text",
+        "drive exposed to os": "exposed_to_os",
+        "rotational speed": "rotational_speed",
+        "firmware revision": "firmware",
+        "serial number": "serial",
+        "wwid": "wwn",
+        "model": "model",
+        "current temperature (c)": "temperature_c",
+        "maximum temperature (c)": "max_temperature_c",
+        "power on hours": "power_on_hours",
+        "drive authentication status": "authentication_status",
+    }
+    integer_fields = {
+        "rotational_speed", "temperature_c", "max_temperature_c", "power_on_hours"
+    }
+
+    for line in (output or "").splitlines():
+        controller_match = re.match(
+            r"^\s*((?:HPE\s+)?Smart Array .+?) in Slot\s+(.+?)\s*$", line
+        )
+        if controller_match:
+            finish()
+            controller, slot = controller_match.groups()
+            controllers_seen.add((controller.casefold(), slot.casefold()))
+            continue
+        summary_drive_match = re.match(
+            r"^\s*physicaldrive\s+([A-Za-z0-9:._-]+)\s+\(port\s+[^)\r\n]+\)\s*$",
+            line,
+            re.I,
+        )
+        if summary_drive_match:
+            if not controller or not slot:
+                invalid = True
+            else:
+                summary_locations.add((
+                    controller.casefold(), slot.casefold(),
+                    summary_drive_match.group(1).casefold(),
+                ))
+            continue
+        drive_match = re.match(r"^\s*physicaldrive\s+([A-Za-z0-9:._-]+)\s*$", line)
+        if line.strip().casefold().startswith("physicaldrive"):
+            finish()
+            if not drive_match:
+                invalid = True
+                current = None
+                continue
+            if not controller or not slot:
+                invalid = True
+                current = None
+                continue
+            location = drive_match.group(1)
+            detail_locations.add((
+                controller.casefold(), slot.casefold(), location.casefold(),
+            ))
+            current = {"location": location, "_seen_fields": set()}
+            continue
+        if current is not None and line.strip():
+            indentation = len(line) - len(line.lstrip())
+            if indentation <= 6:
+                finish()
+        if current is None:
+            continue
+        field_match = re.match(r"^\s*([^:]+):\s*(.*?)\s*$", line)
+        if not field_match:
+            continue
+        label, value = field_match.groups()
+        target = field_map.get(label.strip().casefold())
+        if not target:
+            continue
+        if target in current["_seen_fields"]:
+            invalid = True
+            continue
+        current["_seen_fields"].add(target)
+        if target in integer_fields:
+            number = re.search(r"-?\d+", value)
+            if number:
+                current[target] = int(number.group())
+        else:
+            current[target] = value.strip()
+    finish()
+    if invalid:
+        return []
+    summary_controllers = {location[:2] for location in summary_locations}
+    if (records and (
+            not summary_locations
+            or summary_locations != detail_locations
+            or controllers_seen != summary_controllers
+    )):
+        return []
+    paths = [record["devpath"] for record in records]
+    identities = {
+        kind: [
+            key for record in records
+            if (key := _ssacli_identity_key(kind, record.get(kind))) is not None
+        ]
+        for kind in ("wwn", "serial")
+    }
+    if (len(set(paths)) != len(paths)
+            or any(len(values) != len(set(values)) for values in identities.values())):
+        return []
+    return records
+
+
+def _trusted_ssacli_parent_chain(path):
+    if not os.path.isabs(path):
+        return False
+    parent = os.path.dirname(path)
+    while parent:
+        try:
+            parent_info = os.stat(parent)
+        except OSError:
+            return False
+        if (not stat.S_ISDIR(parent_info.st_mode)
+                or parent_info.st_uid != 0
+                or parent_info.st_mode & 0o022):
+            return False
+        if parent == os.path.sep:
+            return True
+        parent = os.path.dirname(parent)
+    return False
+
+
+def _trusted_ssacli_binary():
+    unsafe_found = False
+    for candidate in SSACLI_CANDIDATES:
+        if not os.path.lexists(candidate):
+            continue
+        unsafe_found = True
+        resolved = os.path.realpath(candidate)
+        try:
+            info = os.stat(resolved)
+            trusted_file = (
+                stat.S_ISREG(info.st_mode)
+                and info.st_uid == 0
+                and not info.st_mode & 0o022
+                and os.access(resolved, os.X_OK)
+            )
+        except OSError:
+            continue
+        if (trusted_file
+                and _trusted_ssacli_parent_chain(candidate)
+                and _trusted_ssacli_parent_chain(resolved)):
+            return resolved
+    if unsafe_found:
+        raise SsacliSnapshotError("ssacli executable path is not trusted")
+    return None
+
+
+def _query_ssacli_records():
+    binary = _trusted_ssacli_binary()
+    if not binary:
+        return []
+    try:
+        result = subprocess.run(
+            [binary, "ctrl", "all", "show", "config", "detail"],
+            capture_output=True,
+            text=True,
+            timeout=8,
+            check=False,
+            env={
+                "LANG": "C",
+                "LC_ALL": "C",
+                "PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+            },
+        )
+    except subprocess.TimeoutExpired as err:
+        raise SsacliSnapshotError("ssacli inventory command timed out") from err
+    except OSError as err:
+        raise SsacliSnapshotError("ssacli inventory command could not run") from err
+    if result.returncode != 0:
+        raise SsacliSnapshotError("ssacli inventory command failed")
+    output = result.stdout or ""
+    if not output.strip():
+        raise SsacliSnapshotError("ssacli inventory output is empty")
+    records = _parse_ssacli_records(output)
+    has_drive_markers = any(
+        line.strip().casefold().startswith("physicaldrive")
+        for line in output.splitlines()
+    )
+    has_controller = any(
+        re.match(r"^\s*((?:HPE\s+)?Smart Array .+?) in Slot\s+(.+?)\s*$", line)
+        for line in output.splitlines()
+    )
+    no_controller = bool(re.search(r"\bno\s+controllers?\b", output, re.I))
+    if ((has_drive_markers and not records)
+            or (has_controller and not records)
+            or (not records and not no_controller)):
+        raise SsacliSnapshotError("ssacli inventory is malformed or ambiguous")
+    return records
+
+
+_ssacli_lock = threading.Lock()
+_ssacli_records_cache = []
+_ssacli_next_refresh = 0.0
+_ssacli_last_error = None
+
+
+def _cached_ssacli_records():
+    global _ssacli_records_cache, _ssacli_next_refresh, _ssacli_last_error
+    with _ssacli_lock:
+        now = time.monotonic()
+        if now < _ssacli_next_refresh:
+            if _ssacli_last_error is not None:
+                raise _ssacli_last_error
+            return [dict(record) for record in _ssacli_records_cache]
+        try:
+            records = _query_ssacli_records()
+        except SsacliSnapshotError as err:
+            _ssacli_last_error = err
+            _ssacli_next_refresh = time.monotonic() + 5
+            raise
+        _ssacli_records_cache = records
+        _ssacli_last_error = None
+        _ssacli_next_refresh = time.monotonic() + 30
+        return [dict(record) for record in _ssacli_records_cache]
+
+
+def _ssacli_record_for_path(path):
+    if not isinstance(path, str) or not path.startswith(SSACLI_DEVICE_PREFIX):
+        return None
+    matches = [record for record in _cached_ssacli_records() if record.get("devpath") == path]
+    return dict(matches[0]) if len(matches) == 1 else None
+
+
 _hba_lock = threading.Lock()
 _hba_temps = {}
 _hba_next_refresh = 0.0
@@ -173,7 +540,9 @@ class Handler(BaseHTTPRequestHandler):
         if not self._client_is_allowed():
             self._send_forbidden()
             return
-        if self.path == "/sensors":
+        if self.path == "/disks":
+            self._handle_disks()
+        elif self.path == "/sensors":
             self._handle_sensors()
         elif self.path == "/smart":
             self._handle_smart()
@@ -192,6 +561,16 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
+
+    def _handle_disks(self):
+        """Return controller-backed physical disk inventory."""
+        try:
+            records = _cached_ssacli_records()
+        except SsacliSnapshotError:
+            self._send_error_response("ssacli inventory unavailable")
+            return
+        records = [record for record in records if not record.get("exposed_to_os")]
+        self._send_json_response(json.dumps(records))
 
     def _handle_sensors(self):
         """Handle lm-sensors data."""
@@ -233,6 +612,15 @@ class Handler(BaseHTTPRequestHandler):
         path = paths[0]
         if not re.fullmatch(r"/dev/[A-Za-z0-9_./-]+", path) or ".." in path.split("/"):
             self._send_error_response("Invalid block device path")
+            return
+        if path.startswith(SSACLI_DEVICE_PREFIX):
+            try:
+                record = _ssacli_record_for_path(path)
+            except SsacliSnapshotError:
+                self._send_error_response("ssacli inventory unavailable")
+                return
+            payload = {"status": "ok", "data": record} if record else {"status": "error"}
+            self._send_json_response(json.dumps(payload))
             return
         try:
             device_stat = os.stat(path)
@@ -567,8 +955,17 @@ class Handler(BaseHTTPRequestHandler):
                     if info:
                         smart_data[device_key] = info
 
+            for record in _cached_ssacli_records():
+                if record.get("exposed_to_os"):
+                    continue
+                device_key = record["devpath"].removeprefix("/dev/")
+                if device_key not in smart_data:
+                    smart_data[device_key] = record
+
             return smart_data
 
+        except SsacliSnapshotError:
+            raise
         except Exception as e:
             return {"error": f"Scan failed: {str(e)}"}
 
@@ -577,10 +974,12 @@ class Handler(BaseHTTPRequestHandler):
         smart_data = self._get_smart_data_fast()
 
         for disk_key in list(smart_data.keys()):
-            if smart_data[disk_key].get("smart_available"):
+            disk = smart_data[disk_key]
+            if (isinstance(disk, dict) and disk.get("smart_available")
+                    and disk.get("device_type") != "ssacli"):
                 detailed = self._get_detailed_smart_attributes(f"/dev/{disk_key}")
                 if detailed:
-                    smart_data[disk_key].update(detailed)
+                    disk.update(detailed)
 
         return smart_data
 
@@ -1012,7 +1411,14 @@ class Handler(BaseHTTPRequestHandler):
             failed = 0
 
             for disk, info in smart_data.items():
-                if info.get("smart_available") and info.get("smart_passed"):
+                if not isinstance(info, dict):
+                    failed += 1
+                elif info.get("device_type") == "ssacli":
+                    if info.get("controller_health_passed"):
+                        working += 1
+                    else:
+                        failed += 1
+                elif info.get("smart_available") and info.get("smart_passed"):
                     working += 1
                 else:
                     failed += 1
@@ -1047,6 +1453,7 @@ def main():
     print(f"PVE Sensors API v2 started on port {port}")
     print(f"Allowed client IPs: {', '.join(sorted(ALLOWED_IPS))}")
     print("Endpoints:")
+    print(f"  GET /disks           - Controller-backed physical disk inventory")
     print(f"  GET /sensors         - lm-sensors data")
     print(f"  GET /smart           - Basic SMART data (fast)")
     print(f"  GET /smart-disk      - One disk with optional standby protection")

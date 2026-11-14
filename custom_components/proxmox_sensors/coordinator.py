@@ -22,7 +22,13 @@ from .logic.guest_selection import (
 from .logic.pdm import build_pdm_remotes, merge_pdm_sections, merge_pdm_updates
 from .logic.smart_cache import SmartCache
 from .logic.disk_smart import DiskSmartSchedule, preferences as disk_smart_preferences
-from .logic.physical_disks import BINDINGS_KEY, DiskIdentityError, hardware_value, plan_disks
+from .logic.physical_disks import (
+    BINDINGS_KEY,
+    DiskIdentityError,
+    matching_hardware_identity,
+    plan_disks,
+    reconcile_disk_inventories,
+)
 from .logic.physical_disk_type import apply_inventory_types
 
 _LOGGER = logging.getLogger(__name__)
@@ -173,6 +179,7 @@ async def create_proxmox_coordinator(hass, entry, client):
 
     sidecar_endpoints = {
         client.get_lm_sensors_http: "sensors",
+        client.get_sidecar_disks_http: "smart",
         client.get_smart_data_http: "smart",
         client.get_smart_disk_http: "smart",
         client.get_memory_http: "memory",
@@ -731,6 +738,7 @@ async def create_proxmox_coordinator(hass, entry, client):
 
                     if enable_physical_disks:
                         tasks.append((client.get_disks, hass, node, True))
+                        tasks.append((client.get_sidecar_disks_http, hass, node, True))
 
                     tasks.append((client.get_mounts, hass, node, True))
 
@@ -949,21 +957,18 @@ async def create_proxmox_coordinator(hass, entry, client):
                         result["node_disks"] = []
                         _mark_cleanup_confirmed(result, "node_disks")
                     else:
-                        disks = results[idx]
-                        idx += 1
+                        pve_disks = results[idx]
+                        sidecar_disks = results[idx + 1]
+                        idx += 2
 
-                        if isinstance(disks, Exception):
-                            result["node_disks"] = _last_good_non_guest_section(
-                                "node_disks", []
-                            )
-                        else:
+                        previous_disks = _last_good_non_guest_section("node_disks", [])
+                        disks, cleanup_confirmed = reconcile_disk_inventories(
+                            pve_disks, sidecar_disks, previous_disks
+                        )
+                        result["node_disks"] = disks
+                        if cleanup_confirmed:
                             result["node_disks"] = _remember_non_guest_section(
-                                "node_disks",
-                                (
-                                    [disk for disk in disks if isinstance(disk, dict)]
-                                    if isinstance(disks, list)
-                                    else []
-                                ),
+                                "node_disks", disks,
                             )
                             _mark_cleanup_confirmed(result, "node_disks")
 
@@ -1046,10 +1051,9 @@ async def create_proxmox_coordinator(hass, entry, client):
                                         )["enabled"]):
                                     continue
                                 if isinstance(response, dict) and response.get("status") == "ok":
-                                    expected = hardware_value(result["disks"][path].get("serial"))
-                                    observed = hardware_value((response.get("data") or {}).get("serial"))
-                                    if (not expected or not observed
-                                            or expected.casefold() != observed.casefold()):
+                                    if not matching_hardware_identity(
+                                        result["disks"][path], response.get("data") or {}
+                                    ):
                                         response = {"status": "error"}
                                 disk_smart_schedule.accept_if_current(
                                     identifier,

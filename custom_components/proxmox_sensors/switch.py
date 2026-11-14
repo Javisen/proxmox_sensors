@@ -1,4 +1,4 @@
-"""Per-physical-disk SMART switches."""
+"""Per-physical-disk monitoring switches."""
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import EntityCategory
@@ -6,25 +6,30 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 
 from .const import DOMAIN
 from .logic.disk_smart import preferences, with_preference
+from .logic.physical_disk_metrics import controller_health_source
 
 
 class PhysicalDiskSmartSwitch(SwitchEntity):
     _attr_has_entity_name = False
     _attr_entity_category = EntityCategory.CONFIG
 
-    def __init__(self, hass, entry, coordinator, identifier, key):
+    def __init__(self, hass, entry, coordinator, identifier, key, controller_reported=False):
         self.hass = hass
         self.entry = entry
         self.coordinator = coordinator
         self.identifier = identifier
         self.key = key
         self._attr_unique_id = f"{identifier}_{key}"
-        self._attr_translation_key = (
-            "smart_disk_monitoring" if key == "enabled" else "smart_disk_standby"
-        )
-        self._attr_name = (
-            "SMART monitoring" if key == "enabled" else "Protect HDD standby"
-        )
+        if controller_reported and key == "enabled":
+            self._attr_translation_key = None
+            self._attr_name = "Controller health polling"
+        else:
+            self._attr_translation_key = (
+                "smart_disk_monitoring" if key == "enabled" else "smart_disk_standby"
+            )
+            self._attr_name = (
+                "SMART monitoring" if key == "enabled" else "Protect HDD standby"
+            )
         self._attr_device_info = {"identifiers": {(DOMAIN, identifier)}}
 
     @property
@@ -77,8 +82,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
         registry = er.async_get(hass)
         devices = dr.async_get(hass)
         for path, identifier in runtime.get("physical_disk_ids", {}).items():
-            kind = str(coordinator.data.get("disks", {}).get(path, {}).get("type") or "").lower()
-            if kind in ("ssd", "nvme") and coordinator.data.get(
+            disk = coordinator.data.get("disks", {}).get(path, {})
+            kind = str(disk.get("type") or "").lower()
+            controller_reported = controller_health_source(disk)
+            if (controller_reported or kind in ("ssd", "nvme")) and coordinator.data.get(
                 "_cleanup_confirmed", {}
             ).get("node_disks") is True:
                 row_id = registry.async_get_entity_id(
@@ -96,8 +103,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 added.add(identifier)
                 controls = [PhysicalDiskSmartSwitch(
                     hass, entry, coordinator, identifier, "enabled",
+                    controller_reported=controller_reported,
                 )]
-                if kind not in ("ssd", "nvme"):
+                if not controller_reported and kind not in ("ssd", "nvme"):
                     controls.append(PhysicalDiskSmartSwitch(
                         hass, entry, coordinator, identifier, "protect_standby",
                     ))
