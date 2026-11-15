@@ -1,54 +1,90 @@
 
 {
-  "version": "5.2.2",
+  "version": "5.2.3",
   "release_status": "development",
   "items": [
     {
-      "id": "smart-dashboard-improvements",
+      "id": "pve-active-tasks",
       "active": true,
       "status": "completed",
       "progress": null,
-      "title": "Enhanced Physical Disks and SMART Dashboard",
-      "message": "Major improvements to physical disk monitoring in Home Assistant. Each disk now has its own device with detailed SMART metrics, health status, temperature, wear indicators and disk-specific controls. The dashboard includes clearer disk identification, improved temperature displays and enhanced storage diagnostics.",
+      "title": "PVE Active Tasks and Completion Monitoring",
+      "message": "New Proxmox VE task monitoring sensors to track active operations and detect task completion, including backup jobs. Provides better visibility into running tasks and their final status, enabling more reliable Home Assistant automations.",
       "es": {
-        "title": "Mejoras de discos físicos y dashboard SMART",
-        "message": "Importante renovación de la monitorización de discos físicos en Home Assistant. Cada disco dispone ahora de su propio dispositivo, con métricas SMART detalladas, estado de salud, temperatura, indicadores de desgaste y controles individuales. El dashboard incorpora una identificación más clara de los discos, mejoras en las temperaturas y diagnósticos de almacenamiento."
+        "title": "Sensores de tareas activas y finalización en PVE",
+        "message": "Nuevos sensores para monitorizar las tareas de Proxmox VE, detectar operaciones en ejecución y conocer cuándo finalizan, incluidos los trabajos de backup. Mejoran la supervisión de las tareas y su estado final, facilitando automatizaciones más fiables en Home Assistant."
       }
     },
     {
-      "id": "individual-smart-control",
+      "id": "pbs-active-tasks",
       "active": true,
       "status": "completed",
       "progress": null,
-      "title": "Individual SMART Monitoring and Disk Controls",
-      "message": "Introducing independent SMART monitoring controls for each physical disk, including enable/disable switches, configurable polling intervals, HDD standby protection and automatic or manual HDD/SSD/NVMe classification. Disk settings are preserved independently, allowing users to optimize monitoring without unnecessary disk activity.",
+      "title": "PBS Active Tasks and Completion Monitoring",
+      "message": "Independent task monitoring sensors for Proxmox Backup Server. Track running maintenance and backup-related operations, detect completion and expose task status to Home Assistant, improving the monitoring of PBS jobs and maintenance workflows.",
       "es": {
-        "title": "Control SMART individual por disco",
-        "message": "Se incorporan controles independientes de monitorización SMART para cada disco físico, incluyendo activación y desactivación, intervalos de consulta configurables, protección del reposo de los HDD y clasificación automática o manual como HDD, SSD o NVMe. La configuración se conserva individualmente, permitiendo optimizar la monitorización y evitar actividad innecesaria en los discos."
+        "title": "Sensores de tareas activas y finalización en PBS",
+        "message": "Sensores independientes para monitorizar las tareas de Proxmox Backup Server. Permiten supervisar operaciones de mantenimiento y backup en ejecución, detectar su finalización y consultar su estado desde Home Assistant, mejorando el seguimiento de los trabajos de PBS."
       }
     },
     {
-      "id": "sidecar-smart-optimization",
+      "id": "guest-migration-orphan-cleanup",
       "active": true,
       "status": "completed",
       "progress": null,
-      "title": "Sidecar SMART Performance Optimization",
-      "message": "Improved SMART data collection in the Proxmox sidecar with individual disk queries, more efficient polling and HDD standby protection. Enhanced SMART attribute parsing and NVMe compatibility while preserving existing monitoring functionality.",
+      "title": "Orphan Device Cleanup After VM and CT Migrations",
+      "message": "Fixed the persistence of empty source-node devices after guest migrations and Home Assistant restarts. The integration can now recover pending cleanup for completed migrations, removing confirmed orphan devices while preserving entity identities, history, dashboards and automations. Validated with a real CT migration.",
       "es": {
-        "title": "Optimización SMART del sidecar",
-        "message": "Mejorada la recopilación SMART del sidecar de Proxmox mediante consultas individuales por disco, una monitorización más eficiente y protección del reposo de los HDD. Se ha perfeccionado la interpretación de atributos SMART y la compatibilidad con NVMe, manteniendo las funcionalidades de monitorización existentes."
+        "title": "Limpieza de dispositivos huérfanos tras migraciones",
+        "message": "Corregida la persistencia de dispositivos vacíos en el nodo de origen después de migraciones de VM y CT y reinicios de Home Assistant. La integración puede recuperar limpiezas pendientes de migraciones completadas y eliminar dispositivos huérfanos confirmados, conservando las identidades de las entidades, el historial, los dashboards y las automatizaciones. Validado con una migración real de CT."
       }
     },
     {
-      "id": "smart-refresh-interval",
+      "id": "perc-raid-duplicate-wwn",
       "active": true,
       "status": "completed",
       "progress": null,
-      "title": "Configurable SMART Refresh Intervals",
-      "message": "SMART polling intervals can now be configured independently of the general Proxmox refresh cycle, with per-disk settings and the option to inherit the global interval. This reduces unnecessary disk queries without affecting other monitoring data.",
+      "title": "Dell PERC RAID Disk Identification Fix",
+      "message": "Prepared a fix for physical disk identification on Dell PERC RAID controllers where virtual disks can expose duplicate WWN identifiers. Improves disk matching and migration handling in these configurations. External validation is pending.",
       "es": {
-        "title": "Intervalos de actualización SMART configurables",
-        "message": "Los intervalos de consulta SMART pueden configurarse independientemente del ciclo general de actualización de Proxmox, con ajustes individuales por disco y opción de heredar el intervalo global. Esto reduce las consultas innecesarias sin afectar al resto de los datos de monitorización."
+        "title": "Corrección de identificación de discos Dell PERC RAID",
+        "message": "Preparada una corrección para la identificación de discos físicos en controladoras Dell PERC RAID, donde los discos virtuales pueden presentar identificadores WWN duplicados. Mejora la correspondencia y migración de discos en estas configuraciones. Pendiente de validación externa."
+      }
+    },
+    {
+      "id": "sidecar-degraded-status",
+      "active": true,
+      "status": "in_progress",
+      "progress": null,
+      "title": "Sidecar Degraded Status Investigation",
+      "message": "Investigating cases where the Proxmox sidecar reports a degraded state despite its monitoring functionality remaining operational. Additional diagnostic information is being collected to identify the cause and determine the appropriate correction.",
+      "es": {
+        "title": "Investigación del estado degradado del sidecar",
+        "message": "En investigación los casos en los que el sidecar de Proxmox muestra un estado degradado a pesar de mantener operativa su funcionalidad de monitorización. Se está recopilando información de diagnóstico para identificar la causa y determinar la corrección adecuada."
+      }
+    },
+    {
+      "id": "ugreen-usb-smart-standby",
+      "active": true,
+      "status": "completed",
+      "progress": null,
+      "title": "UGREEN USB SMART Compatibility and HDD Standby Fix",
+      "message": "Fixed SMART detection for UGREEN USB storage adapters using Realtek controllers, including device ID 0bda:9201. Updated sidecar handling also addresses HDD standby protection to avoid unnecessary disk wake-ups. SMART detection has been externally validated; final confirmation of the standby fix is pending.",
+      "es": {
+        "title": "Corrección SMART USB UGREEN y reposo de HDD",
+        "message": "Corregida la detección SMART de adaptadores de almacenamiento USB UGREEN con controladoras Realtek, incluido el identificador 0bda:9201. La actualización del sidecar también corrige la protección del reposo de los HDD para evitar activaciones innecesarias. La detección SMART cuenta con validación externa; queda pendiente la confirmación final de la corrección del reposo."
+      }
+    },
+    {
+      "id": "disabled-entities-persistence",
+      "active": true,
+      "status": "completed",
+      "progress": null,
+      "title": "Preserve Disabled Entities Across Updates",
+      "message": "Fixed an issue where entities explicitly disabled in Home Assistant could become enabled again after integration updates. The correction preserves user-defined entity states and has passed local regression tests. External validation is pending.",
+      "es": {
+        "title": "Conservación de entidades deshabilitadas tras actualizaciones",
+        "message": "Corregido un problema por el que las entidades deshabilitadas expresamente en Home Assistant podían volver a habilitarse después de actualizar la integración. La corrección respeta la configuración establecida por el usuario y ha superado las pruebas de regresión locales. Pendiente de validación externa."
       }
     }
   ]
