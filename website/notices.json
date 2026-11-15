@@ -1,38 +1,37 @@
 
-
 {
   "notices": [
     {
-      "id": "development-v5.2.2",
+      "id": "development-v5.2.3",
       "active": true,
       "level": "info",
-      "title": "V5.2.2 in Development: Major Physical Disks Upgrade",
-      "message": "Proxmox Extended Sensors V5.2.2 is nearing completion! This update brings a major redesign of physical disk monitoring, with independent Home Assistant devices for each disk, detailed SMART metrics, improved NVMe support, individual monitoring controls and enhanced disk diagnostics. Final testing is underway before the stable release.",
+      "title": "V5.2.3 in Development: Active Tasks Monitoring",
+      "message": "Proxmox Extended Sensors V5.2.3 is in development! This update introduces new Active Tasks sensors for Proxmox VE and Proxmox Backup Server, allowing Home Assistant to monitor running operations and detect task completion. The release also includes fixes for guest migration cleanup, disk identification, SMART compatibility and entity configuration persistence.",
       "es": {
-        "title": "V5.2.2 en desarrollo: gran renovación de discos físicos",
-        "message": "¡Proxmox Extended Sensors V5.2.2 está cerca de completarse! Esta actualización incorpora una importante renovación de la monitorización de discos físicos, con dispositivos independientes en Home Assistant, métricas SMART detalladas, mejoras en el soporte NVMe, controles individuales y diagnósticos más completos. Estamos realizando las últimas pruebas antes de publicar la versión estable."
+        "title": "V5.2.3 en desarrollo: monitorización de tareas activas",
+        "message": "¡Proxmox Extended Sensors V5.2.3 está en desarrollo! Esta actualización incorpora nuevos sensores Active Tasks para Proxmox VE y Proxmox Backup Server, que permiten supervisar operaciones en ejecución y detectar su finalización desde Home Assistant. La versión también incluye correcciones en la limpieza de dispositivos tras migraciones, identificación de discos, compatibilidad SMART y conservación de la configuración de entidades."
       }
     },
     {
-      "id": "v5.2.2-individual-smart",
+      "id": "v5.2.3-pve-active-tasks",
       "active": true,
       "level": "info",
-      "title": "New: Individual SMART Monitoring for Every Disk",
-      "message": "Each physical disk now has its own SMART monitoring controls. Enable or disable monitoring individually, configure polling intervals, protect HDD standby and automatically detect or manually select HDD, SSD or NVMe disk types. The optimized Proxmox sidecar provides more efficient disk queries and improved SMART data handling.",
+      "title": "New: PVE Active Tasks Sensors",
+      "message": "Monitor active Proxmox VE tasks directly from Home Assistant. The new sensors provide visibility into running operations, including VM and container backup jobs, and help detect when tasks finish. This makes it easier to build automations that react to task completion without relying on fixed waiting times.",
       "es": {
-        "title": "Novedad: monitorización SMART individual por disco",
-        "message": "Cada disco físico dispone ahora de sus propios controles SMART. Es posible activar o desactivar su monitorización individualmente, configurar intervalos de consulta, proteger el reposo de los HDD y detectar automáticamente o seleccionar manualmente el tipo HDD, SSD o NVMe. El sidecar de Proxmox se ha optimizado para realizar consultas más eficientes y mejorar el tratamiento de los datos SMART."
+        "title": "Novedad: sensores Active Tasks para PVE",
+        "message": "Supervisa las tareas activas de Proxmox VE directamente desde Home Assistant. Los nuevos sensores permiten conocer las operaciones en ejecución, incluidos los trabajos de backup de máquinas virtuales y contenedores, y detectar cuándo finalizan. Esto facilita crear automatizaciones que reaccionen al fin de una tarea sin depender de tiempos de espera fijos."
       }
     },
     {
-      "id": "v5.2.2-dashboard-improvements",
+      "id": "v5.2.3-pbs-active-tasks",
       "active": true,
       "level": "info",
-      "title": "V5.2.2: Enhanced Dashboard and Storage Diagnostics",
-      "message": "The dashboard receives further improvements with clearer physical disk identification, detailed SMART information, better temperature displays, NVMe temperature deduplication and corrected Proxmox Datacenter Manager storage usage bars. These refinements make monitoring more intuitive while preserving light and dark theme compatibility.",
+      "title": "New: PBS Active Tasks Sensors",
+      "message": "Proxmox Backup Server now has independent Active Tasks sensors in Home Assistant. Monitor running backup and maintenance operations, including garbage collection, pruning and verification tasks, and detect their completion. These sensors improve job tracking and enable more precise maintenance automations.",
       "es": {
-        "title": "V5.2.2: mejoras del dashboard y diagnósticos de almacenamiento",
-        "message": "El dashboard incorpora nuevas mejoras en la identificación de discos físicos, información SMART detallada, presentación de temperaturas, eliminación de temperaturas NVMe duplicadas y corrección de las barras de uso de almacenamiento de Proxmox Datacenter Manager. Estos ajustes facilitan la monitorización y mantienen la compatibilidad con los temas claros y oscuros."
+        "title": "Novedad: sensores Active Tasks para PBS",
+        "message": "Proxmox Backup Server incorpora sensores Active Tasks independientes en Home Assistant. Permiten supervisar las operaciones de backup y mantenimiento en ejecución, incluidos los trabajos de Garbage Collection, Prune y Verify, y detectar su finalización. Estos sensores mejoran el seguimiento de los trabajos y permiten crear automatizaciones de mantenimiento más precisas."
       }
     }
   ]
