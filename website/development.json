@@ -97,6 +97,7 @@
       "es": {
         "title": "Conflicto de propiedad del registro con ayudantes de estadísticas (#97)",
         "message": "En investigación un problema por el que crear un ayudante nativo de estadísticas de Home Assistant a partir de un sensor de temperatura de un disco físico puede provocar que el dispositivo y sus entidades queden no disponibles después de reiniciar Home Assistant. Los primeros indicios apuntan a un posible falso conflicto de propiedad en el registro cuando el ayudante se asocia al mismo dispositivo. Se está investigando para resolverlo antes de publicar la versión V5.2.3."
+      }
     }
   ]
 }
