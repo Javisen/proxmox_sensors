@@ -100,7 +100,8 @@ from .hardware import ProxmoxHardwareSensor, detect_sensor_type, hba_roc_name
 from .disks import ProxmoxDiskSensor, ProxmoxDiskSmartSensor
 from ..logic.physical_registry import reconcile_physical_registry
 from ..logic.physical_disk_metrics import (
-    owned_percentage_row, percentage_used_available, percentage_used_obsolete,
+    controller_health_source, disk_monitoring_metrics, owned_percentage_row,
+    percentage_used_available, percentage_used_obsolete,
 )
 
 # Storage
@@ -1193,24 +1194,11 @@ async def async_setup_entry(
                             physical_id,
                         )
                     )
-                    kind = str(d_info.get("type") or "").lower()
-                    metrics = ["smart_status", "temperature_c", "power_on_hours"]
-                    if kind == "nvme":
-                        metrics += ["smart_poll_status", "available_spare", "media_errors"]
-                    elif kind == "hdd":
-                        metrics += ["reallocated_sectors", "pending_sectors"]
-                        model = str(d_info.get("model") or "").strip()
-                        vendor = str(d_info.get("vendor") or "")
-                        if ("seagate" in vendor.casefold()
-                                or "seagate" in model.casefold()
-                                or re.match(r"^ST[0-9]{3,}", model, re.IGNORECASE)):
-                            metrics.append("seek_error_rate")
-                    elif kind == "ssd":
-                        metrics += ["reallocated_sectors"]
-                    for metric in metrics:
+                    controller_reported = controller_health_source(d_info)
+                    for metric in disk_monitoring_metrics(d_info):
                         entities.append(ProxmoxDiskSmartSensor(
                             coordinator, d_id, node, d_info.get("model") or d_id,
-                            physical_id, metric,
+                            physical_id, metric, controller_reported=controller_reported,
                         ))
 
         # Storage pools

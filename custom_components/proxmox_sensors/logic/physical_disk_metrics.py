@@ -1,6 +1,35 @@
 """Availability and cleanup rules for optional Physical Disk metrics."""
 
 import math
+import re
+
+
+def controller_health_source(disk):
+    return (isinstance(disk, dict)
+            and (disk.get("device_type") == "ssacli"
+                 or disk.get("health_source") == "ssacli"))
+
+
+def disk_monitoring_metrics(disk):
+    """Select evidence-appropriate health metrics for one disk record."""
+    if not isinstance(disk, dict):
+        return []
+    if controller_health_source(disk):
+        return ["controller_health", "temperature_c", "power_on_hours"]
+    kind = str(disk.get("type") or "").lower()
+    metrics = ["smart_status", "temperature_c", "power_on_hours"]
+    if kind == "nvme":
+        return metrics + ["smart_poll_status", "available_spare", "media_errors"]
+    if kind == "hdd":
+        metrics += ["reallocated_sectors", "pending_sectors"]
+        model = str(disk.get("model") or "").strip()
+        vendor = str(disk.get("vendor") or "")
+        if ("seagate" in vendor.casefold() or "seagate" in model.casefold()
+                or re.match(r"^ST[0-9]{3,}", model, re.IGNORECASE)):
+            metrics.append("seek_error_rate")
+    elif kind == "ssd":
+        metrics.append("reallocated_sectors")
+    return metrics
 
 
 def percentage_used_available(kind, snapshot):

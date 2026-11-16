@@ -159,30 +159,41 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
 
         # Search for SMART data
         disk_smart = self._find_smart_data_by_serial()
+        controller_reported = (
+            disk.get("device_type") == "ssacli"
+            or disk.get("health_source") == "ssacli"
+        )
         if self._physical_identifier:
             snapshot = self.coordinator.data.get("physical_smart", {}).get(
                 self._physical_identifier, {}
             )
             if not self._smart_monitoring_enabled():
                 snapshot = {"status": "disabled"}
-            attributes["SMART Poll Status"] = snapshot.get("status", "pending")
-            attributes["SMART Last Read"] = snapshot.get("last_read")
-            attributes["SMART Data Age (s)"] = snapshot.get("age_seconds")
+            poll_label = "Controller" if controller_reported else "SMART"
+            attributes[f"{poll_label} Poll Status"] = snapshot.get("status", "pending")
+            attributes[f"{poll_label} Last Read"] = snapshot.get("last_read")
+            attributes[f"{poll_label} Data Age (s)"] = snapshot.get("age_seconds")
 
         if disk_smart:
-            # Basic information
+            # Basic information, labeled by the evidence source.
             if disk_smart.get("model"):
-                attributes["SMART Model"] = disk_smart.get("model")
+                model_label = "Controller-reported Model" if controller_reported else "SMART Model"
+                attributes[model_label] = disk_smart.get("model")
 
             if disk_smart.get("serial"):
-                attributes["SMART Serial"] = disk_smart.get("serial")
+                serial_label = "Controller-reported Serial" if controller_reported else "SMART Serial"
+                attributes[serial_label] = disk_smart.get("serial")
 
             if disk_smart.get("firmware"):
                 attributes["Firmware"] = disk_smart.get("firmware")
 
-            # Health status
-            if "smart_passed" in disk_smart:
-                attributes["Health Status"] = (
+            if controller_reported:
+                passed = disk_smart.get("controller_health_passed")
+                if isinstance(passed, bool):
+                    attributes["Controller Health"] = "OK" if passed else "FAILED"
+                attributes["Health Source"] = "HPE Smart Array (ssacli)"
+            elif "smart_passed" in disk_smart:
+                attributes["SMART Health"] = (
                     "OK" if disk_smart.get("smart_passed") else "FAILED"
                 )
 
@@ -270,7 +281,11 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
                 attributes["Device Type"] = disk_smart.get("device_type")
 
             if disk_smart.get("returncode") is not None:
-                attributes["SMART Return Code"] = disk_smart.get("returncode")
+                return_code_label = (
+                    "Controller Query Return Code" if controller_reported
+                    else "SMART Return Code"
+                )
+                attributes[return_code_label] = disk_smart.get("returncode")
 
             # === NVMe ATTRIBUTES ===
 
@@ -335,13 +350,11 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
             if disk_smart.get("critical_warning") is not None:
                 attributes["Critical Warning"] = disk_smart.get("critical_warning")
 
-            # Health Score
-            health_score = self._calculate_health_score(disk_smart)
-            attributes["Health Score"] = f"{health_score}/100"
-
-            # General condition
-            health_status = self._determine_health_status(disk_smart)
-            attributes["Disk Health"] = health_status
+            if not controller_reported:
+                health_score = self._calculate_health_score(disk_smart)
+                attributes["Health Score"] = f"{health_score}/100"
+                health_status = self._determine_health_status(disk_smart)
+                attributes["Disk Health"] = health_status
 
         return attributes
 
@@ -416,6 +429,7 @@ class ProxmoxDiskSensor(ProxmoxBaseSensor):
 
 
 SMART_METRICS = {
+    "controller_health": ("Controller health", None, None),
     "smart_status": ("SMART health", None, None),
     "smart_poll_status": ("SMART Poll Status", None, None),
     "temperature_c": ("Temperature", "°C", "temperature"),
@@ -430,21 +444,29 @@ SMART_METRICS = {
 
 
 class ProxmoxDiskSmartSensor(ProxmoxDiskSensor):
-    """One measured SMART value from the verified per-disk sidecar result."""
+    """One verified per-disk health or telemetry value."""
 
-    def __init__(self, coordinator, disk_id, node, label, physical_identifier, metric):
+    def __init__(
+        self, coordinator, disk_id, node, label, physical_identifier, metric,
+        controller_reported=False,
+    ):
         super().__init__(coordinator, disk_id, node, label, physical_identifier)
         name, unit, device_class = SMART_METRICS[metric]
         self._metric = metric
+        self._controller_reported = controller_reported
         self._attr_unique_id = f"{physical_identifier}_{metric}"
-        self._attr_translation_key = f"disk_{metric}"
+        self._attr_translation_key = (
+            None if metric == "controller_health" else f"disk_{metric}"
+        )
         self._attr_name = name
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
         if metric == "smart_poll_status":
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_state_class = (
-            "measurement" if metric not in ("smart_status", "smart_poll_status", "seek_error_rate") else None
+            "measurement" if metric not in (
+                "controller_health", "smart_status", "smart_poll_status", "seek_error_rate"
+            ) else None
         )
 
     def _get_value(self):
@@ -461,6 +483,9 @@ class ProxmoxDiskSmartSensor(ProxmoxDiskSensor):
         data = self._find_smart_data_by_serial()
         if not isinstance(data, dict):
             return None
+        if self._metric == "controller_health":
+            passed = data.get("controller_health_passed")
+            return "Healthy" if passed is True else "Failed" if passed is False else None
         if self._metric == "smart_status":
             passed = data.get("smart_passed")
             return "Healthy" if passed is True else "Failed" if passed is False else None
@@ -478,13 +503,22 @@ class ProxmoxDiskSmartSensor(ProxmoxDiskSensor):
         )
         if not self._smart_monitoring_enabled():
             snapshot = {"status": "disabled"}
+        data = snapshot.get("data") or {}
+        controller_reported = (
+            self._controller_reported
+            or self._metric == "controller_health"
+            or data.get("device_type") == "ssacli"
+            or data.get("health_source") == "ssacli"
+        )
+        poll_label = "Controller" if controller_reported else "SMART"
         attributes = {
-            "SMART Poll Status": snapshot.get("status", "pending"),
-            "SMART Last Read": snapshot.get("last_read"),
-            "SMART Data Age (s)": snapshot.get("age_seconds"),
+            f"{poll_label} Poll Status": snapshot.get("status", "pending"),
+            f"{poll_label} Last Read": snapshot.get("last_read"),
+            f"{poll_label} Data Age (s)": snapshot.get("age_seconds"),
         }
+        if controller_reported:
+            attributes["Health Source"] = "HPE Smart Array (ssacli)"
         if self._metric == "seek_error_rate":
-            data = snapshot.get("data") or {}
             attributes["RAW"] = data.get("seek_error_rate_raw")
             attributes["WORST"] = data.get("seek_error_rate_worst")
             attributes["THRESH"] = data.get("seek_error_rate_threshold")

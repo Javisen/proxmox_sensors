@@ -1,0 +1,59 @@
+
+Smart Array P420 in Slot 1
+   Slot: 1
+   Serial Number: CONTROLLER-SERIAL
+   Controller Status: OK
+   Controller Temperature (C): 88
+
+   physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 1 TB, OK)
+   physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 1 TB, OK)
+
+   Array: A
+      Status: OK
+      Logical Drive: 1
+         Size: 931.48 GB
+         Status: OK
+         Disk Name: /dev/sda
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 1 TB
+         Drive exposed to OS: False
+         Rotational Speed: 7200
+         Firmware Revision: HPD5
+         Serial Number: DRIVE-SERIAL-1
+         WWID: DRIVE-WWN-1
+         Model: HP      MB1000FCWDE
+         Current Temperature (C): 34
+         Maximum Temperature (C): 38
+         Drive Authentication Status: OK
+
+   Array: B
+      Status: OK
+      Logical Drive: 2
+         Size: 931.48 GB
+         Status: OK
+         Disk Name: /dev/sdb
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: Predictive Failure
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 1 TB
+         Drive exposed to OS: False
+         Rotational Speed: 7200
+         Firmware Revision: HPD9
+         Serial Number: DRIVE-SERIAL-2
+         WWID: DRIVE-WWN-2
+         Model: HP      MB1000FCWDE
+         Current Temperature (C): 41
+         Maximum Temperature (C): 44
+         Drive Authentication Status: OK
