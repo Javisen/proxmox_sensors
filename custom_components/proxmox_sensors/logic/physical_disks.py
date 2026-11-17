@@ -29,6 +29,28 @@ def hardware_value(value):
     return cleaned
 
 
+def _identity_set(*values):
+    found = set()
+    for value in values:
+        cleaned = hardware_value(value)
+        if cleaned:
+            found.add(cleaned.casefold().removeprefix("0x"))
+    return found
+
+
+def smart_identity_matches(inventory_disk, smart_data):
+    """True when SMART data belongs to the inventory disk.
+
+    Proxmox reports some drives (notably SAS) by WWN instead of the vendor
+    serial, so both the serial and the WWN are compared on each side.
+    """
+    inventory_disk = inventory_disk if isinstance(inventory_disk, dict) else {}
+    smart_data = smart_data if isinstance(smart_data, dict) else {}
+    expected = _identity_set(inventory_disk.get("serial"), inventory_disk.get("wwn"))
+    observed = _identity_set(smart_data.get("serial"), smart_data.get("wwn"))
+    return bool(expected & observed)
+
+
 def _key(value):
     return value.casefold() if value else None
 

@@ -22,7 +22,12 @@ from .logic.guest_selection import (
 from .logic.pdm import build_pdm_remotes, merge_pdm_sections, merge_pdm_updates
 from .logic.smart_cache import SmartCache
 from .logic.disk_smart import DiskSmartSchedule, preferences as disk_smart_preferences
-from .logic.physical_disks import BINDINGS_KEY, DiskIdentityError, hardware_value, plan_disks
+from .logic.physical_disks import (
+    BINDINGS_KEY,
+    DiskIdentityError,
+    plan_disks,
+    smart_identity_matches,
+)
 from .logic.physical_disk_type import apply_inventory_types
 
 _LOGGER = logging.getLogger(__name__)
@@ -1046,10 +1051,9 @@ async def create_proxmox_coordinator(hass, entry, client):
                                         )["enabled"]):
                                     continue
                                 if isinstance(response, dict) and response.get("status") == "ok":
-                                    expected = hardware_value(result["disks"][path].get("serial"))
-                                    observed = hardware_value((response.get("data") or {}).get("serial"))
-                                    if (not expected or not observed
-                                            or expected.casefold() != observed.casefold()):
+                                    if not smart_identity_matches(
+                                        result["disks"][path], response.get("data"),
+                                    ):
                                         response = {"status": "error"}
                                 disk_smart_schedule.accept_if_current(
                                     identifier,
