@@ -54,7 +54,7 @@
     {
       "id": "sidecar-degraded-status",
       "active": true,
-      "status": "study",
+      "status": "completed",
       "progress": null,
       "title": "Sidecar Degraded Status Investigation",
       "message": "Investigating cases where the Proxmox sidecar reports a degraded state despite its monitoring functionality remaining operational. Additional diagnostic information is being collected to identify the cause and determine the appropriate correction.",
