@@ -806,7 +806,47 @@ class Handler(BaseHTTPRequestHandler):
                         if type(value) is int and 0 <= value <= 255:
                             parsed[field] = value
 
+        parsed["wwn"] = self._smart_wwn(disk_info)
+        self._apply_scsi_counters(disk_info, parsed)
         return parsed
+
+    @staticmethod
+    def _smart_wwn(disk_info):
+        """World Wide Name as 16 lowercase hex digits, or None.
+
+        Proxmox lists SAS drives (and some others) by WWN rather than by the
+        vendor serial, so the WWN lets the integration match the two.
+        """
+        luid = str(disk_info.get("logical_unit_id") or "").strip().lower()
+        luid = luid.removeprefix("0x")
+        if re.fullmatch(r"[0-9a-f]{16}", luid):
+            return luid
+        wwn = disk_info.get("wwn")
+        if isinstance(wwn, dict) and all(
+            type(wwn.get(k)) is int for k in ("naa", "oui", "id")
+        ):
+            return f"{wwn['naa']:x}{wwn['oui']:06x}{wwn['id']:09x}"
+        return None
+
+    @staticmethod
+    def _apply_scsi_counters(disk_info, parsed):
+        """SCSI/SAS equivalents of the ATA counters, when smartctl has them."""
+        if (disk_info.get("device") or {}).get("type") != "scsi":
+            return
+        grown = disk_info.get("scsi_grown_defect_list")
+        if type(grown) is int and grown >= 0 and parsed.get("reallocated_sectors") is None:
+            parsed["reallocated_sectors"] = grown
+        log = disk_info.get("scsi_error_counter_log")
+        if isinstance(log, dict) and parsed.get("uncorrectable_errors") is None:
+            total = 0
+            seen = False
+            for direction in ("read", "write", "verify"):
+                value = (log.get(direction) or {}).get("total_uncorrected_errors")
+                if type(value) is int and value >= 0:
+                    total += value
+                    seen = True
+            if seen:
+                parsed["uncorrectable_errors"] = total
 
     def _parse_basic_info_text(self, text_output, returncode):
         parsed = {
