@@ -5,6 +5,8 @@ entries are only read here; the existing platforms remain responsible for claims
 """
 
 
+import re
+
 from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
@@ -131,6 +133,60 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
                 and device.identifiers == {identifier} and not device.connections
                 and parent is not None and device.via_device_id == parent.id)
 
+    def recover_empty_sources():
+        """Re-arm a proven scoped handoff after a restart lost its pending state."""
+        cluster = entry_cluster_scope_id(entry)
+        if not cluster or not scoped_member(entry, cluster) or not fresh(entry, cluster):
+            return
+        pattern = re.compile(
+            r"proxmox_(vm|ct)_cluster_" + re.escape(cluster) + r"_([0-9]+)_v1"
+        )
+        for source in dr.async_entries_for_config_entry(devices, entry.entry_id):
+            if (source.id in pending or source.config_entry_id != entry.entry_id
+                    or len(source.identifiers) != 1 or source.connections):
+                continue
+            domain, value = next(iter(source.identifiers))
+            match = pattern.fullmatch(value) if domain == DOMAIN and isinstance(value, str) else None
+            if match is None:
+                continue
+            if er.async_entries_for_device(
+                registry, source.id, include_disabled_entities=True,
+            ):
+                continue
+            kind, vmid = match.groups()
+            identifier = (DOMAIN, value)
+            target_node = location(coordinator.data, kind, vmid)
+            if target_node is None or target_node == source_node or selected(cluster, kind, vmid) is not True:
+                continue
+            targets = [owner for owner in hass.config_entries.async_entries(DOMAIN)
+                       if owner.data.get(CONF_PLATFORM_TYPE) == "PVE"
+                       and scoped_member(owner, cluster)
+                       and str(owner.data.get(CONF_NODE, "")).lower() == target_node]
+            if len(targets) != 1:
+                continue
+            target = targets[0]
+            destination = devices.async_get_device_by_identifier(
+                identifier, config_entry_id=target.entry_id,
+            )
+            if (not fresh(target, cluster) or not valid_device(source, entry, identifier)
+                    or not valid_device(destination, target, identifier)
+                    or destination.id == source.id):
+                continue
+            uid = f"pve_cluster_{cluster}_proxmox_{kind}_{cluster}_{vmid}_status_v1".lower().replace(" ", "_")
+            status_id = registry.async_get_entity_id("sensor", DOMAIN, uid)
+            status = registry.async_get(status_id) if status_id else None
+            if (status is None or status.config_entry_id != target.entry_id
+                    or status.device_id != destination.id):
+                continue
+            # None means recovery may only remove an already empty device;
+            # it must never move Registry rows whose release was not observed.
+            pending[source.id] = (
+                cluster, kind, vmid, target, target_node, identifier, status_id,
+                None, {entry.entry_id, target.entry_id},
+            )
+            if target.entry_id not in subscriptions:
+                subscriptions[target.entry_id] = runtime(target).async_add_listener(changed)
+
     def invalidate():
         for did, item in list(pending.items()):
             cluster, kind, vmid, target, target_node, _identifier, _status_id, _rows, observed = item
@@ -211,10 +267,13 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
                 registry, did, include_disabled_entities=True,
             )
             # Include late-registered buttons/Replication in the completion check.
+            if rows is None and attached:
+                continue
+            tracked_rows = rows if rows is not None else {}
             for row in attached:
-                rows.setdefault(row.entity_id, (row.unique_id, row.config_entry_id))
+                tracked_rows.setdefault(row.entity_id, (row.unique_id, row.config_entry_id))
             if not reconcile_claimed_guest_rows(
-                registry, did, destination.id, rows, entry.entry_id,
+                registry, did, destination.id, tracked_rows, entry.entry_id,
                 target.entry_id, hass.states,
             ):
                 continue
@@ -224,7 +283,7 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
             if attached:
                 continue
             complete = True
-            for eid, (uid, owner_id) in rows.items():
+            for eid, (uid, owner_id) in tracked_rows.items():
                 row = registry.async_get(eid)
                 expected_owner = target.entry_id if owner_id == entry.entry_id else owner_id
                 if (row is None or row.unique_id != uid
@@ -253,6 +312,7 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
         if closed:
             return
         invalidate()
+        recover_empty_sources()
         if pending and scheduled is None:
             scheduled = hass.loop.call_soon(retry)
 
@@ -309,4 +369,5 @@ def setup_guest_migration_cleanup(hass, entry, coordinator):
     subscriptions["entities"] = hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, changed)
     subscriptions["devices"] = hass.bus.async_listen(dr.EVENT_DEVICE_REGISTRY_UPDATED, changed)
     entry.async_on_unload(close)
+    changed()
     return observe_release

@@ -806,8 +806,9 @@ class Handler(BaseHTTPRequestHandler):
                         if type(value) is int and 0 <= value <= 255:
                             parsed[field] = value
 
-        parsed["wwn"] = self._smart_wwn(disk_info)
-        self._apply_scsi_counters(disk_info, parsed)
+        if device_type == "scsi":
+            parsed["wwn"] = self._smart_wwn(disk_info)
+            self._apply_scsi_counters(disk_info, parsed)
         return parsed
 
     @staticmethod
@@ -817,16 +818,28 @@ class Handler(BaseHTTPRequestHandler):
         Proxmox lists SAS drives (and some others) by WWN rather than by the
         vendor serial, so the WWN lets the integration match the two.
         """
-        luid = str(disk_info.get("logical_unit_id") or "").strip().lower()
-        luid = luid.removeprefix("0x")
-        if re.fullmatch(r"[0-9a-f]{16}", luid):
-            return luid
+        raw_luid = disk_info.get("logical_unit_id")
+        luid = None
+        if raw_luid is not None:
+            if not isinstance(raw_luid, str):
+                return None
+            luid = raw_luid.strip().lower().removeprefix("0x")
+            if not re.fullmatch(r"[0-9a-f]{16}", luid) or not int(luid, 16):
+                return None
         wwn = disk_info.get("wwn")
-        if isinstance(wwn, dict) and all(
-            type(wwn.get(k)) is int for k in ("naa", "oui", "id")
-        ):
-            return f"{wwn['naa']:x}{wwn['oui']:06x}{wwn['id']:09x}"
-        return None
+        alternate = None
+        if wwn is not None:
+            if not isinstance(wwn, dict) or not all(
+                type(wwn.get(k)) is int and 0 <= wwn[k] < limit
+                for k, limit in (("naa", 16), ("oui", 16**6), ("id", 16**9))
+            ):
+                return None
+            alternate = f"{wwn['naa']:x}{wwn['oui']:06x}{wwn['id']:09x}"
+            if not int(alternate, 16):
+                return None
+        if luid and alternate and luid != alternate:
+            return None
+        return luid or alternate
 
     @staticmethod
     def _apply_scsi_counters(disk_info, parsed):

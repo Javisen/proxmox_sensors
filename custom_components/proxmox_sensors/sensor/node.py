@@ -287,6 +287,47 @@ class ProxmoxClusterTasksSensor(ProxmoxBaseSensor):
         return build_cluster_task_attributes(task, tasks_list)
 
 
+class ProxmoxNodeActiveTasksSensor(ProxmoxBaseSensor):
+    def __init__(self, coordinator, node):
+        super().__init__(
+            coordinator, "active_tasks", None, None,
+            f"proxmox_node_{node}_active_tasks", node,
+        )
+        self._attr_translation_key = "node_metric"
+        self._attr_translation_placeholders = {"name": "Active Tasks"}
+        self._attr_icon = "mdi:progress-clock"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    def _tasks(self):
+        tasks = (self.coordinator.data or {}).get("running_node_tasks")
+        return tasks if isinstance(tasks, list) else None
+
+    def _get_value(self):
+        tasks = self._tasks()
+        return len(tasks) if tasks is not None else None
+
+    @property
+    def extra_state_attributes(self):
+        tasks = self._tasks()
+        if tasks is None:
+            data = self.coordinator.data or {}
+            return {"fetch_error": data.get("running_node_tasks_error") or "NoSnapshot"}
+        types = {}
+        upids = []
+        for task in tasks:
+            task_type = task.get("type")
+            if isinstance(task_type, str) and task_type:
+                types[task_type] = types.get(task_type, 0) + 1
+            upid = task.get("upid")
+            if isinstance(upid, str) and upid:
+                upids.append(upid)
+        return {
+            "active_backups": types.get("vzdump", 0),
+            "task_types": types,
+            "active_upids": upids,
+        }
+
+
 class ProxmoxCPUInfoSensor(ProxmoxBaseSensor):
     def __init__(self, coordinator, node):
         super().__init__(

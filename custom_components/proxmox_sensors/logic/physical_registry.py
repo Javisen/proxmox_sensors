@@ -65,8 +65,9 @@ def reconcile_physical_registry(hass, entry, coordinator, node, enabled):
         if device.id not in old_device_ids:
             continue
         if (len(device.identifiers) != 1 or
-                any(row.config_entry_id != entry.entry_id or
-                    not (row.unique_id or "").startswith(DEVICE_PREFIX)
+                any(row.platform == DOMAIN and
+                    (row.config_entry_id != entry.entry_id or
+                     not (row.unique_id or "").startswith(DEVICE_PREFIX))
                     for row in er.async_entries_for_device(
                         registry, device.id, include_disabled_entities=True,
                     ))):
@@ -106,19 +107,13 @@ def reconcile_physical_registry(hass, entry, coordinator, node, enabled):
             ) is not None
         ]
         migrations = []
-        retirements = []
         for row in old_rows:
             if row.device_id is not None and (group is None or row.device_id != group.id):
                 raise DiskIdentityError("Legacy disk row belongs to another device")
-            try:
-                migration = prove_legacy_rows(
-                    [row], hass.states, entry.entry_id, context,
-                    server_id, node.lower(), disks, identities,
-                )
-            except DiskIdentityError:
-                retirements.append(row)
-            else:
-                migrations.extend(migration)
+            migrations.extend(prove_legacy_rows(
+                [row], hass.states, entry.entry_id, context,
+                server_id, node.lower(), disks, identities,
+            ))
         target_ids = {target for _, _, target in migrations}
         if len(target_ids) != len(migrations):
             raise DiskIdentityError("Duplicate legacy migration target")
@@ -130,9 +125,7 @@ def reconcile_physical_registry(hass, entry, coordinator, node, enabled):
                 if existing.config_entry_id != entry.entry_id:
                     raise DiskIdentityError("Physical disk identity belongs to another entry")
                 if uid in target_ids:
-                    migration = next(item for item in migrations if item[2] == uid)
-                    migrations.remove(migration)
-                    retirements.append(migration[0])
+                    raise DiskIdentityError("Legacy capacity target already exists")
             existing_device = devices.async_get_device_by_identifier(
                 (DOMAIN, identifier), config_entry_id=entry.entry_id,
             )
@@ -228,22 +221,18 @@ def reconcile_physical_registry(hass, entry, coordinator, node, enabled):
                 _safe_remove_device(devices, registry, device)
         raise
 
-    for row in retirements:
-        registry.async_remove(row.entity_id)
-
     group_removed = group is not None and _safe_remove_device(devices, registry, group)
     if group_removed:
         protected.discard(group.id)
-    if retirements or group_removed:
+    if group_removed:
         persistent_notification.async_dismiss(
             hass, f"{DOMAIN}_physical_disk_{entry.entry_id}",
         )
         persistent_notification.async_create(
             hass,
-            "Physical disks now have separate devices. Legacy capacity entities without "
-            "proven serial correspondence were replaced; review their customizations and "
-            "automations. The former `2. Disks` device ID cannot follow multiple disks. "
-            "Use your pre-install Home Assistant backup to recover old settings if needed.",
+            "Physical disks now have separate devices. Proven legacy capacity entities "
+            "were migrated with their Registry settings. The former `2. Disks` device "
+            "ID cannot follow multiple disks; review device-level references.",
             title="Physical Disks device migration",
             notification_id=f"{DOMAIN}_physical_disk_migrated_{entry.entry_id}",
         )

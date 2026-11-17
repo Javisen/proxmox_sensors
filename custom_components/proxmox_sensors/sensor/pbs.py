@@ -267,6 +267,64 @@ class ProxmoxPBSTaskSensor(ProxmoxPbsBaseSensor):
         }
 
 
+class ProxmoxPBSActiveTasksSensor(ProxmoxPbsBaseSensor):
+    def __init__(self, coordinator, server_id):
+        super().__init__(coordinator, server_id, "active_tasks", None)
+        self._attr_translation_key = "node_metric"
+        self._attr_translation_placeholders = {"name": "Active Tasks"}
+        self._attr_icon = "mdi:progress-clock"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    def _active_tasks(self):
+        data = self.coordinator.data or {}
+        if not data.get("pbs_tasks_fresh"):
+            return None
+        tasks = data.get("pbs_tasks")
+        if not isinstance(tasks, list):
+            return None
+        return [
+            task for task in tasks
+            if isinstance(task, dict)
+            and task.get("endtime") in (None, "", 0, "0")
+            and str(task.get("status") or "").lower() not in
+            ("ok", "stopped", "error", "failed", "job errors")
+        ]
+
+    def _get_value(self):
+        tasks = self._active_tasks()
+        return len(tasks) if tasks is not None else None
+
+    @property
+    def extra_state_attributes(self):
+        tasks = self._active_tasks()
+        if tasks is None:
+            return {}
+        types = {}
+        upids = []
+        for task in tasks:
+            task_type = task.get("worker_type")
+            if isinstance(task_type, str) and task_type:
+                types[task_type] = types.get(task_type, 0) + 1
+            upid = task.get("upid")
+            if isinstance(upid, str) and upid:
+                upids.append(upid)
+        return {
+            "active_backups": types.get("backup", 0),
+            "task_types": types,
+            "active_upids": upids,
+        }
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, f"pbs_tasks_{self._server_id}")},
+            "via_device_id": pbs_parent_device(self.coordinator),
+            "name": f"Tasks - {self._server_id.upper()}",
+            "manufacturer": "Proxmox",
+            "model": "Backup Server Tasks",
+        }
+
+
 class ProxmoxPBSTaskTypeSensor(ProxmoxPbsBaseSensor):
     """Sensor for last task type."""
 

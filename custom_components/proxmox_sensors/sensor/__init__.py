@@ -71,6 +71,7 @@ from .node import (
     ProxmoxSwapSensor,
     ProxmoxRootFSSensor,
     ProxmoxClusterTasksSensor,
+    ProxmoxNodeActiveTasksSensor,
     PVEBackupProgressSensor,
     ProxmoxNodesSensor,
     ProxmoxNodeIOWaitSensor,
@@ -133,6 +134,7 @@ from .pbs import (
     ProxmoxPBSBackupErrorsSensor,
     ProxmoxPBSBackupsListSensor,
     ProxmoxPBSTaskSensor,
+    ProxmoxPBSActiveTasksSensor,
     ProxmoxPBSTaskTypeSensor,
     ProxmoxPBSTaskStatusSensor,
     ProxmoxPBSTaskMessageSensor,
@@ -1154,6 +1156,7 @@ async def async_setup_entry(
         entities.append(ProxmoxKSMStatusSensor(coordinator, node))
         if node_data:
             entities.append(ProxmoxClusterTasksSensor(coordinator, node))
+            entities.append(ProxmoxNodeActiveTasksSensor(coordinator, node))
             entities.append(ProxmoxNodeUpdatesSensor(coordinator, node))
 
             entities.append(ProxmoxNodeIOWaitSensor(coordinator, node))
@@ -1414,6 +1417,7 @@ async def async_setup_entry(
 
         # Global PBS Status
         entities.append(ProxmoxPBSTaskSensor(coordinator, server_id))
+        entities.append(ProxmoxPBSActiveTasksSensor(coordinator, server_id))
         entities.append(ProxmoxPBSTaskTypeSensor(coordinator, server_id))
         entities.append(ProxmoxPBSTaskStatusSensor(coordinator, server_id))
         entities.append(ProxmoxPBSTaskMessageSensor(coordinator, server_id))

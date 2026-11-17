@@ -208,6 +208,16 @@ class ProxmoxClient:
             hass, "cluster/tasks", raise_errors=raise_errors
         ) or []
 
+    async def get_running_node_tasks(self, hass, node: str) -> list:
+        data = await self.get(
+            hass, f"nodes/{node}/tasks?source=active", raise_errors=True
+        )
+        if not isinstance(data, list) or not all(
+            isinstance(task, dict) for task in data
+        ):
+            raise ValueError("Invalid running node tasks response: expected a list")
+        return data
+
     async def wait_for_task(self, hass, upid: str, timeout: float = 3600, poll_interval: float = 2):
         """Wait for a Proxmox task identified by its exact UPID."""
         if not isinstance(upid, str) or not upid.strip():
@@ -853,12 +863,15 @@ class ProxmoxClient:
         )
 
     async def get_pbs_tasks(self, hass, raise_errors: bool = False):
-        return (
-            await self.pbs_get(
-                hass, "nodes/localhost/tasks", raise_errors=raise_errors
-            )
-            or []
+        tasks = await self.pbs_get(
+            hass, "nodes/localhost/tasks", raise_errors=raise_errors
         )
+        if raise_errors and (
+            not isinstance(tasks, list)
+            or not all(isinstance(task, dict) for task in tasks)
+        ):
+            raise ValueError("Invalid PBS tasks response: expected a list")
+        return tasks or []
 
     async def get_pbs_prune_jobs(self, hass, raise_errors: bool = False):
         """Get configured PBS prune jobs."""

@@ -29,26 +29,51 @@ def hardware_value(value):
     return cleaned
 
 
-def _identity_set(*values):
-    found = set()
-    for value in values:
-        cleaned = hardware_value(value)
-        if cleaned:
-            found.add(cleaned.casefold().removeprefix("0x"))
-    return found
+def sas_wwn(value):
+    if not isinstance(value, str):
+        return None
+    candidate = value.strip().lower().removeprefix("0x")
+    if re.fullmatch(r"[0-9a-f]{16}", candidate) and int(candidate, 16):
+        return candidate
+    return None
 
 
-def smart_identity_matches(inventory_disk, smart_data):
-    """True when SMART data belongs to the inventory disk.
-
-    Proxmox reports some drives (notably SAS) by WWN instead of the vendor
-    serial, so both the serial and the WWN are compared on each side.
-    """
-    inventory_disk = inventory_disk if isinstance(inventory_disk, dict) else {}
-    smart_data = smart_data if isinstance(smart_data, dict) else {}
-    expected = _identity_set(inventory_disk.get("serial"), inventory_disk.get("wwn"))
-    observed = _identity_set(smart_data.get("serial"), smart_data.get("wwn"))
-    return bool(expected & observed)
+def smart_identity_matches(inventory_disk, smart_data, inventory_disks):
+    if not isinstance(inventory_disk, dict) or not isinstance(smart_data, dict):
+        return False
+    expected = hardware_value(inventory_disk.get("serial"))
+    observed = hardware_value(smart_data.get("serial"))
+    if expected and observed and expected.casefold() == observed.casefold():
+        expected_wwn = sas_wwn(expected)
+        observed_wwn = sas_wwn(smart_data.get("wwn"))
+        if smart_data.get("device_type") == "scsi" and expected_wwn and observed_wwn:
+            return expected_wwn == observed_wwn
+        return True
+    if smart_data.get("device_type") != "scsi" or not isinstance(inventory_disks, dict):
+        return False
+    observed_wwn = sas_wwn(smart_data.get("wwn"))
+    if not observed_wwn:
+        return False
+    expected_serial_wwn = sas_wwn(expected)
+    expected_wwn = sas_wwn(inventory_disk.get("wwn"))
+    if expected_serial_wwn != observed_wwn:
+        return False
+    if (hardware_value(inventory_disk.get("wwn"))
+            and expected_wwn != observed_wwn):
+        return False
+    owners = [disk for disk in inventory_disks.values()
+              if isinstance(disk, dict) and observed_wwn in (
+                  sas_wwn(disk.get("serial")), sas_wwn(disk.get("wwn")),
+              )]
+    if len(owners) != 1 or owners[0] is not inventory_disk:
+        return False
+    if observed and any(
+        disk is not inventory_disk and isinstance(disk, dict)
+        and (hardware_value(disk.get("serial")) or "").casefold() == observed.casefold()
+        for disk in inventory_disks.values()
+    ):
+        return False
+    return True
 
 
 def _key(value):
@@ -72,6 +97,16 @@ def plan_disks(scope, disks, bindings):
                 if isinstance(key, str) and isinstance(value, dict)}
     if len(proposed) != len(bindings):
         raise DiskIdentityError("Invalid persisted disk binding")
+    wwn_counts = {}
+    for disk in disks.values():
+        if isinstance(disk, dict) and (wwn := hardware_value(disk.get("wwn"))):
+            key = _key(wwn)
+            wwn_counts[key] = wwn_counts.get(key, 0) + 1
+    bound_wwn_counts = {}
+    for old in proposed.values():
+        if wwn := hardware_value(old.get("wwn")):
+            key = _key(wwn)
+            bound_wwn_counts[key] = bound_wwn_counts.get(key, 0) + 1
     seen = {"wwn": set(), "serial": set()}
     used = set()
     result = {}
@@ -81,15 +116,28 @@ def plan_disks(scope, disks, bindings):
         values = {kind: hardware_value(disk.get(kind)) for kind in ("wwn", "serial")}
         if not any(values.values()):
             raise DiskIdentityError("Disk lacks a reliable WWN or serial")
+        shared_wwn = values["wwn"] and wwn_counts[_key(values["wwn"])] > 1
+        if shared_wwn and not values["serial"]:
+            raise DiskIdentityError("Shared disk WWN lacks a unique serial")
+        if shared_wwn and any(
+            _key(old.get("wwn")) == _key(values["wwn"]) and not hardware_value(old.get("serial"))
+            for old in proposed.values()
+        ):
+            raise DiskIdentityError("Shared disk WWN has an unproven persisted binding")
         for kind, value in values.items():
             if value:
                 key = _key(value)
-                if key in seen[kind]:
+                if key in seen[kind] and not (kind == "wwn" and shared_wwn):
                     raise DiskIdentityError(f"Duplicate disk {kind}")
                 seen[kind].add(key)
+        reliable_wwn = values["wwn"] and not shared_wwn and (
+            bound_wwn_counts.get(_key(values["wwn"]), 0) <= 1
+        )
+        if not reliable_wwn and not values["serial"]:
+            raise DiskIdentityError("Disk lacks an unambiguous serial")
         matches = [identifier for identifier, old in proposed.items()
-                   if any(value and _key(old.get(kind)) == _key(value)
-                          for kind, value in values.items())]
+                   if (reliable_wwn and _key(old.get("wwn")) == _key(values["wwn"]))
+                   or (values["serial"] and _key(old.get("serial")) == _key(values["serial"]))]
         if len(matches) > 1:
             raise DiskIdentityError("Conflicting persisted disk identities")
         if matches:
@@ -100,7 +148,7 @@ def plan_disks(scope, disks, bindings):
                 raise DiskIdentityError("Contradictory disk identity")
             old.update({kind: value for kind, value in values.items() if value})
         else:
-            kind = "wwn" if values["wwn"] else "serial"
+            kind = "wwn" if reliable_wwn else "serial"
             identifier = disk_identifier(scope, kind, values[kind])
             if identifier in proposed:
                 raise DiskIdentityError("Disk identity hash collision")

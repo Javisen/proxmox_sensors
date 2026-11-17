@@ -289,7 +289,8 @@ async def create_proxmox_coordinator(hass, entry, client):
         result.setdefault("_cleanup_confirmed", _cleanup_defaults())[section] = confirmed
 
     async def _pbs_preserved_call(
-        section: str, fallback, coro_func, *args, store: str | None = None
+        section: str, fallback, coro_func, *args, store: str | None = None,
+        report_freshness: bool = False,
     ):
         key = _pbs_cache_key(section, store)
         try:
@@ -300,9 +301,11 @@ async def create_proxmox_coordinator(hass, entry, client):
                 raise
 
             _LOGGER.warning("PBS: Failed to fetch %s: %s", section, err)
-            return _last_good_pbs.get(key, fallback)
+            preserved = _last_good_pbs.get(key, fallback)
+            return (preserved, False) if report_freshness else preserved
 
-        return _remember_pbs_section(section, value, store=store)
+        value = _remember_pbs_section(section, value, store=store)
+        return (value, True) if report_freshness else value
 
     def _configured_pve_nodes():
         return {
@@ -543,12 +546,15 @@ async def create_proxmox_coordinator(hass, entry, client):
                     result["pbs_auth_status"] = "OK" if version_info else "ERROR"
 
                     if enable_pbs_tasks:
-                        tasks = await _pbs_preserved_call(
-                            "pbs_tasks", [], client.get_pbs_tasks, hass
+                        tasks, tasks_fresh = await _pbs_preserved_call(
+                            "pbs_tasks", [], client.get_pbs_tasks, hass,
+                            report_freshness=True,
                         )
                         result["pbs_tasks"] = tasks if isinstance(tasks, list) else []
+                        result["pbs_tasks_fresh"] = tasks_fresh and isinstance(tasks, list)
                     else:
                         result["pbs_tasks"] = []
+                        result["pbs_tasks_fresh"] = False
 
                     # PBS configured jobs
                     prune_jobs = await _pbs_preserved_call(
@@ -728,6 +734,7 @@ async def create_proxmox_coordinator(hass, entry, client):
                         (client.get_node_updates, hass, node),
                         (client.get_node_network, hass, node),
                         (client.get_cluster_tasks, hass),
+                        (client.get_running_node_tasks, hass, node),
                         (client.get_vms, hass, node, True),
                         (client.get_containers, hass, node, True),
                         (client.get_storages, hass, node, True),
@@ -827,6 +834,26 @@ async def create_proxmox_coordinator(hass, entry, client):
                             "id": last.get("id", "node"),
                             "endtime": last.get("endtime"),
                         }
+
+                    running_tasks = results[idx]
+                    idx += 1
+                    if isinstance(running_tasks, list) and all(
+                        isinstance(task, dict) for task in running_tasks
+                    ):
+                        result["running_node_tasks"] = running_tasks
+                        result["running_node_tasks_error"] = None
+                    else:
+                        result["running_node_tasks"] = None
+                        if isinstance(running_tasks, (AuthenticationError, ProxmoxPermissionError, CannotConnect)):
+                            error = str(running_tasks)
+                        elif isinstance(running_tasks, Exception):
+                            error = type(running_tasks).__name__
+                        else:
+                            error = "InvalidResponse"
+                        result["running_node_tasks_error"] = error
+                        _LOGGER.warning(
+                            "PVE running tasks unavailable on %s: %s", node, error
+                        )
 
                     # -------- VMs --------
 
@@ -1053,6 +1080,7 @@ async def create_proxmox_coordinator(hass, entry, client):
                                 if isinstance(response, dict) and response.get("status") == "ok":
                                     if not smart_identity_matches(
                                         result["disks"][path], response.get("data"),
+                                        result["disks"],
                                     ):
                                         response = {"status": "error"}
                                 disk_smart_schedule.accept_if_current(
