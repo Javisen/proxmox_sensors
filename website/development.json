@@ -90,7 +90,7 @@
     {
       "id": "physical-disk-statistics-helper-conflict",
       "active": true,
-      "status": "testing",
+      "status": "completed",
       "progress": null,
       "title": "Physical Disk Registry Ownership Conflict with Statistics Helpers (#97)",
       "message": "Investigating an issue where creating a native Home Assistant Statistics helper from a physical disk temperature sensor can cause the disk device and its entities to become unavailable after restarting Home Assistant. Initial findings suggest a possible false Registry ownership conflict when the helper is associated with the same device. The issue is being investigated for resolution before the V5.2.3 release.",
