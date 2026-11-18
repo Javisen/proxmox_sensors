@@ -15,7 +15,9 @@ fi
 echo "Proxmox Extended Sensors - Hardware Sidecar installer"
 echo
 
-if systemctl list-unit-files | grep -q '^pve-sensors.service'; then
+# Check the unit file written by this installer directly. A pipe into `grep -q`
+# can fail under pipefail (SIGPIPE, exit 141) and miss an existing install.
+if [[ -f "${SERVICE_PATH}" ]]; then
   echo "Existing Sidecar installation detected."
 fi
 
@@ -24,8 +26,30 @@ echo "Enter the Home Assistant IP address(es) allowed to access the Sidecar."
 echo "Use commas to separate multiple addresses."
 echo "Example: 192.168.1.50,192.168.1.60"
 
+# The IP prompt needs an interactive stdin. With `curl ... | bash`, stdin is the
+# script itself, so `read` would consume script lines instead of user input.
+if [[ ! -t 0 ]]; then
+  echo "Error: stdin is not a terminal. Run the installer interactively, e.g.:" >&2
+  echo "  bash <(curl -fsSL ${REPO_RAW}/install-sidecar.sh)" >&2
+  exit 1
+fi
+
+# Read existing ALLOWED_IPS from sidecar.conf as default (parsed, not sourced)
+DEFAULT_IPS=""
+if [[ -r "${CONFIG_PATH}" ]]; then
+  DEFAULT_IPS="$(sed -n 's/^[[:space:]]*ALLOWED_IPS[[:space:]]*=[[:space:]]*//p' "${CONFIG_PATH}" \
+    | tail -n1 | tr -d "\"' \r")"
+  if [[ -n "${DEFAULT_IPS}" ]]; then
+    echo "Current value from ${CONFIG_PATH}: ${DEFAULT_IPS}"
+    echo "Press Enter to keep it, or edit the line."
+  fi
+fi
+
 while true; do
-  read -r -p "Allowed IP(s): " ALLOWED_INPUT
+  # -e: use readline, -i: pre-fill the editable input line with the default
+  read -r -e -i "${DEFAULT_IPS}" -p "Allowed IP(s): " ALLOWED_INPUT
+  # Empty input falls back to the default (safety net if -i has no effect)
+  ALLOWED_INPUT="${ALLOWED_INPUT:-${DEFAULT_IPS}}"
   if python3 - "${ALLOWED_INPUT}" <<'PY'
 import ipaddress
 import sys
